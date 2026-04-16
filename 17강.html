@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>17강 전체 지문분석 - Lio T</title>
+  <style>
+    /* 디자인 시스템 변수 설정 */
+    :root {
+      --bg-color: #f4f7fb;
+      --text-main: #0f172a;
+      --text-sub: #334155;
+      --text-muted: #64748b;
+      --primary: #4f46e5;
+      --primary-light: #e0e7ff;
+      --secondary: #3b82f6;
+      --border-light: #e2e8f0;
+      --card-bg: #ffffff;
+      --radius: 12px;
+    }
+
+    /* 페이지 기본 설정 (세로 모드) */
+    @page {
+      size: A4 portrait;
+      margin: 15mm; 
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg-color);
+      color: var(--text-main);
+      font-family: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+      letter-spacing: -0.02em; 
+    }
+
+    body {
+      padding: 10px; 
+      display: flex;
+      justify-content: center;
+    }
+
+    .doc {
+      width: 100%;
+      max-width: 210mm; 
+    }
+
+    /* =========================================
+       지문 간 구분선 (화면용 vs 인쇄용)
+       ========================================= */
+    .passage-separator {
+      height: 4px;
+      background-image: repeating-linear-gradient(to right, #cbd5e1 0, #cbd5e1 10px, transparent 10px, transparent 20px);
+      margin: 80px 0;
+      border: none;
+      position: relative;
+    }
+    .passage-separator::after {
+      content: '▼ 다음 지문 (인쇄 시 무조건 새 페이지에서 시작됩니다) ▼';
+      position: absolute;
+      top: -26px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--bg-color);
+      padding: 0 16px;
+      color: #94a3b8;
+      font-weight: 700;
+      font-size: 10pt;
+    }
+
+    /* 공통 레이아웃 제어 */
+    .no-break { page-break-inside: avoid; break-inside: avoid; }
+    
+    .header-container { margin-bottom: 30px; text-align: center; }
+    .hero-title {
+      display: inline-block; margin: 0 0 10px 0; padding: 8px 24px; font-size: 22pt; font-weight: 800;
+      color: #ffffff; background: linear-gradient(135deg, var(--primary), var(--secondary));
+      border-radius: 999px; box-shadow: 0 4px 14px rgba(79, 70, 229, 0.25);
+    }
+    .subtitle { font-size: 13pt; font-weight: 600; color: var(--text-muted); }
+
+    .section-title {
+      display: flex; align-items: center; gap: 12px; margin: 30px 0 16px 0;
+      border-bottom: 2px solid var(--border-light); padding-bottom: 4px;
+      page-break-after: avoid; break-after: avoid;
+    }
+    .page-no {
+      width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+      background: var(--primary); color: white; font-weight: 700; font-size: 12pt; border-radius: 8px;
+    }
+    h2 { margin: 0; font-size: 16pt; font-weight: 700; color: var(--text-main); }
+
+    .card {
+      background: var(--card-bg); border: 1px solid var(--border-light); border-top: 4px solid var(--primary);
+      border-radius: var(--radius); padding: 8px 16px; margin-bottom: 16px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    }
+    
+    .text-block-title { font-size: 12pt; font-weight: 700; color: var(--primary); margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+    .text-block-title::before { content: ''; display: block; width: 6px; height: 6px; border-radius: 50%; background: var(--primary); }
+    .eng-body { font-size: 12pt; line-height: 1.7; font-weight: 500; color: var(--text-main); margin-bottom: 20px; text-align: justify; }
+    .divider { height: 1px; background: var(--border-light); margin: 20px 0; }
+    .mini-divider { height: 1px; background: var(--border-light); margin: 8px 0; }
+    .kor-body { font-size: 11.5pt; line-height: 1.7; color: var(--text-sub); text-align: justify; word-break: keep-all; }
+
+    .sentence-card {
+      background: var(--card-bg); border: 1px solid var(--border-light); border-left: 4px solid var(--secondary);
+      border-radius: 8px; padding: 8px 16px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    }
+    .sentence-id { display: inline-block; margin-bottom: 8px; padding: 2px 8px; border-radius: 6px; background: var(--primary-light); color: var(--primary); font-size: 9pt; font-weight: 700; }
+    .sentence-en { font-size: 12.5pt; font-weight: 600; line-height: 1.6; color: var(--text-main); margin-bottom: 4px; }
+    .sentence-ko { font-size: 9pt; line-height: 1.6; color: var(--text-sub); margin-bottom: 4px; word-break: keep-all; }
+    .vocab-box { display: inline-block; padding: 4px 8px; border-radius: 6px; background: #f8fafc; border: 1px dashed #cbd5e1; font-size: 9pt; color: var(--text-muted); }
+
+    .point-block { margin-bottom: 16px; }
+    .point-block:last-child { margin-bottom: 0; }
+    .line-item { font-size: 11.5pt; line-height: 1.7; margin: 0 0 8px 0; word-break: keep-all; }
+    .exam-note { margin-top: 8px; padding: 8px 12px; background: #fffbeb; border-left: 3px solid #f59e0b; border-radius: 0 6px 6px 0; font-size: 10.5pt; line-height: 1.6; color: #92400e; }
+    .exam-note ul { margin: 4px 0 0 0; padding-left: 20px; }
+    .exam-note li { margin-bottom: 4px; }
+    .exam-note li:last-child { margin-bottom: 0; }
+
+    .chip-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 8px 0 20px 0; }
+    .chip { padding: 4px 10px; border-radius: 999px; background: var(--primary-light); color: var(--primary); font-size: 10pt; font-weight: 600; }
+    .arrow { color: var(--text-muted); font-weight: 700; }
+    h3 { font-size: 12pt; margin: 0 0 8px 0; color: var(--text-main); }
+    .label { display: inline-block; font-size: 9.5pt; font-weight: 700; color: var(--secondary); background: #eff6ff; padding: 2px 6px; border-radius: 4px; margin-bottom: 6px; }
+    .summary-pair { margin-bottom: 20px; }
+    .summary-pair:last-child { margin-bottom: 0; }
+
+    /* =========================================
+       인쇄(Print) 전용 스타일 - 다중 지문 분할 처리
+       ========================================= */
+    @media print {
+      html, body { background: #ffffff !important; padding: 0; }
+      .doc { max-width: 100%; }
+
+      /* 지문 구분선을 강제 페이지 넘김으로 변환 */
+      .passage-separator {
+        page-break-before: always !important;
+        break-before: page !important;
+        margin: 0 !important;
+        height: 0 !important;
+        border: none !important;
+        background: none !important;
+      }
+      .passage-separator::after { display: none !important; }
+
+      .page-break { page-break-before: always !important; break-before: page !important; }
+      .card, .sentence-card { box-shadow: none !important; border: 1px solid #cbd5e1 !important; page-break-inside: avoid !important; break-inside: avoid !important; }
+      .section-title { page-break-after: avoid !important; break-after: avoid !important; }
+
+      .hero-title { background: #0f172a !important; color: white !important; }
+      .page-no { background: #0f172a !important; }
+      .sentence-id, .chip, .label { border: 1px solid #cbd5e1 !important; background: #f8fafc !important; color: #0f172a !important; }
+      .exam-note { background: #f8fafc !important; border-left-color: #94a3b8 !important; color: #334155 !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="doc">
+
+    <!-- ========================================== -->
+    <!-- [지문 2] 17강 1번                          -->
+    <!-- ========================================== -->
+    
+    <div class="passage-container">
+      <div class="header-container">
+        <div class="hero-title">17강 1번 지문분석</div>
+        <div class="subtitle">Lio T 내신대비 지문분석서</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">00</div><h2>영어 본문 및 전체 해석</h2></div>
+      <div class="card no-break">
+        <div class="text-block-title">영어 본문</div>
+        <div class="eng-body">
+          Deep work is when you perform an activity with deep concentration that pushes your cognitive capabilities, and by doing so create new value and improve your skills. These efforts are hard to replicate; and to be able to do deep work, we need a distraction-free environment. For many people though, we spend far too much time on the other end of the scale, doing what is referred to as shallow work. This style of working is not cognitively demanding but is rather an execution of logical-type tasks that rarely create new value (although they may still be important). We often perform these tasks while we are distracted. Shallow work has its place, both because routine-type tasks need to be done and because we cannot spend our entire time doing deep work. The problem with too much shallow work is that we feel busy, maybe even stressed, but we rarely see any output reflecting our experienced effort.
+        </div>
+        <div class="divider"></div>
+        <div class="text-block-title">전체 해석</div>
+        <div class="kor-body">
+          딥 워크(몰입 작업)는 당신의 인지 능력을 한계까지 밀어붙이는 깊은 집중력을 가지고 활동을 수행하며, 그렇게 함으로써 새로운 가치를 창출하고 당신의 기술을 향상하는 때이다. 이러한 노력은 재현하기 어렵다. 그리고 딥 워크를 할 수 있으려면, 주의를 산만하게 하는 것이 없는 환경이 필요하다. 하지만 많은 사람의 경우, 우리는 척도의 반대편 끝에서 이른바 얕은 작업을 하면서 너무 많은 시간을 보낸다. 이러한 작업 방식은 인지적으로 부담이 크지 않으며 (여전히 중요할 수는 있지만) 새로운 가치를 거의 창출하지 못하는 논리적 유형의 과업을 실행하는 것에 가깝다. 우리는 종종 주의가 산만한 상태에서 이러한 과업들을 수행한다. 얕은 작업도 나름의 자리가 있는데, 그 이유는 일상적인 과업도 처리되어야 하고, 우리가 모든 시간을 딥 워크에만 쏟을 수는 없기 때문이다. 얕은 작업을 너무 많이 할 때의 문제는, 우리가 바쁘고 어쩌면 스트레스까지 받는다고 느끼지만, 우리가 경험한(들인) 노력을 반영하는 결과물은 거의 보지 못한다는 것이다.
+        </div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">01</div><h2>직독직해 및 어휘 정리</h2></div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 1</div>
+        <div class="sentence-en">Deep work / is / when / you / perform / an activity / with deep concentration / that / pushes / your cognitive capabilities, / and by doing so / create / new value / and improve / your skills.</div>
+        <div class="sentence-ko">딥 워크(몰입 작업)는 / ~이다 / 때 / 당신이 / 수행하는 / 활동을 / 깊은 집중력을 가지고 / (~하는) / 밀어붙이는 / 당신의 인지 능력을, / 그리고 그렇게 함으로써 / 창출하고 / 새로운 가치를 / 그리고 향상하는 (때) / 당신의 기술을.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> deep work - 몰입 작업, concentration - 집중, cognitive - 인지의, capability - 능력, by doing so - 그렇게 함으로써</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 2</div>
+        <div class="sentence-en">These efforts / are / hard / to replicate; / and / to be able / to do deep work, / we / need / a distraction-free environment.</div>
+        <div class="sentence-ko">이러한 노력은 / ~이다 / 어려운 / 재현하기; / 그리고 / 가능하기 위해서 / 딥 워크를 하는 것이, / 우리는 / 필요로 한다 / 주의를 산만하게 하는 것이 없는 환경을.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> replicate - 재현하다, 반복하다, distraction-free - 산만함이 없는, 집중을 방해받지 않는</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 3</div>
+        <div class="sentence-en">For many people though, / we / spend / far too much time / on the other end / of the scale, / doing / what / is referred to / as shallow work.</div>
+        <div class="sentence-ko">하지만 많은 사람의 경우, / 우리는 / 보낸다 / 너무 많은 시간을 / 반대편 끝에서 / 척도의, / 하면서 / 것을 / 일컬어지는 / 얕은 작업이라고.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> scale - 척도, 저울, be referred to as - ~라고 일컬어지다, shallow - 얕은</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 4</div>
+        <div class="sentence-en">This style / of working / is not / cognitively demanding / but is / rather / an execution / of logical-type tasks / that / rarely create / new value / (although / they / may still be / important).</div>
+        <div class="sentence-ko">이러한 방식은 / 작업의 / ~가 아니다 / 인지적으로 힘든 (것이) / 오히려 ~이다 / 실행 / 논리적 유형의 과업들의 / (~하는) / 좀처럼 창출하지 못하는 / 새로운 가치를 / (비록 / 그것들이 / 여전히 ~일지라도 / 중요할지라도).</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> demanding - (노력 등을) 요구하는, 힘든, execution - 실행 수행, rarely - 좀처럼 ~않는</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 5</div>
+        <div class="sentence-en">We / often perform / these tasks / while / we / are distracted.</div>
+        <div class="sentence-ko">우리는 / 종종 수행한다 / 이러한 과업들을 / ~하는 동안 / 우리가 / 산만해진 (동안).</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> perform - 수행하다, distracted - 산만한, 주의가 흩어진</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 6</div>
+        <div class="sentence-en">Shallow work / has / its place, / both because / routine-type tasks / need / to be done / and because / we / cannot spend / our entire time / doing deep work.</div>
+        <div class="sentence-ko">얕은 작업은 / 가진다 / 그것의 자리를(나름의 역할을), / 둘 다의 이유 때문에 / 일상적인 유형의 과업들이 / 필요가 있고 / 행해질 / 그리고 ~때문에 / 우리가 / 쓸 수 없기 (때문에) / 우리의 모든 시간을 / 딥 워크를 하는 데.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> have its place - 나름의 자리(역할)가 있다, routine-type - 일상적인 유형의</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 7</div>
+        <div class="sentence-en">The problem / with too much shallow work / is / that / we / feel busy, / maybe even stressed, / but / we / rarely see / any output / reflecting / our experienced effort.</div>
+        <div class="sentence-ko">문제는 / 너무 많은 얕은 작업의 / ~이다 / ~라는 것 / 우리가 / 바쁘다고 느끼고, / 어쩌면 심지어 스트레스를 받는다고 (느끼는 것), / 하지만 / 우리가 / 좀처럼 보지 못한다는 것 / 어떠한 결과물도 / 반영하는 / 우리가 경험한 노력을.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> output - 결과물, reflect - 반영하다</div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">02</div><h2>어법 및 구문 포인트</h2></div>
+      <div class="card no-break">
+        <div class="point-block">
+          <div class="sentence-id">문장 1</div>
+          <div class="line-item"><strong>[an activity with deep concentration that pushes...]</strong> `that`은 주격 관계대명사로 선행사인 `an activity with deep concentration` (결국 활동이나 집중력)을 수식한다. 단수 선행사이므로 동사 `pushes`가 쓰였다.</div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul><li>관계절 내의 동사 병렬 구조에 유의해야 한다. `you perform... and by doing so create... and improve...`에서 `perform`, `create`, `improve`가 병렬 연결되어 있다.</li></ul>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 3</div>
+          <div class="line-item"><strong>[doing what is referred to as shallow work]</strong> `doing`은 분사구문으로 '~하면서'의 의미를 지닌다. `what`은 선행사를 포함하는 관계대명사로 `doing`의 목적어 역할을 하는 명사절을 이끈다.</div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul><li>`what` 자리에 `that`을 쓰면 안 된다. 뒤에 주어가 없는 불완전한 문장이 오므로 관계대명사가 필요하고, 선행사가 없으므로 `what`이 옳다.</li></ul>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 7</div>
+          <div class="line-item"><strong>[any output reflecting our experienced effort]</strong> `reflecting`은 현재분사로 앞의 명사 `output`을 능동적으로 수식한다('~을 반영하는 결과물').</div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul><li>결과물이 노력을 능동적으로 반영하는 것이므로 `reflected` (과거분사)를 쓰면 어법상 어색해진다.</li></ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">03</div><h2>문장 단위 내용 흐름 정리</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>[(1)-(2) 딥 워크의 정의와 조건] :</strong> 딥 워크는 인지 능력을 최대로 발휘하여 새로운 가치를 창출하는 고도의 집중 상태이며, 이를 위해서는 방해 요소가 없는 환경이 필수적이다.</div>
+        <div class="line-item"><strong>[(3)-(5) 얕은 작업의 개념과 실태 (문제 제기)] :</strong> 그러나 현대인들은 척도의 반대편에 있는 '얕은 작업(인지적 부담 없이 기계적으로 하는 일)'에 너무 많은 시간을 빼앗기며, 주로 산만한 상태에서 이를 수행한다.</div>
+        <div class="line-item"><strong>[(6)-(7) 얕은 작업의 한계와 문제점] :</strong> 일상적인 처리를 위해 얕은 작업이 불가피하게 필요하긴 하지만, 이것에만 매몰되면 몸은 바쁘고 스트레스를 받으면서도 정작 가치 있는 결과물은 만들어내지 못하는 딜레마에 빠진다.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">04</div><h2>표현들의 연관성 정리</h2></div>
+      <div class="card no-break">
+        <h3>작업 방식의 대조</h3>
+        <div class="chip-row">
+          <span class="chip">Deep work</span> <span class="arrow">↔</span> <span class="chip">Shallow work</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 20px;">가치를 창출하고 집중력을 요하는 깊은 몰입(Deep work)과 단순 반복적이고 주의가 산만한 상태에서 하는 피상적인 일(Shallow work)의 대조.</div>
+
+        <h3>작업 환경의 대조</h3>
+        <div class="chip-row">
+          <span class="chip">Distraction-free environment</span> <span class="arrow">↔</span> <span class="chip">Distracted</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 20px;">딥 워크를 위한 이상적인 환경(방해 없음)과 얕은 작업을 할 때의 현대인의 일반적인 상태(산만함)를 대조한다.</div>
+
+        <h3>얕은 작업의 딜레마</h3>
+        <div class="chip-row">
+          <span class="chip">Feel busy, stressed</span> <span class="arrow">↔</span> <span class="chip">Rarely see any output</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 4px;">얕은 작업의 아이러니를 보여준다. 과정은 힘들고 바쁘지만, 본질적인 성과(output)나 가치 창출(create new value)은 이뤄지지 않는다.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">05</div><h2>소재와 주제문</h2></div>
+      <div class="card no-break" style="border-top-color: #f59e0b;">
+        <div class="line-item" style="margin-bottom: 12px;"><strong>핵심 소재:</strong> 딥 워크(Deep work)의 필요성과 얕은 작업(Shallow work) 과잉의 문제점</div>
+        <div class="mini-divider"></div>
+        <div class="label" style="margin-top: 8px;">주제문 (문장 7)</div>
+        <div class="sentence-en" style="margin-bottom: 0;">The problem with too much shallow work is that we feel busy, maybe even stressed, but we rarely see any output reflecting our experienced effort.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">06</div><h2>지문의 요약 및 패러프레이징</h2></div>
+      <div class="card no-break">
+        <div class="summary-pair">
+          <div class="label">요약 / Summary</div>
+          <div class="sentence-en">While deep work creates meaningful value through intense concentration, people waste too much time on shallow, distracted tasks that leave them feeling busy but yield little real output.</div>
+          <div class="sentence-ko">몰입 작업은 고도의 집중을 통해 의미 있는 가치를 창출하는 반면, 사람들은 바쁘게 느끼게 하지만 실제 결과물은 거의 없는 산만하고 얕은 작업에 너무 많은 시간을 낭비한다.</div>
+        </div>
+        <div class="divider"></div>
+        <div class="summary-pair">
+          <div class="label">패러프레이징 / Paraphrasing</div>
+          <div class="sentence-en">True productivity stems from distraction-free, cognitively demanding tasks. However, modern workers often fall into the trap of performing superficial routines that induce stress without producing significant results.</div>
+          <div class="sentence-ko">진정한 생산성은 방해 요소가 없고 인지적으로 힘든 과업에서 비롯된다. 그러나 현대의 근로자들은 중요한 결과를 만들어내지 못한 채 스트레스만 유발하는 표면적인 일과를 수행하는 덫에 자주 빠진다.</div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">07</div><h2>도움이 되는 배경지식</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>1. 딥 워크 (Deep Work):</strong><br> 칼 뉴포트(Cal Newport)가 제안한 개념으로, 소셜 미디어, 이메일 등의 방해를 차단하고 한 가지 중요한 목표에 고도의 집중력을 쏟아붓는 업무 방식을 말한다.</div>
+        <div class="divider"></div>
+        <div class="line-item"><strong>2. 인지적 과부하 (Cognitive Load):</strong><br> 얕은 작업을 지속하며 멀티태스킹을 시도할 때, 뇌는 피로감을 느끼지만 실제로는 의미 있는 정보 처리(새로운 가치 창출)가 이루어지지 않아 효율성이 떨어지는 현상.</div>
+      </div>
+    </div>
+
+
+    <!-- ========================================== -->
+    <!-- [지문 4] 17강 3번                          -->
+    <!-- ========================================== -->
+    <hr class="passage-separator" />
+    
+    <div class="passage-container">
+      <div class="header-container">
+        <div class="hero-title">17강 3번 지문분석</div>
+        <div class="subtitle">Lio T 내신대비 지문분석서</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">00</div><h2>영어 본문 및 전체 해석</h2></div>
+      <div class="card no-break">
+        <div class="text-block-title">영어 본문</div>
+        <div class="eng-body">
+          Depression is terrible, and it is common. Roughly one in seven people will experience at least one full-blown depressive episode in their lifetime. It is a tragedy on an individual and a societal level, yet we — and by we, I mean all of us, including doctors — struggle to grasp it. This is because depression is not one disease; it is a collection of symptoms that appears similar across sufferers, despite resulting from a melting pot of diverse causes and mechanisms. There is no single reason for depression: one person’s depressive episode seems to clearly stem from recent life events, another from historic trauma and loss, yet another out of the blue, with no clear psychological or social cause whatsoever. There is also no one presentation of depression: in fact, there are 227 possible symptom combinations that meet the diagnostic criteria for major depressive disorder. Perhaps understandably, there is no one treatment for this condition, either. Antidepressants lead to improvement in roughly a third of patients, offer some kind of improvement in another third, while a final third remain completely unaffected.
+        </div>
+        <div class="divider"></div>
+        <div class="text-block-title">전체 해석</div>
+        <div class="kor-body">
+          우울증은 끔찍하며 흔하다. 대략 7명 중 1명은 평생 적어도 한 번의 본격적인 우울증 발병을 겪게 될 것이다. 그것은 개인적, 사회적 차원에서 비극이지만, 우리(우리란 의사들을 포함한 우리 모두를 의미한다)는 그것을 완전히 이해하는 데 어려움을 겪고 있다. 이것은 우울증이 단일한 질병이 아니기 때문이다; 그것은 다양한 원인과 메커니즘의 용광로(혼합)에서 비롯됨에도 불구하고 환자들에게 걸쳐 비슷하게 나타나는 증상들의 집합체이다. 우울증에는 단일한 이유가 없다. 어떤 사람의 우울증 발병은 최근의 삶의 사건들에서 분명히 비롯된 것처럼 보이고, 다른 사람은 역사적(오랜) 트라우마와 상실에서, 또 다른 사람은 어떠한 분명한 심리적, 사회적 원인도 전혀 없이 갑자기 발생한 것처럼 보인다. 우울증에는 발현 방식도 단 한 가지만 있는 것이 아니다. 실제로 주요 우울 장애의 진단 기준을 충족하는 증상 조합은 227가지나 존재한다. 아마도 이해할 만하게도, 이 질환에 대한 단 하나의 치료법 역시 존재하지 않는다. 항우울제는 환자의 대략 3분의 1에서 호전을 가져오고, 다른 3분의 1에서는 약간의 호전을 제공하는 반면, 마지막 3분의 1은 전혀 효과를 보지 못한다.
+        </div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">01</div><h2>직독직해 및 어휘 정리</h2></div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 1</div>
+        <div class="sentence-en">Depression / is / terrible, / and / it / is / common.</div>
+        <div class="sentence-ko">우울증은 / ~이다 / 끔찍한, / 그리고 / 그것은 / ~이다 / 흔한.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> depression - 우울증</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 2</div>
+        <div class="sentence-en">Roughly / one in seven people / will experience / at least / one full-blown depressive episode / in their lifetime.</div>
+        <div class="sentence-ko">대략 / 7명 중 1명은 / 경험할 것이다 / 적어도 / 한 번의 본격적인 우울증 발병(에피소드)을 / 그들의 일생에서.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> roughly - 대략, full-blown - 본격적인, 완전히 발달한, episode - (병의) 발병, 에피소드</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 3</div>
+        <div class="sentence-en">It / is / a tragedy / on an individual and a societal level, / yet / we / — and by we, / I / mean / all of us, / including doctors — / struggle to grasp / it.</div>
+        <div class="sentence-ko">그것은 / ~이다 / 비극 / 개인적 그리고 사회적 차원에서의, / 하지만 / 우리는 / (그리고 '우리'란, / 내가 / 의미하는 것이다 / 우리 모두를, / 의사들을 포함한) / 완전히 이해하는 데 어려움을 겪고 있다 / 그것을.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> tragedy - 비극, societal - 사회적인, struggle to - ~하려고 분투하다, 애쓰다, grasp - 이해하다, 파악하다</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 4</div>
+        <div class="sentence-en">This / is / because / depression / is not / one disease; / it / is / a collection of symptoms / that / appears / similar / across sufferers, / despite resulting / from a melting pot / of diverse causes and mechanisms.</div>
+        <div class="sentence-ko">이것은 / ~때문이다 / 우울증이 / 아니기 (때문이다) / 단일한 질병이; / 그것은 / ~이다 / 증상들의 집합체 / (~하는) / 나타나는 / 비슷하게 / 환자들에게 걸쳐, / ~에서 비롯됨에도 불구하고 / 용광로(혼합)에서 / 다양한 원인들과 메커니즘들의.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> symptom - 증상, sufferer - 환자, 고통받는 사람, result from - ~에서 기인하다, melting pot - 용광로 (여러 요소가 섞인 것), diverse - 다양한</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 5</div>
+        <div class="sentence-en">There / is / no single reason / for depression: / one person’s depressive episode / seems / to clearly stem / from recent life events, / another / from historic trauma and loss, / yet another / out of the blue, / with no clear psychological or social cause / whatsoever.</div>
+        <div class="sentence-ko">~가 있다 / 단일한 이유는 없다 / 우울증에 대한: / 어떤 사람의 우울증 발병은 / 보인다 / 분명히 비롯되는 것처럼 / 최근의 삶의 사건들에서, / 다른 하나는 / 오랜 트라우마와 상실에서 (비롯되는 것처럼 보이고), / 또 다른 하나는 / 난데없이 갑자기 (비롯되는 것처럼 보인다), / 어떠한 명확한 심리적이거나 사회적인 원인 없이 / 전혀.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> stem from - ~에서 비롯되다, trauma - 트라우마, 정신적 외상, out of the blue - 갑자기, 난데없이, whatsoever - (부정문 뒤에서) 전혀, 조금도</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 6</div>
+        <div class="sentence-en">There / is / also / no one presentation / of depression: / in fact, / there / are / 227 possible symptom combinations / that / meet / the diagnostic criteria / for major depressive disorder.</div>
+        <div class="sentence-ko">~가 있다 / 또한 / 단일한 발현(모습)은 없다 / 우울증의: / 사실, / ~가 있다 / 227가지의 가능한 증상 조합이 / (~하는) / 충족하는 / 진단 기준을 / 주요 우울 장애에 대한.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> presentation - 발현, 제시, combination - 조합, meet - 충족시키다, diagnostic - 진단의, criteria - 기준 (criterion의 복수형), disorder - 장애, 질환</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 7</div>
+        <div class="sentence-en">Perhaps / understandably, / there / is / no one treatment / for this condition, / either.</div>
+        <div class="sentence-ko">아마도 / 이해할 만하게도, / ~가 있다 / 단 하나의 치료법도 없다 / 이 질환에 대한, / 역시.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> treatment - 치료(법), condition - (건강) 상태, 질환</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 8</div>
+        <div class="sentence-en">Antidepressants / lead / to improvement / in roughly a third of patients, / offer / some kind of improvement / in another third, / while / a final third / remain / completely unaffected.</div>
+        <div class="sentence-ko">항우울제는 / 이끈다 / 호전(개선)으로 / 대략 환자의 3분의 1에서, / (그리고) 제공한다 / 어떤 종류의 호전을 / 다른 3분의 1에서, / 반면에 / 마지막 3분의 1은 / 남아 있다 / 완전히 영향받지 않은(효과가 없는) 상태로.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> antidepressant - 항우울제, improvement - 호전, 개선, unaffected - 영향받지 않은</div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">02</div><h2>어법 및 구문 포인트</h2></div>
+      <div class="card no-break">
+        <div class="point-block">
+          <div class="sentence-id">문장 4</div>
+          <div class="line-item"><strong>[a collection of symptoms that appears similar...]</strong> `that`은 주격 관계대명사다. 여기서 선행사는 `symptoms`(복수)가 아니라 `a collection`(단수)이므로 관계절의 동사가 단수형 `appears`로 쓰였다.</div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul><li>바로 앞의 `symptoms`를 선행사로 착각하여 `appear`로 수 일치를 틀리게 할 수 있으므로 주의해야 한다. 문맥상 비슷하게 나타나는 주체는 '증상들의 집합체'라는 덩어리 개념이다.</li></ul>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 5</div>
+          <div class="line-item"><strong>[one ... another ... yet another]</strong> 불특정 다수 중 여러 사례를 차례대로 나열할 때 쓰는 대명 구문이다. `another`와 `yet another` 뒤에는 `(depressive episode seems to stem)`이 반복을 피하기 위해 생략되었다.</div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 6</div>
+          <div class="line-item"><strong>[combinations that meet the diagnostic criteria]</strong> 여기서 선행사는 복수인 `combinations`이므로 관계대명사 `that` 뒤에 복수 동사 `meet`이 왔다.</div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">03</div><h2>문장 단위 내용 흐름 정리</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>[(1)-(3) 문제 제기] :</strong> 우울증은 매우 흔하고 치명적인 질환이지만, 전문가들조차 이를 명확히 파악하는 데 어려움을 겪고 단정짓지 못하고 있다.</div>
+        <div class="line-item"><strong>[(4) 우울증의 본질] :</strong> 그 이유는 우울증이 단일 질환이 아니라, 원인이 매우 다양하게 섞여 있으면서도 겉으로만 증상이 비슷해 보이는 '증후군(집합체)'이기 때문이다.</div>
+        <div class="line-item"><strong>[(5)-(6) 원인과 증상의 다양성] :</strong> 우울증이 발병하는 이유는 최근의 스트레스, 과거의 상처, 혹은 아무 이유 없이 발생하는 등 사람마다 다르며, 나타나는 증상의 조합만 해도 수백 가지에 달한다.</div>
+        <div class="line-item"><strong>[(7)-(8) 치료의 한계] :</strong> 원인과 증상이 이토록 다양하기 때문에, '항우울제'라는 하나의 치료법만으로는 모든 환자에게 동일한 효과를 낼 수 없으며 상당수는 효과를 보지 못한다.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">04</div><h2>표현들의 연관성 정리</h2></div>
+      <div class="card no-break">
+        <h3>우울증의 복합적 특성</h3>
+        <div class="chip-row">
+          <span class="chip">Not one disease</span> <span class="arrow">=</span> <span class="chip">diverse causes</span> <span class="arrow">=</span> <span class="chip">no one presentation</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 20px;">우울증이 한 가지 스펙트럼으로 정의될 수 없는 복합적인 상태임을 나타내는 동의적 표현들이다.</div>
+
+        <h3>파악의 어려움과 결과</h3>
+        <div class="chip-row">
+          <span class="chip">Struggle to grasp it</span> <span class="arrow">=</span> <span class="chip">no one treatment</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 4px;">우울증의 복합적 특성 때문에 진단과 이해가 어렵고, 이는 곧 단일한 완벽한 치료법의 부재라는 결과로 이어진다.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">05</div><h2>소재와 주제문</h2></div>
+      <div class="card no-break" style="border-top-color: #f59e0b;">
+        <div class="line-item" style="margin-bottom: 12px;"><strong>핵심 소재:</strong> 우울증의 복합적 원인과 증상, 그리고 그로 인한 치료의 어려움</div>
+        <div class="mini-divider"></div>
+        <div class="label" style="margin-top: 8px;">주제문 (문장 4)</div>
+        <div class="sentence-en" style="margin-bottom: 0;">This is because depression is not one disease; it is a collection of symptoms that appears similar across sufferers, despite resulting from a melting pot of diverse causes and mechanisms.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">06</div><h2>지문의 요약 및 패러프레이징</h2></div>
+      <div class="card no-break">
+        <div class="summary-pair">
+          <div class="label">요약 / Summary</div>
+          <div class="sentence-en">Depression is a highly complex condition with diverse underlying causes and hundreds of symptom combinations, making it extremely difficult for medical professionals to grasp and treat with a single solution like antidepressants.</div>
+          <div class="sentence-ko">우울증은 다양한 근본 원인과 수백 가지의 증상 조합을 가진 매우 복잡한 질환으로, 의료 전문가들이 항우울제와 같은 단일한 해결책으로 파악하고 치료하는 것을 극도로 어렵게 만든다.</div>
+        </div>
+        <div class="divider"></div>
+        <div class="summary-pair">
+          <div class="label">패러프레이징 / Paraphrasing</div>
+          <div class="sentence-en">Because depression manifests differently in each individual and arises from a multitude of disparate psychological and biological sources, relying on a one-size-fits-all medical treatment proves largely ineffective for a significant portion of patients.</div>
+          <div class="sentence-ko">우울증은 개인마다 다르게 발현되고 수많은 이질적인 심리적, 생물학적 원인에서 발생하기 때문에, 일률적인 의학적 치료에 의존하는 것은 상당수의 환자에게 대체로 비효율적인 것으로 판명된다.</div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">07</div><h2>도움이 되는 배경지식</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>1. 증후군 (Syndrome):</strong><br> 질병의 원인이 단일하지 않고 여러 가지 복합적인 원인에 의해 나타나는 공통된 증상들의 모음을 뜻한다. 본문에서 우울증을 'a collection of symptoms'라고 표현한 이유다.</div>
+        <div class="divider"></div>
+        <div class="line-item"><strong>2. SSRI (선택적 세로토닌 재흡수 억제제):</strong><br> 대표적인 항우울제 종류. 그러나 우울증의 원인이 뇌내 화학물질(세로토닌) 불균형뿐만 아니라 트라우마, 환경적 요인 등 다양하기 때문에 약물만으로 완치되지 않는 환자가 많다.</div>
+      </div>
+    </div>
+
+
+    <!-- ========================================== -->
+    <!-- [지문 6] 17강 5번                          -->
+    <!-- ========================================== -->
+    <hr class="passage-separator" />
+    
+    <div class="passage-container">
+      <div class="header-container">
+        <div class="hero-title">17강 5번 지문분석</div>
+        <div class="subtitle">Lio T 내신대비 지문분석서</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">00</div><h2>영어 본문 및 전체 해석</h2></div>
+      <div class="card no-break">
+        <div class="text-block-title">영어 본문</div>
+        <div class="eng-body">
+          Recovery can be considered a process as well as an outcome. Recovery as an outcome refers to one’s physiological and psychological state after a certain recovery period, which can be, for instance, at the end of the day, after engaging in a certain activity, or after waking up. Physiological recovery outcomes involve the restoration of physiological resources such as muscle strength, heart rate, and the absence of physical fatigue (e.g., muscle soreness, heavy arms and legs). Psychological recovery outcomes relate to the restoration of mental resources such as attention, motivation, mental energy, and mood. As such, one’s physiological and psychological states act as a resource that functions as a stress-buffer for upcoming activities as well. Recovery as a process refers to those activities and experiences that result in a change in one’s physiological and psychological state. Accordingly, recovery processes precede recovery outcomes and, consequently, determine whether adequate recovery is obtained. Regarding recovery processes, physical inactivity is generally considered the most effective way to restore physiological resources.
+        </div>
+        <div class="divider"></div>
+        <div class="text-block-title">전체 해석</div>
+        <div class="kor-body">
+          회복은 결과뿐만 아니라 하나의 과정으로 간주될 수 있다. 결과로서의 회복은 일정한 회복 기간 후의 개인의 생리적, 심리적 상태를 의미하며, 이는 예를 들어 하루의 끝, 특정 활동 참여 후, 또는 잠에서 깬 후일 수 있다. 생리적 회복 결과는 근력, 심박수, 그리고 신체적 피로(예를 들어 근육통, 무거운 팔다리)의 부재와 같은 생리적 자원의 회복을 포함한다. 심리적 회복 결과는 주의력, 동기 부여, 정신적 에너지, 그리고 기분과 같은 정신적 자원의 회복과 관련이 있다. 이와 같이, 한 사람의 생리적, 심리적 상태는 다가오는 활동들을 위한 스트레스 완충제 역할을 하는 자원으로 작용하기도 한다. 과정으로서의 회복은 개인의 생리적, 심리적 상태의 변화를 가져오는 그러한 활동과 경험을 의미한다. 따라서 회복 과정은 회복 결과에 선행하며, 결과적으로 적절한 회복이 달성되는지를 결정한다. 회복 과정과 관련하여, 신체적 비활동은 일반적으로 생리적 자원을 복구하는 가장 효과적인 방법으로 간주된다.
+        </div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">01</div><h2>직독직해 및 어휘 정리</h2></div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 1</div>
+        <div class="sentence-en">Recovery / can be considered / a process / as well as an outcome.</div>
+        <div class="sentence-ko">회복은 / 간주될 수 있다 / 과정으로 / 결과뿐만 아니라.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> recovery - 회복, consider - 간주하다, process - 과정, outcome - 결과</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 2</div>
+        <div class="sentence-en">Recovery / as an outcome / refers to / one’s physiological and psychological state / after a certain recovery period, / which / can be, / for instance, / at the end / of the day, / after engaging / in a certain activity, / or after waking up.</div>
+        <div class="sentence-ko">회복은 / 결과로서의 / 가리킨다 / 개인의 생리적이고 심리적인 상태를 / 일정한 회복 기간 후의, / (그리고) 그것은 / ~일 수 있다, / 예를 들어, / 끝에 / 하루의, / 참여한 후에 / 특정 활동에, / 혹은 잠에서 깬 후에.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> refer to - ~을 가리키다, physiological - 생리적인, 육체적인, psychological - 심리적인, engage in - ~에 참여하다</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 3</div>
+        <div class="sentence-en">Physiological recovery outcomes / involve / the restoration / of physiological resources / such as muscle strength, heart rate, / and the absence / of physical fatigue / (e.g., muscle soreness, heavy arms and legs).</div>
+        <div class="sentence-ko">생리적 회복 결과는 / 포함한다 / 복구(회복)를 / 생리적 자원의 / 근력, 심박수와 같은, / 그리고 부재를 / 신체적 피로의 / (예를 들어, 근육통, 무거운 팔다리).</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> involve - 포함하다, 수반하다, restoration - 복구, 회복, absence - 부재, fatigue - 피로, soreness - 통증, 아픔</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 4</div>
+        <div class="sentence-en">Psychological recovery outcomes / relate to / the restoration / of mental resources / such as attention, motivation, mental energy, and mood.</div>
+        <div class="sentence-ko">심리적 회복 결과는 / ~와 관련되다 / 복구와 / 정신적 자원의 / 주의력, 동기, 정신적 에너지, 그리고 기분과 같은.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> relate to - ~와 관련되다, attention - 주의력, motivation - 동기</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 5</div>
+        <div class="sentence-en">As such, / one’s physiological and psychological states / act / as a resource / that / functions / as a stress-buffer / for upcoming activities / as well.</div>
+        <div class="sentence-ko">이와 같이, / 개인의 생리적, 심리적 상태는 / 작용한다 / 자원으로서 / (~하는) / 기능하는 / 스트레스 완충제로서 / 다가오는 활동에 대한 / 역시.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> function - 기능하다, buffer - 완충제, 완충 장치, upcoming - 다가오는</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 6</div>
+        <div class="sentence-en">Recovery / as a process / refers to / those activities and experiences / that / result in / a change / in one’s physiological and psychological state.</div>
+        <div class="sentence-ko">회복은 / 과정으로서의 / 가리킨다 / 그러한 활동과 경험을 / (~하는) / 초래하는 / 변화를 / 개인의 생리적, 심리적 상태에서의.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> result in - ~을 초래하다, ~라는 결과를 낳다</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 7</div>
+        <div class="sentence-en">Accordingly, / recovery processes / precede / recovery outcomes / and, / consequently, / determine / whether / adequate recovery / is obtained.</div>
+        <div class="sentence-ko">따라서, / 회복 과정은 / 선행한다 / 회복 결과를 / 그리고, / 결과적으로, / 결정한다 / ~인지 아닌지를 / 적절한 회복이 / 달성되는지(얻어지는지).</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> accordingly - 따라서, precede - 선행하다, 앞서다, consequently - 결과적으로, adequate - 적절한, 충분한, obtain - 얻다</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 8</div>
+        <div class="sentence-en">Regarding / recovery processes, / physical inactivity / is generally considered / the most effective way / to restore / physiological resources.</div>
+        <div class="sentence-ko">~와 관련하여 / 회복 과정과, / 신체적 비활동은 / 일반적으로 간주된다 / 가장 효과적인 방법으로 / 복구하기 위한 / 생리적 자원을.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> regarding - ~와 관련하여, inactivity - 활동하지 않음, 비활동, restore - 복구하다</div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">02</div><h2>어법 및 구문 포인트</h2></div>
+      <div class="card no-break">
+        <div class="point-block">
+          <div class="sentence-id">문장 2</div>
+          <div class="line-item"><strong>[..., which can be...]</strong> 콤마 뒤의 계속적 용법의 관계대명사 `which`가 쓰여 선행사 `a certain recovery period`를 부연 설명한다.</div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul><li>콤마 뒤이므로 `that`으로 바꿔 쓸 수 없다.</li></ul>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 6</div>
+          <div class="line-item"><strong>[experiences that result in a change]</strong> 주격 관계대명사 `that`이 쓰였으며, 선행사가 `activities and experiences`로 복수이므로 복수 동사 `result in`이 왔다.</div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul><li>`result in`은 뒤에 '결과'가 오고, `result from`은 뒤에 '원인'이 온다. 활동과 경험이 상태 변화라는 '결과'를 초래하는 것이므로 `result in`이 맞다.</li></ul>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 7</div>
+          <div class="line-item"><strong>[determine whether adequate recovery is obtained]</strong> 동사 `determine`의 목적어로 `whether` 명사절이 왔다. 명사절 내부는 주어(`adequate recovery`)와 수동태 동사(`is obtained`)로 완전한 문장 구조를 갖추었다.</div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">03</div><h2>문장 단위 내용 흐름 정리</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>[(1) 주제 도입] :</strong> 회복(Recovery)은 '과정'과 '결과'라는 두 가지 측면으로 나눌 수 있다.</div>
+        <div class="line-item"><strong>[(2)-(5) 결과로서의 회복 (상태)] :</strong> 결과로서의 회복은 활동이 끝난 후 나타나는 신체적(근력 회복, 피로 없음) 및 정신적(동기, 기분 회복) '상태'를 말하며, 이는 다음 활동을 위한 스트레스 완충제가 된다.</div>
+        <div class="line-item"><strong>[(6)-(7) 과정으로서의 회복 (활동)] :</strong> 반면, 과정으로서의 회복은 이러한 상태의 변화를 이끌어내는 구체적인 '활동이나 경험'을 의미한다. 과정이 있어야 결과(적절한 회복 여부)가 결정된다.</div>
+        <div class="line-item"><strong>[(8) 회복 과정의 예시] :</strong> 생리적 회복을 위한 가장 효과적인 과정(활동)의 예로 '신체적 비활동(쉬기)'을 든다.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">04</div><h2>표현들의 연관성 정리</h2></div>
+      <div class="card no-break">
+        <h3>회복의 두 가지 측면</h3>
+        <div class="chip-row">
+          <span class="chip">Process</span> <span class="arrow">↔</span> <span class="chip">Outcome</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 20px;">회복을 이루어가는 행위(activities and experiences)와 그 행위 이후 도달한 최종 상태(state)의 논리적 선후관계를 보여준다.</div>
+
+        <h3>인과 관계</h3>
+        <div class="chip-row">
+          <span class="chip">Result in a change</span> <span class="arrow">↔</span> <span class="chip">Precede recovery outcomes</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 4px;">(과정으로서의) 활동이 상태 변화를 초래하므로, 시간상 과정이 결과보다 앞선다(precede)는 인과관계를 나타낸다.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">05</div><h2>소재와 주제문</h2></div>
+      <div class="card no-break" style="border-top-color: #f59e0b;">
+        <div class="line-item" style="margin-bottom: 12px;"><strong>핵심 소재:</strong> 회복의 두 가지 측면: 과정(활동)과 결과(상태)</div>
+        <div class="mini-divider"></div>
+        <div class="label" style="margin-top: 8px;">주제문 (문장 1)</div>
+        <div class="sentence-en" style="margin-bottom: 8px;">Recovery can be considered a process as well as an outcome.</div>
+        <div class="label" style="margin-top: 8px;">주제문 (문장 7)</div>
+        <div class="sentence-en" style="margin-bottom: 0;">Accordingly, recovery processes precede recovery outcomes and, consequently, determine whether adequate recovery is obtained.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">06</div><h2>지문의 요약 및 패러프레이징</h2></div>
+      <div class="card no-break">
+        <div class="summary-pair">
+          <div class="label">요약 / Summary</div>
+          <div class="sentence-en">Recovery consists of two interconnected concepts: the outcome, which is the restored physical and mental state, and the process, which represents the activities that precede and determine those outcomes.</div>
+          <div class="sentence-ko">회복은 두 가지 상호 연결된 개념으로 구성된다. 회복된 신체적, 정신적 상태인 결과와 이러한 결과를 선행하고 결정하는 활동을 나타내는 과정이다.</div>
+        </div>
+        <div class="divider"></div>
+        <div class="summary-pair">
+          <div class="label">패러프레이징 / Paraphrasing</div>
+          <div class="sentence-en">Understanding recovery requires viewing it both as an end state and as a preparatory phase. The specific restorative actions we engage in function as the process, ultimately dictating the quality of our psychological and physiological recovery outcomes.</div>
+          <div class="sentence-ko">회복을 이해하려면 이를 최종 상태이자 준비 단계로 보아야 한다. 우리가 참여하는 특정 회복 행동은 과정으로서 기능하며, 궁극적으로 심리적, 생리적 회복 결과의 질을 좌우한다.</div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">07</div><h2>도움이 되는 배경지식</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>1. 스트레스-완충 가설 (Stress-Buffering Hypothesis):</strong><br> 충분한 회복(수면, 휴식 등)을 통해 형성된 긍정적인 신체적, 심리적 자원이 이후에 다가올 스트레스 상황에서 그 충격을 흡수하고 방어해주는 역할을 한다는 심리학 이론이다.</div>
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>

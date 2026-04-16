@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>1강 전체 지문분석 - Lio T</title>
+  <style>
+    /* 디자인 시스템 변수 설정 */
+    :root {
+      --bg-color: #f4f7fb;
+      --text-main: #0f172a;
+      --text-sub: #334155;
+      --text-muted: #64748b;
+      --primary: #4f46e5;
+      --primary-light: #e0e7ff;
+      --secondary: #3b82f6;
+      --border-light: #e2e8f0;
+      --card-bg: #ffffff;
+      --radius: 12px;
+    }
+
+    /* 페이지 기본 설정 (세로 모드) */
+    @page {
+      size: A4 portrait;
+      margin: 15mm; 
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg-color);
+      color: var(--text-main);
+      font-family: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+      letter-spacing: -0.02em; 
+    }
+
+    body {
+      padding: 10px; 
+      display: flex;
+      justify-content: center;
+    }
+
+    .doc {
+      width: 100%;
+      max-width: 210mm; 
+    }
+
+    /* =========================================
+       지문 간 구분선 (화면용 vs 인쇄용)
+       ========================================= */
+    .passage-separator {
+      height: 4px;
+      background-image: repeating-linear-gradient(to right, #cbd5e1 0, #cbd5e1 10px, transparent 10px, transparent 20px);
+      margin: 80px 0;
+      border: none;
+      position: relative;
+    }
+    .passage-separator::after {
+      content: '▼ 다음 지문 (인쇄 시 무조건 새 페이지에서 시작됩니다) ▼';
+      position: absolute;
+      top: -26px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--bg-color);
+      padding: 0 16px;
+      color: #94a3b8;
+      font-weight: 700;
+      font-size: 10pt;
+    }
+
+    /* 공통 레이아웃 제어 */
+    .no-break { page-break-inside: avoid; break-inside: avoid; }
+    
+    .header-container { margin-bottom: 30px; text-align: center; }
+    .hero-title {
+      display: inline-block; margin: 0 0 10px 0; padding: 8px 24px; font-size: 22pt; font-weight: 800;
+      color: #ffffff; background: linear-gradient(135deg, var(--primary), var(--secondary));
+      border-radius: 999px; box-shadow: 0 4px 14px rgba(79, 70, 229, 0.25);
+    }
+    .subtitle { font-size: 13pt; font-weight: 600; color: var(--text-muted); }
+
+    .section-title {
+      display: flex; align-items: center; gap: 12px; margin: 30px 0 16px 0;
+      border-bottom: 2px solid var(--border-light); padding-bottom: 4px;
+      page-break-after: avoid; break-after: avoid;
+    }
+    .page-no {
+      width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+      background: var(--primary); color: white; font-weight: 700; font-size: 12pt; border-radius: 8px;
+    }
+    h2 { margin: 0; font-size: 16pt; font-weight: 700; color: var(--text-main); }
+
+    .card {
+      background: var(--card-bg); border: 1px solid var(--border-light); border-top: 4px solid var(--primary);
+      border-radius: var(--radius); padding: 8px 16px; margin-bottom: 16px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    }
+    
+    .text-block-title { font-size: 12pt; font-weight: 700; color: var(--primary); margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+    .text-block-title::before { content: ''; display: block; width: 6px; height: 6px; border-radius: 50%; background: var(--primary); }
+    .eng-body { font-size: 12pt; line-height: 1.7; font-weight: 500; color: var(--text-main); margin-bottom: 20px; text-align: justify; }
+    .divider { height: 1px; background: var(--border-light); margin: 20px 0; }
+    .mini-divider { height: 1px; background: var(--border-light); margin: 8px 0; }
+    .kor-body { font-size: 11.5pt; line-height: 1.7; color: var(--text-sub); text-align: justify; word-break: keep-all; }
+
+    .sentence-card {
+      background: var(--card-bg); border: 1px solid var(--border-light); border-left: 4px solid var(--secondary);
+      border-radius: 8px; padding: 8px 16px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    }
+    .sentence-id { display: inline-block; margin-bottom: 8px; padding: 2px 8px; border-radius: 6px; background: var(--primary-light); color: var(--primary); font-size: 9pt; font-weight: 700; }
+    .sentence-en { font-size: 12.5pt; font-weight: 600; line-height: 1.6; color: var(--text-main); margin-bottom: 4px; }
+    .sentence-ko { font-size: 9pt; line-height: 1.6; color: var(--text-sub); margin-bottom: 4px; word-break: keep-all; }
+    .vocab-box { display: inline-block; padding: 4px 8px; border-radius: 6px; background: #f8fafc; border: 1px dashed #cbd5e1; font-size: 9pt; color: var(--text-muted); }
+
+    .point-block { margin-bottom: 16px; }
+    .point-block:last-child { margin-bottom: 0; }
+    .line-item { font-size: 11.5pt; line-height: 1.7; margin: 0 0 8px 0; word-break: keep-all; }
+    .exam-note { margin-top: 8px; padding: 8px 12px; background: #fffbeb; border-left: 3px solid #f59e0b; border-radius: 0 6px 6px 0; font-size: 10.5pt; line-height: 1.6; color: #92400e; }
+    .exam-note ul { margin: 4px 0 0 0; padding-left: 20px; }
+    .exam-note li { margin-bottom: 4px; }
+    .exam-note li:last-child { margin-bottom: 0; }
+
+    .chip-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 8px 0 20px 0; }
+    .chip { padding: 4px 10px; border-radius: 999px; background: var(--primary-light); color: var(--primary); font-size: 10pt; font-weight: 600; }
+    .arrow { color: var(--text-muted); font-weight: 700; }
+    h3 { font-size: 12pt; margin: 0 0 8px 0; color: var(--text-main); }
+    .label { display: inline-block; font-size: 9.5pt; font-weight: 700; color: var(--secondary); background: #eff6ff; padding: 2px 6px; border-radius: 4px; margin-bottom: 6px; }
+    .summary-pair { margin-bottom: 20px; }
+    .summary-pair:last-child { margin-bottom: 0; }
+
+    /* =========================================
+       인쇄(Print) 전용 스타일 - 다중 지문 분할 처리
+       ========================================= */
+    @media print {
+      html, body { background: #ffffff !important; padding: 0; }
+      .doc { max-width: 100%; }
+
+      /* 지문 구분선을 강제 페이지 넘김으로 변환 */
+      .passage-separator {
+        page-break-before: always !important;
+        break-before: page !important;
+        margin: 0 !important;
+        height: 0 !important;
+        border: none !important;
+        background: none !important;
+      }
+      .passage-separator::after { display: none !important; }
+
+      .page-break { page-break-before: always !important; break-before: page !important; }
+      .card, .sentence-card { box-shadow: none !important; border: 1px solid #cbd5e1 !important; page-break-inside: avoid !important; break-inside: avoid !important; }
+      .section-title { page-break-after: avoid !important; break-after: avoid !important; }
+
+      .hero-title { background: #0f172a !important; color: white !important; }
+      .page-no { background: #0f172a !important; }
+      .sentence-id, .chip, .label { border: 1px solid #cbd5e1 !important; background: #f8fafc !important; color: #0f172a !important; }
+      .exam-note { background: #f8fafc !important; border-left-color: #94a3b8 !important; color: #334155 !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="doc">
+
+    <!-- ========================================== -->
+    <!-- [지문 2] 1강 1번                           -->
+    <!-- ========================================== -->
+    <div class="passage-container">
+      <div class="header-container">
+        <div class="hero-title">1강 1번 지문분석</div>
+        <div class="subtitle">Lio T 내신대비 지문분석서</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">00</div><h2>영어 본문 및 전체 해석</h2></div>
+      <div class="card no-break">
+        <div class="text-block-title">영어 본문</div>
+        <div class="eng-body">
+          Dear Parents, At Greenwood High School, we take great pride in the cultural diversity that enriches our community. We are very pleased to share with you our special new project, a recipe book, created to celebrate the traditions and flavors of families from around the world. This unique collection features 100 recipes from 26 countries, highlighting beloved dishes passed down through generations. It offers a special chance to explore global cuisine and share meaningful moments with your children. We encourage you to try some of these recipes together over the summer. You can download this online recipe book from our school website. Food brings us together, and this project reflects the joy and unity that diversity brings to our school. Thank you, as always, for your continued support. Warm regards, Dr. Helen Brooks Principal, Greenwood High School
+        </div>
+        <div class="divider"></div>
+        <div class="text-block-title">전체 해석</div>
+        <div class="kor-body">
+          친애하는 학부모님들께, Greenwood 고등학교에서 우리는 우리 공동체를 풍요롭게 하는 문화적 다양성에 큰 자부심을 가지고 있습니다. 우리는 전 세계 가족들의 전통과 맛을 기념하기 위해 만들어진 특별한 새 프로젝트인 요리책을 여러분과 공유하게 되어 매우 기쁩니다. 이 독특한 모음집은 26개국의 100가지 조리법을 특징으로 하며, 세대를 거쳐 전해 내려온 사랑받는 요리들을 강조합니다. 그것은 세계 요리를 탐구하고 자녀들과 의미 있는 순간을 공유할 특별한 기회를 제공합니다. 우리는 여러분이 여름 동안 함께 이 조리법 중 일부를 시도해 볼 것을 권장합니다. 여러분은 우리 학교 웹사이트에서 이 온라인 요리책을 다운로드할 수 있습니다. 음식은 우리를 하나로 모으며, 이 프로젝트는 다양성이 우리 학교에 가져다주는 기쁨과 화합을 반영합니다. 여러분의 지속적인 지원에 항상 감사드립니다. 따뜻한 안부를 전하며, Greenwood 고등학교 교장 Dr. Helen Brooks
+        </div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">01</div><h2>직독직해 및 어휘 정리</h2></div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 1</div>
+        <div class="sentence-en">Dear Parents, / At Greenwood High School, / we / take great pride / in the cultural diversity / that / enriches / our community.</div>
+        <div class="sentence-ko">친애하는 학부모님들께, / Greenwood 고등학교에서, / 우리는 / 큰 자부심을 가집니다 / 문화적 다양성에 / (~하는) / 풍요롭게 하는 / 우리 공동체를.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> take pride in - ~에 자부심을 가지다, diversity - 다양성, enrich - 풍요롭게 하다</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 2</div>
+        <div class="sentence-en">We / are very pleased / to share / with you / our special new project, / a recipe book, / created / to celebrate / the traditions and flavors / of families / from around the world.</div>
+        <div class="sentence-ko">우리는 / 매우 기쁩니다 / 공유하게 되어 / 여러분과 / 우리의 특별한 새 프로젝트를, / (즉) 요리책을, / 만들어진 / 기념하기 위해 / 전통과 맛을 / 가족들의 / 전 세계에서 온.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> pleased to - ~하게 되어 기쁜, celebrate - 기념하다 축하하다, flavor - 맛, 풍미</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 3</div>
+        <div class="sentence-en">This unique collection / features / 100 recipes / from 26 countries, / highlighting / beloved dishes / passed down / through generations.</div>
+        <div class="sentence-ko">이 독특한 모음집은 / 특징으로 합니다 / 100가지 조리법을 / 26개국에서 온, / 강조하면서 / 사랑받는 요리들을 / 전해 내려온 / 세대를 거쳐.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> feature - 특징으로 하다, 포함하다, highlight - 강조하다, 돋보이게 하다, beloved - 사랑받는, pass down - 물려주다, 전해주다</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 4</div>
+        <div class="sentence-en">It / offers / a special chance / to explore / global cuisine / and share / meaningful moments / with your children.</div>
+        <div class="sentence-ko">그것은 / 제공합니다 / 특별한 기회를 / 탐구할 / 세계 요리를 / 그리고 공유할 / 의미 있는 순간들을 / 여러분의 자녀들과.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> explore - 탐구하다, cuisine - 요리, 요리법, meaningful - 의미 있는</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 5</div>
+        <div class="sentence-en">We / encourage / you / to try / some of these recipes / together / over the summer.</div>
+        <div class="sentence-ko">우리는 / 권장합니다 / 여러분이 / 시도해 볼 것을 / 이 조리법 중 일부를 / 함께 / 여름 동안.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> encourage A to B - A가 B하도록 권장하다</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 6</div>
+        <div class="sentence-en">You / can download / this online recipe book / from our school website.</div>
+        <div class="sentence-ko">여러분은 / 다운로드할 수 있습니다 / 이 온라인 요리책을 / 우리 학교 웹사이트에서.</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 7</div>
+        <div class="sentence-en">Food / brings / us / together, / and / this project / reflects / the joy and unity / that / diversity / brings / to our school.</div>
+        <div class="sentence-ko">음식은 / 데려옵니다 / 우리를 / 함께(우리를 하나로 모아줍니다), / 그리고 / 이 프로젝트는 / 반영합니다 / 기쁨과 화합을 / (~하는) / 다양성이 / 가져다주는 / 우리 학교에.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> bring together - 하나로 모으다, 뭉치게 하다, reflect - 반영하다, unity - 화합, 결속</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 8</div>
+        <div class="sentence-en">Thank you, / as always, / for your continued support.</div>
+        <div class="sentence-ko">감사합니다, / 항상 그렇듯이, / 여러분의 지속적인 지원에.</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 9</div>
+        <div class="sentence-en">Warm regards, / Dr. Helen Brooks / Principal, Greenwood High School</div>
+        <div class="sentence-ko">따뜻한 안부를 전하며, / Dr. Helen Brooks / Greenwood 고등학교 교장</div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">02</div><h2>어법 및 구문 포인트</h2></div>
+      <div class="card no-break">
+        <div class="point-block">
+          <div class="sentence-id">문장 1</div>
+          <div class="line-item"><strong>[the cultural diversity that enriches our community]</strong> `that`은 주격 관계대명사로 선행사 `the cultural diversity`를 수식한다. 선행사가 단수이므로 동사에 `es`가 붙은 `enriches`가 쓰였다.</div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 2</div>
+          <div class="line-item"><strong>[a recipe book, created to celebrate...]</strong> `created`는 과거분사로 앞의 명사 `a recipe book`을 수식한다. '기념하기 위해 만들어진 요리책'이라는 수동의 의미를 지닌다.</div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul><li>`creating`을 쓰면 능동의 의미가 되므로 어법상 틀린다.</li></ul>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 3</div>
+          <div class="line-item"><strong>[highlighting beloved dishes passed down through generations]</strong> `highlighting`은 능동의 의미를 지닌 현재 분사구문으로, 주어인 `This unique collection`이 요리들을 강조한다는 동시 상황을 나타낸다. `passed down`은 과거분사구로 앞의 `beloved dishes`를 수식한다(세대를 거쳐 '전해진' 요리들).</div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul><li>`highlighted`를 쓰면 수동의 의미가 되어 어색해진다. `passing down`을 쓰면 요리가 스스로 무언가를 물려준다는 뜻이 되어 틀린다.</li></ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">03</div><h2>문장 단위 내용 흐름 정리</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>[(1)-(2) 도입 및 목적] :</strong> 학교의 문화적 다양성에 자부심을 표하며, 이를 기념하기 위해 제작한 다문화 요리책 프로젝트를 학부모와 공유하게 되어 기쁨을 나타낸다.</div>
+        <div class="line-item"><strong>[(3)-(4) 프로젝트 소개] :</strong> 이 요리책은 26개국 100가지 조리법을 담고 있으며, 자녀와 함께 세계 요리를 탐험할 기회를 제공한다.</div>
+        <div class="line-item"><strong>[(5)-(6) 구체적 권장 사항] :</strong> 여름 방학 동안 가족이 함께 요리책을 활용해 볼 것을 권장하며, 학교 웹사이트에서 다운로드할 수 있다고 안내한다.</div>
+        <div class="line-item"><strong>[(7)-(9) 결론 및 감사] :</strong> 음식이 주는 화합의 의미를 강조하며 학부모의 지속적인 지원에 감사를 표한다.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">04</div><h2>표현들의 연관성 정리</h2></div>
+      <div class="card no-break">
+        <div class="chip-row">
+          <span class="chip">Cultural diversity</span> <span class="arrow">=</span> <span class="chip">Traditions and flavors of families</span> <span class="arrow">=</span> <span class="chip">Global cuisine</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 20px;">학교가 속한 공동체의 다문화적 특성을 요리라는 매개체로 구체화하여 표현한 흐름이다.</div>
+
+        <div class="chip-row">
+          <span class="chip">Share with you ... a recipe book</span> <span class="arrow">=</span> <span class="chip">Download this online recipe book</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 4px;">요리책을 공유하겠다는 목적이 실제 다운로드라는 행동 안내로 이어졌다.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">05</div><h2>소재와 주제문</h2></div>
+      <div class="card no-break" style="border-top-color: #f59e0b;">
+        <div class="line-item" style="margin-bottom: 12px;"><strong>핵심 소재:</strong> 학교에서 제작한 온라인 다문화 요리책 배포 및 이용 권장</div>
+        <div class="mini-divider"></div>
+        <div class="label" style="margin-top: 8px;">주제문 (문장 6)</div>
+        <div class="sentence-en" style="margin-bottom: 0;">You can download this online recipe book from our school website.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">06</div><h2>지문의 요약 및 패러프레이징</h2></div>
+      <div class="card no-break">
+        <div class="summary-pair">
+          <div class="label">요약 / Summary</div>
+          <div class="sentence-en">The principal of Greenwood High School is encouraging parents to download and use a newly created online recipe book that celebrates the school's cultural diversity.</div>
+          <div class="sentence-ko">Greenwood 고등학교 교장은 학부모들에게 학교의 문화적 다양성을 기념하기 위해 새로 만들어진 온라인 요리책을 다운로드하여 사용할 것을 권장하고 있다.</div>
+        </div>
+        <div class="divider"></div>
+        <div class="summary-pair">
+          <div class="label">패러프레이징 / Paraphrasing</div>
+          <div class="sentence-en">A high school is offering an online collection of international recipes to families, promoting cultural appreciation and encouraging parents to cook global dishes with their children during the summer.</div>
+          <div class="sentence-ko">한 고등학교에서 가족들에게 국제 조리법의 온라인 모음집을 제공하며, 문화적 이해를 증진하고 학부모들이 여름 동안 자녀와 함께 세계 요리를 요리하도록 권장하고 있다.</div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">07</div><h2>도움이 되는 배경지식</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>1. 다문화주의 (Multiculturalism)와 음식:</strong><br> 다양한 문화적 배경을 가진 사람들이 모여 사는 곳에서는 각자의 전통 음식을 나누는 행사나 요리책 출간이 문화적 포용성과 공동체의 화합(unity)을 다지는 교육 및 친목 활동으로 자주 활용된다.</div>
+      </div>
+    </div>
+
+
+    <!-- ========================================== -->
+    <!-- [지문 4] 1강 3번                           -->
+    <!-- ========================================== -->
+    <hr class="passage-separator" />
+    
+    <div class="passage-container">
+      <div class="header-container">
+        <div class="hero-title">1강 3번 지문분석</div>
+        <div class="subtitle">Lio T 내신대비 지문분석서</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">00</div><h2>영어 본문 및 전체 해석</h2></div>
+      <div class="card no-break">
+        <div class="text-block-title">영어 본문</div>
+        <div class="eng-body">
+          To whom it may concern, Before I get to my main point, I'd like to mention a past experience with your store. A year ago, I ordered my wedding bouquet from you, and my husband, Nicholas, had promised me David Austin roses. However, on my wedding day, I received standard roses instead. Although I briefly considered filing a complaint about the mistake, I chose to focus on enjoying my special day. Yesterday, to celebrate our one-year wedding anniversary, my husband ordered David Austin roses from your store again. However, the flowers I received today were lifeless, spotted, and browning upon arrival. This time, I believe it's only fair to ask you to take action to resolve this matter. I am not asking for compensation for the flowers from a year ago, but I do expect a refund for this order. To resolve this issue, I would appreciate a full refund. I look forward to your response. Sincerely, Cheryl
+        </div>
+        <div class="divider"></div>
+        <div class="text-block-title">전체 해석</div>
+        <div class="kor-body">
+          관계자분께, 제 요점에 들어가기 전에, 귀하의 가게와 있었던 과거의 경험을 언급하고 싶습니다. 1년 전, 저는 귀하에게 제 결혼식 부케를 주문했고, 제 남편 Nicholas는 저에게 David Austin 장미를 약속했었습니다. 하지만, 제 결혼식 날, 저는 대신에 일반 장미를 받았습니다. 그 실수에 대해 항의를 제기할까 잠시 고려했지만, 저는 제 특별한 날을 즐기는 데 집중하기로 선택했습니다. 어제, 저희의 결혼 1주년을 기념하기 위해, 제 남편은 귀하의 가게에서 다시 David Austin 장미를 주문했습니다. 하지만 오늘 제가 받은 꽃은 도착하자마자 생기가 없었고, 얼룩이 있었으며, 갈색으로 변해가고 있었습니다. 이번에는, 이 문제를 해결하기 위해 귀하에게 조치를 취해 달라고 요구하는 것이 정당하다고 생각합니다. 저는 1년 전의 꽃에 대한 보상을 요구하는 것은 아니지만, 이번 주문에 대해서는 환불을 기대합니다. 이 문제를 해결하기 위해, 전액 환불해 주시면 감사하겠습니다. 귀하의 답변을 기다리겠습니다. 진심을 담아, Cheryl
+        </div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">01</div><h2>직독직해 및 어휘 정리</h2></div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 1</div>
+        <div class="sentence-en">To whom it may concern, / Before / I / get to / my main point, / I / 'd like to mention / a past experience / with your store.</div>
+        <div class="sentence-ko">관계자분께, / ~하기 전에 / 제가 / 도달하기(들어가기) / 제 요점에, / 저는 / 언급하고 싶습니다 / 과거의 경험을 / 귀하의 가게와의.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> To whom it may concern - 관계자분께 (담당자 이름을 모를 때 쓰는 편지 서두), get to - ~에 도달하다, 시작하다, mention - 언급하다</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 2</div>
+        <div class="sentence-en">A year ago, / I / ordered / my wedding bouquet / from you, / and / my husband, Nicholas, / had promised / me / David Austin roses.</div>
+        <div class="sentence-ko">1년 전, / 저는 / 주문했습니다 / 제 결혼식 부케를 / 귀하로부터, / 그리고 / 제 남편 Nicholas는 / 약속했었습니다 / 저에게 / David Austin 장미를.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> order - 주문하다, promise A B - A에게 B를 약속하다</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 3</div>
+        <div class="sentence-en">However, / on my wedding day, / I / received / standard roses / instead.</div>
+        <div class="sentence-ko">하지만, / 제 결혼식 날, / 저는 / 받았습니다 / 일반 장미를 / 대신에.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> standard - 일반적인, 표준의</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 4</div>
+        <div class="sentence-en">Although / I / briefly / considered / filing a complaint / about the mistake, / I / chose / to focus on / enjoying / my special day.</div>
+        <div class="sentence-ko">비록 ~일지라도 / 제가 / 잠시 / 고려했을지라도 / 항의를 제기할 것을 / 그 실수에 대해, / 저는 / 선택했습니다 / 집중하기로 / 즐기는 데 / 제 특별한 날을.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> briefly - 잠시, 짧게, consider ~ing - ~할 것을 고려하다, file a complaint - 불평(항의)을 제기하다</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 5</div>
+        <div class="sentence-en">Yesterday, / to celebrate / our one-year wedding anniversary, / my husband / ordered / David Austin roses / from your store / again.</div>
+        <div class="sentence-ko">어제, / 기념하기 위해 / 저희의 결혼 1주년을, / 제 남편은 / 주문했습니다 / David Austin 장미를 / 귀하의 가게에서 / 다시.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> celebrate - 기념하다, anniversary - 기념일</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 6</div>
+        <div class="sentence-en">However, / the flowers / I received today / were / lifeless, spotted, and browning / upon arrival.</div>
+        <div class="sentence-ko">하지만, / 꽃들은 / (제가 오늘 받은) / ~였습니다 / 생기가 없고, 얼룩이 있고, 갈색으로 변하는 중(이었습니다) / 도착하자마자.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> lifeless - 생기가 없는, 죽은 듯한, spotted - 얼룩덜룩한, 반점이 있는, brown - 갈색으로 변하다(동사), upon arrival - 도착하자마자</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 7</div>
+        <div class="sentence-en">This time, / I / believe / it / 's / only fair / to ask / you / to take action / to resolve / this matter.</div>
+        <div class="sentence-ko">이번에는, / 저는 / 생각합니다 / 그것이 / ~라고 / 그저 정당하다고(당연하다고) / 요구하는 것이 / 귀하에게 / 조치를 취해 달라고 / 해결하기 위해 / 이 문제를.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> fair - 정당한, 타당한, take action - 조치를 취하다, resolve - 해결하다, matter - 문제, 일</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 8</div>
+        <div class="sentence-en">I / am not asking for / compensation / for the flowers / from a year ago, / but / I / do expect / a refund / for this order.</div>
+        <div class="sentence-ko">저는 / 요구하는 것이 아닙니다 / 보상을 / 꽃에 대한 / 1년 전의, / 하지만 / 저는 / 정말로 기대합니다 / 환불을 / 이번 주문에 대한.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> ask for - ~을 요구하다, compensation - 보상, refund - 환불</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 9</div>
+        <div class="sentence-en">To resolve / this issue, / I / would appreciate / a full refund.</div>
+        <div class="sentence-ko">해결하기 위해 / 이 문제를, / 저는 / 감사할 것입니다 / 전액 환불에.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> appreciate - 감사하다</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 10</div>
+        <div class="sentence-en">I / look forward to / your response. / Sincerely, / Cheryl</div>
+        <div class="sentence-ko">저는 / 고대합니다 / 귀하의 답변을. / 진심을 담아, / Cheryl</div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">02</div><h2>어법 및 구문 포인트</h2></div>
+      <div class="card no-break">
+        <div class="point-block">
+          <div class="sentence-id">문장 2</div>
+          <div class="line-item"><strong>[had promised me David Austin roses]</strong> 주절의 과거 동사(`ordered`)보다 더 이전의 과거를 나타내기 위해 과거완료(`had promised`) 시제가 쓰였다. `promise`는 4형식 동사로 쓰여 간접목적어(`me`), 직접목적어(`David Austin roses`)를 취했다.</div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 4</div>
+          <div class="line-item"><strong>[considered filing a complaint]</strong> 동사 `consider`는 동명사(`filing`)를 목적어로 취한다.</div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul><li>`to file`을 쓰면 어법상 틀리다.</li></ul>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 7</div>
+          <div class="line-item"><strong>[it's only fair to ask you to take action]</strong> `it`은 가주어, `to ask` 이하가 진주어다. 진주어 구문 안에서 `ask + 목적어 + 목적격보어(to부정사)`의 5형식 구조(`ask you to take action`)가 쓰였다.</div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 8</div>
+          <div class="line-item"><strong>[I do expect a refund]</strong> 여기서 `do`는 뒤의 일반동사 `expect`의 의미를 강조하는 조동사로 쓰였다. '정말로 기대한다'는 뜻이다.</div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">03</div><h2>문장 단위 내용 흐름 정리</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>[(1)-(4) 과거의 불만족스러운 경험] :</strong> 고객은 1년 전 결혼식 부케로 특별한 장미를 주문했으나 일반 장미를 받았던 실망스러운 경험을 언급한다.</div>
+        <div class="line-item"><strong>[(5)-(6) 현재의 문제 발생] :</strong> 어제 결혼 1주년을 맞아 같은 장미를 다시 주문했는데, 이번에는 꽃의 상태가 매우 불량하다.</div>
+        <div class="line-item"><strong>[(7)-(10) 요구 사항 명시] :</strong> 두 번이나 실망을 안겨준 꽃집에 대해 이번 문제만큼은 해결 조치가 필요하다고 주장하며, 최근 주문 건에 대한 '전액 환불'을 단호하게 요청한다.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">04</div><h2>표현들의 연관성 정리</h2></div>
+      <div class="card no-break">
+        <div class="chip-row">
+          <span class="chip">A past experience (wrong flowers)</span> <span class="arrow">-></span> <span class="chip">Lifeless, spotted, and browning flowers (current problem)</span> <span class="arrow">-></span> <span class="chip">Expect a full refund</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 20px;">작성자가 꽃집에 강력하게 환불을 요구하는 논리적 근거(과거의 누적된 실수와 현재의 불량한 품질)를 단계적으로 제시하고 있다.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">05</div><h2>소재와 주제문</h2></div>
+      <div class="card no-break" style="border-top-color: #f59e0b;">
+        <div class="line-item" style="margin-bottom: 12px;"><strong>핵심 소재:</strong> 품질이 불량한 꽃 배달에 대한 전액 환불 요청</div>
+        <div class="mini-divider"></div>
+        <div class="label" style="margin-top: 8px;">주제문 (문장 9)</div>
+        <div class="sentence-en" style="margin-bottom: 0;">To resolve this issue, I would appreciate a full refund.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">06</div><h2>지문의 요약 및 패러프레이징</h2></div>
+      <div class="card no-break">
+        <div class="summary-pair">
+          <div class="label">요약 / Summary</div>
+          <div class="sentence-en">A dissatisfied customer is requesting a full refund for an anniversary flower delivery that arrived in poor condition, noting this is the second time the store has failed her.</div>
+          <div class="sentence-ko">불만족한 고객이 상태가 좋지 않게 도착한 기념일 꽃 배달에 대해 전액 환불을 요청하고 있으며, 가게가 그녀를 실망시킨 것이 이번이 두 번째라고 지적하고 있다.</div>
+        </div>
+        <div class="divider"></div>
+        <div class="summary-pair">
+          <div class="label">패러프레이징 / Paraphrasing</div>
+          <div class="sentence-en">After receiving dead and browning flowers for her anniversary, a customer is writing to demand her money back, expressing frustration over repeated poor service from the florist.</div>
+          <div class="sentence-ko">기념일에 시들고 갈색으로 변한 꽃을 받은 후, 한 고객이 꽃집의 반복적인 열악한 서비스에 대한 불만을 표출하며 환불을 요구하는 글을 쓰고 있다.</div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">07</div><h2>도움이 되는 배경지식</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>1. 고객 불만 편지 (Complaint Letter):</strong><br> 상거래에서 서비스나 상품에 문제가 있을 때 정당한 보상이나 조치를 요구하기 위해 작성하는 비즈니스 레터의 일종. 객관적 사실(past experience, current condition)을 나열하고 명확한 해결책(full refund)을 제시하는 것이 특징이다.</div>
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>

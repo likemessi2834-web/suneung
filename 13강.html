@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>13강 전체 지문분석 - Lio T</title>
+  <style>
+    /* 디자인 시스템 변수 설정 */
+    :root {
+      --bg-color: #f4f7fb;
+      --text-main: #0f172a;
+      --text-sub: #334155;
+      --text-muted: #64748b;
+      --primary: #4f46e5;
+      --primary-light: #e0e7ff;
+      --secondary: #3b82f6;
+      --border-light: #e2e8f0;
+      --card-bg: #ffffff;
+      --radius: 12px;
+    }
+
+    /* 페이지 기본 설정 (세로 모드) */
+    @page {
+      size: A4 portrait;
+      margin: 15mm; 
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg-color);
+      color: var(--text-main);
+      font-family: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+      letter-spacing: -0.02em; 
+    }
+
+    body {
+      padding: 10px; 
+      display: flex;
+      justify-content: center;
+    }
+
+    .doc {
+      width: 100%;
+      max-width: 210mm; 
+    }
+
+    /* =========================================
+       지문 간 구분선 (화면용 vs 인쇄용)
+       ========================================= */
+    .passage-separator {
+      height: 4px;
+      background-image: repeating-linear-gradient(to right, #cbd5e1 0, #cbd5e1 10px, transparent 10px, transparent 20px);
+      margin: 80px 0;
+      border: none;
+      position: relative;
+    }
+    .passage-separator::after {
+      content: '▼ 다음 지문 (인쇄 시 무조건 새 페이지에서 시작됩니다) ▼';
+      position: absolute;
+      top: -26px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--bg-color);
+      padding: 0 16px;
+      color: #94a3b8;
+      font-weight: 700;
+      font-size: 10pt;
+    }
+
+    /* 공통 레이아웃 제어 */
+    .no-break { page-break-inside: avoid; break-inside: avoid; }
+    
+    .header-container { margin-bottom: 30px; text-align: center; }
+    .hero-title {
+      display: inline-block; margin: 0 0 10px 0; padding: 8px 24px; font-size: 22pt; font-weight: 800;
+      color: #ffffff; background: linear-gradient(135deg, var(--primary), var(--secondary));
+      border-radius: 999px; box-shadow: 0 4px 14px rgba(79, 70, 229, 0.25);
+    }
+    .subtitle { font-size: 13pt; font-weight: 600; color: var(--text-muted); }
+
+    .section-title {
+      display: flex; align-items: center; gap: 12px; margin: 30px 0 16px 0;
+      border-bottom: 2px solid var(--border-light); padding-bottom: 4px;
+      page-break-after: avoid; break-after: avoid;
+    }
+    .page-no {
+      width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+      background: var(--primary); color: white; font-weight: 700; font-size: 12pt; border-radius: 8px;
+    }
+    h2 { margin: 0; font-size: 16pt; font-weight: 700; color: var(--text-main); }
+
+    .card {
+      background: var(--card-bg); border: 1px solid var(--border-light); border-top: 4px solid var(--primary);
+      border-radius: var(--radius); padding: 8px 16px; margin-bottom: 16px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    }
+    
+    .text-block-title { font-size: 12pt; font-weight: 700; color: var(--primary); margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+    .text-block-title::before { content: ''; display: block; width: 6px; height: 6px; border-radius: 50%; background: var(--primary); }
+    .eng-body { font-size: 12pt; line-height: 1.7; font-weight: 500; color: var(--text-main); margin-bottom: 20px; text-align: justify; }
+    .divider { height: 1px; background: var(--border-light); margin: 20px 0; }
+    .mini-divider { height: 1px; background: var(--border-light); margin: 8px 0; }
+    .kor-body { font-size: 11.5pt; line-height: 1.7; color: var(--text-sub); text-align: justify; word-break: keep-all; }
+
+    .sentence-card {
+      background: var(--card-bg); border: 1px solid var(--border-light); border-left: 4px solid var(--secondary);
+      border-radius: 8px; padding: 8px 16px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    }
+    .sentence-id { display: inline-block; margin-bottom: 8px; padding: 2px 8px; border-radius: 6px; background: var(--primary-light); color: var(--primary); font-size: 9pt; font-weight: 700; }
+    .sentence-en { font-size: 12.5pt; font-weight: 600; line-height: 1.6; color: var(--text-main); margin-bottom: 4px; }
+    .sentence-ko { font-size: 9pt; line-height: 1.6; color: var(--text-sub); margin-bottom: 4px; word-break: keep-all; }
+    .vocab-box { display: inline-block; padding: 4px 8px; border-radius: 6px; background: #f8fafc; border: 1px dashed #cbd5e1; font-size: 9pt; color: var(--text-muted); }
+
+    .point-block { margin-bottom: 16px; }
+    .point-block:last-child { margin-bottom: 0; }
+    .line-item { font-size: 11.5pt; line-height: 1.7; margin: 0 0 8px 0; word-break: keep-all; }
+    .exam-note { margin-top: 8px; padding: 8px 12px; background: #fffbeb; border-left: 3px solid #f59e0b; border-radius: 0 6px 6px 0; font-size: 10.5pt; line-height: 1.6; color: #92400e; }
+    .exam-note ul { margin: 4px 0 0 0; padding-left: 20px; }
+    .exam-note li { margin-bottom: 4px; }
+    .exam-note li:last-child { margin-bottom: 0; }
+
+    .chip-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 8px 0 20px 0; }
+    .chip { padding: 4px 10px; border-radius: 999px; background: var(--primary-light); color: var(--primary); font-size: 10pt; font-weight: 600; }
+    .arrow { color: var(--text-muted); font-weight: 700; }
+    h3 { font-size: 12pt; margin: 0 0 8px 0; color: var(--text-main); }
+    .label { display: inline-block; font-size: 9.5pt; font-weight: 700; color: var(--secondary); background: #eff6ff; padding: 2px 6px; border-radius: 4px; margin-bottom: 6px; }
+    .summary-pair { margin-bottom: 20px; }
+    .summary-pair:last-child { margin-bottom: 0; }
+
+    /* =========================================
+       인쇄(Print) 전용 스타일 - 다중 지문 분할 처리
+       ========================================= */
+    @media print {
+      html, body { background: #ffffff !important; padding: 0; }
+      .doc { max-width: 100%; }
+
+      /* 지문 구분선을 강제 페이지 넘김으로 변환 */
+      .passage-separator {
+        page-break-before: always !important;
+        break-before: page !important;
+        margin: 0 !important;
+        height: 0 !important;
+        border: none !important;
+        background: none !important;
+      }
+      .passage-separator::after { display: none !important; }
+
+      .page-break { page-break-before: always !important; break-before: page !important; }
+      .card, .sentence-card { box-shadow: none !important; border: 1px solid #cbd5e1 !important; page-break-inside: avoid !important; break-inside: avoid !important; }
+      .section-title { page-break-after: avoid !important; break-after: avoid !important; }
+
+      .hero-title { background: #0f172a !important; color: white !important; }
+      .page-no { background: #0f172a !important; }
+      .sentence-id, .chip, .label { border: 1px solid #cbd5e1 !important; background: #f8fafc !important; color: #0f172a !important; }
+      .exam-note { background: #f8fafc !important; border-left-color: #94a3b8 !important; color: #334155 !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="doc">
+
+    <!-- ========================================== -->
+    <!-- [지문 2] 13강 1번                          -->
+    <!-- ========================================== -->
+    
+    <div class="passage-container">
+      <div class="header-container">
+        <div class="hero-title">13강 1번 지문분석</div>
+        <div class="subtitle">Lio T 내신대비 지문분석서</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">00</div><h2>영어 본문 및 전체 해석</h2></div>
+      <div class="card no-break">
+        <div class="text-block-title">영어 본문</div>
+        <div class="eng-body">
+          In the Physics, Aristotle asks whether nature acts for the sake of something. He offers an account of rain as water that rises when heated by the Sun, then cools, condenses, and falls to Earth, but is not particularly concerned with explaining rain as such. Rather, he addresses a more general question: how to account for natural objects, events, and processes that appear with regularity. He queries whether the sharpness of front teeth and the bluntness of molars is coincidental and rejects that possibility, because this arrangement occurs with regularity and that regularity is linked to purposefulness. The sharpness of front teeth allows them to tear while the bluntness of those in the back enables them to crush food; both are useful for eating. In Aristotle's view, all natural things happen in a given way and occur for the sake of something; that is the final cause.
+        </div>
+        <div class="divider"></div>
+        <div class="text-block-title">전체 해석</div>
+        <div class="kor-body">
+          &lt;자연학&gt;에서, 아리스토텔레스는 자연이 무언가를 위해서(목적을 위해) 작용하는지를 묻는다. 그는 비에 대해 태양에 의해 가열될 때 상승하고, 그런 다음 냉각되고 응결되어 지구로 떨어지는 물로서의 설명을 제공하지만, 비 자체를 설명하는 데 특별히 관심이 있는 것은 아니다. 오히려 그는 더 일반적인 문제, 즉 규칙성을 가지고 나타나는 자연의 사물, 사건, 과정들을 어떻게 설명할 것인가를 다룬다. 그는 앞니의 날카로움과 어금니의 뭉툭함이 우연의 일치인지 의문을 제기하고 그 가능성을 거부하는데, 왜냐하면 이러한 배열은 규칙성을 가지고 발생하며 그 규칙성은 '합목적성'과 연결되어 있기 때문이다. 앞니의 날카로움은 앞니가 음식을 찢을 수 있게 해주는 반면 뒤에 있는 것들(어금니들)의 뭉툭함은 그것들이 음식을 으깰 수 있게 해준다. 둘 다 먹는 데 유용하다. 아리스토텔레스의 관점에서, 모든 자연적인 것들은 정해진 방식으로 일어나며 무언가를 위해서 발생한다. 그것이 바로 목적인(목적 원인)이다.
+        </div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">01</div><h2>직독직해 및 어휘 정리</h2></div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 1</div>
+        <div class="sentence-en">In the Physics, / Aristotle / asks / whether / nature / acts / for the sake of something.</div>
+        <div class="sentence-ko">&lt;자연학&gt;에서, / 아리스토텔레스는 / 묻는다 / ~인지를 / 자연이 / 작용하는지 / 무언가를 위해서(목적을 위해).</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> Physics - 자연학(아리스토텔레스의 저서), for the sake of - ~을 위하여</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 2</div>
+        <div class="sentence-en">He / offers / an account / of rain / as water / that / rises / when heated by the Sun, / then cools, condenses, / and falls to Earth, / but / is not particularly concerned / with explaining rain / as such.</div>
+        <div class="sentence-ko">그는 / 제공한다 / 설명을 / 비에 대한 / 물로서의 / (~하는) / 상승하는 / 태양에 의해 가열될 때, / 그런 다음 냉각되고, 응결되고, / 지구로 떨어지는, / 하지만 / 특별히 관심이 있는 것은 아니다 / 비를 설명하는 데 / 그 자체로서.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> offer an account of - ~에 대한 설명을 제공하다, condense - 응결되다, be concerned with - ~에 관심이 있다, as such - 그 자체로서, 그런 것으로서</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 3</div>
+        <div class="sentence-en">Rather, / he / addresses / a more general question: / how to account for / natural objects, events, and processes / that / appear / with regularity.</div>
+        <div class="sentence-ko">오히려, / 그는 / 다룬다 / 더 일반적인 문제를: / 어떻게 설명할 것인가(를) / 자연의 사물, 사건, 그리고 과정들을 / (~하는) / 나타나는 / 규칙성을 가지고.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> address - (문제를) 다루다, 해결하려 하다, account for - ~을 설명하다, regularity - 규칙성</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 4</div>
+        <div class="sentence-en">He / queries / whether / the sharpness of front teeth / and the bluntness of molars / is coincidental / and rejects / that possibility, / because / this arrangement / occurs / with regularity / and / that regularity / is linked to / purposefulness.</div>
+        <div class="sentence-ko">그는 / 의문을 제기한다 / ~인지(에) / 앞니의 날카로움 / 그리고 어금니의 뭉툭함이 / 우연의 일치인지 / 그리고 거부한다 / 그 가능성을, / 왜냐하면 / 이러한 배열은 / 발생하기 때문이다 / 규칙성을 가지고 / 그리고 / 그 규칙성은 / ~와 연결되어 있다 / 합목적성과.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> query - 의문을 제기하다, 질문하다, sharpness - 날카로움, bluntness - 뭉툭함, molar - 어금니, coincidental - 우연의 일치인, 우연한, arrangement - 배열, 배치, purposefulness - 합목적성, 목적이 있음</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 5</div>
+        <div class="sentence-en">The sharpness / of front teeth / allows / them / to tear / while / the bluntness / of those in the back / enables / them / to crush food; / both / are useful / for eating.</div>
+        <div class="sentence-ko">날카로움은 / 앞니의 / 허용한다(해준다) / 그것들이 / 찢을 수 있게 / 반면에 / 뭉툭함은 / 뒤에 있는 것들의 / 가능하게 한다 / 그것들이 / 음식을 으깨도록; / 둘 다 / 유용하다 / 먹는 데.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> tear - 찢다, enable A to B - A가 B하는 것을 가능하게 하다, crush - 으깨다, 부수다</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 6</div>
+        <div class="sentence-en">In Aristotle's view, / all natural things / happen / in a given way / and occur / for the sake of something; / that / is the final cause.</div>
+        <div class="sentence-ko">아리스토텔레스의 관점에서, / 모든 자연적인 것들은 / 일어난다 / 정해진 방식으로 / 그리고 발생한다 / 무언가를 위해서; / 그것이 / 목적인(최종 원인)이다.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> given - 정해진, 특정한, final cause - 목적인(아리스토텔레스 철학에서 사물이 존재하는 목적이나 이유)</div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">02</div><h2>어법 및 구문 포인트</h2></div>
+      <div class="card no-break">
+        <div class="point-block">
+          <div class="sentence-id">문장 2</div>
+          <div class="line-item"><strong>[water that rises when heated by the Sun, then cools, condenses, and falls...]</strong> `that`은 주격 관계대명사로 선행사 `water`를 수식한다. 관계절 안에서 동사 `rises`, `cools`, `condenses`, `falls`가 병렬 연결되었다. `when heated`는 `when it is heated`에서 주어와 be동사가 생략된 분사구문이다.</div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul><li>병렬 구조에 있는 동사들의 수 일치(`-s`)를 확인해야 한다. `when heating`으로 쓰면 물이 무엇인가를 가열한다는 능동의 의미가 되므로 수동의 `heated`가 적절하다.</li></ul>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 4</div>
+          <div class="line-item"><strong>[whether the sharpness ... and the bluntness ... is coincidental]</strong> `whether` 절 안의 주어가 두 가지(`sharpness`, `bluntness`)임에도 동사가 단수 `is`로 쓰였다. 이는 앞니의 날카로움과 어금니의 뭉툭함이라는 치아의 상호보완적 구조를 하나의 단일한 현상이나 개념(this arrangement)으로 취급했기 때문이다.</div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul><li>수 일치 문제에서 기계적으로 주어가 두 개라고 `are`를 쓰기 쉬우나, 의미상 단일 개념일 때는 단수 동사를 쓸 수 있음에 유의하라.</li></ul>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 5</div>
+          <div class="line-item"><strong>[allows them to tear while ... enables them to crush]</strong> `allow + 목적어 + to부정사`와 `enable + 목적어 + to부정사` 구문이 `while`을 대칭축으로 병렬 형태를 이루고 있다. `those`는 대명사로 `teeth`를 지칭한다.</div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">03</div><h2>문장 단위 내용 흐름 정리</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>[(1)-(3) 도입] :</strong> 아리스토텔레스는 자연이 특정한 목적을 가지고 움직이는지에 대해 질문을 던졌다. 그는 비의 생성 과정 같은 개별 현상 자체보다는 자연에서 '규칙성'을 띠며 나타나는 현상들이 왜 일어나는지 설명하고자 했다.</div>
+        <div class="line-item"><strong>[(4) 치아의 예시와 논증] :</strong> 앞니는 날카롭고 어금니는 뭉툭한 형태가 항상 규칙적으로 나타나는 것은 결코 단순한 '우연'이 아니다. 이 규칙성은 분명한 '목적'과 연결되어 있다.</div>
+        <div class="line-item"><strong>[(5) 목적의 구체화] :</strong> 앞니는 음식을 찢고 어금니는 으깨기 위한 것이라는 구체적인 목적(식사)이 각각의 형태에 부여되어 있다.</div>
+        <div class="line-item"><strong>[(6) 결론] :</strong> 자연의 모든 사물과 규칙적인 현상은 우연이 아니라 특정한 '목적(the final cause)'을 달성하기 위해 발생한다는 것이 아리스토텔레스의 관점이다.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">04</div><h2>표현들의 연관성 정리</h2></div>
+      <div class="card no-break">
+        <h3>아리스토텔레스의 세계관</h3>
+        <div class="chip-row">
+          <span class="chip">Acts for the sake of something</span> <span class="arrow">=</span> <span class="chip">purposefulness</span> <span class="arrow">=</span> <span class="chip">final cause</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 20px;">지문을 관통하는 핵심 개념으로, 자연의 모든 사물과 현상에는 고유한 목적과 존재 이유가 있다는 아리스토텔레스의 '목적론적 세계관'을 의미한다.</div>
+
+        <h3>목적의 증거</h3>
+        <div class="chip-row">
+          <span class="chip">Regularity</span> <span class="arrow">↔</span> <span class="chip">Coincidental</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 20px;">자연 현상이 변함없이 일관되게 나타나는 성질(규칙성)과 아무런 목적 없이 무작위로 일어나는 성질(우연)을 대조하여, 규칙성이 곧 목적의 증거임을 주장한다.</div>
+
+        <h3>형태와 기능의 일치</h3>
+        <div class="chip-row">
+          <span class="chip">Sharpness to tear / bluntness to crush</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 4px;">구조(형태)가 곧 기능(목적)을 따른다는 목적론의 완벽한 사례다.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">05</div><h2>소재와 주제문</h2></div>
+      <div class="card no-break" style="border-top-color: #f59e0b;">
+        <div class="line-item" style="margin-bottom: 12px;"><strong>핵심 소재:</strong> 자연의 규칙성과 합목적성에 대한 아리스토텔레스의 관점</div>
+        <div class="mini-divider"></div>
+        <div class="label" style="margin-top: 8px;">주제문 (문장 6)</div>
+        <div class="sentence-en" style="margin-bottom: 0;">In Aristotle's view, all natural things happen in a given way and occur for the sake of something; that is the final cause.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">06</div><h2>지문의 요약 및 패러프레이징</h2></div>
+      <div class="card no-break">
+        <div class="summary-pair">
+          <div class="label">요약 / Summary</div>
+          <div class="sentence-en">Aristotle argued that the regularity found in nature, such as the specific shapes of teeth, is not coincidental but clear evidence of purposefulness, meaning everything exists for a reason.</div>
+          <div class="sentence-ko">아리스토텔레스는 치아의 특정 형태와 같이 자연에서 발견되는 규칙성은 우연이 아니라 합목적성의 분명한 증거이며, 이는 모든 것이 이유가 있어 존재함을 의미한다고 주장했다.</div>
+        </div>
+        <div class="divider"></div>
+        <div class="summary-pair">
+          <div class="label">패러프레이징 / Paraphrasing</div>
+          <div class="sentence-en">Rejecting the idea of random occurrence, Aristotle's philosophy posits that natural phenomena are inherently teleological; the consistent structural designs in nature, like dental arrangements, exist to fulfill specific functions.</div>
+          <div class="sentence-ko">무작위적 발생이라는 개념을 거부하면서, 아리스토텔레스의 철학은 자연 현상이 본질적으로 목적론적이라고 상정한다. 치아 배열과 같이 자연의 일관된 구조적 설계는 특정 기능을 수행하기 위해 존재한다.</div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">07</div><h2>도움이 되는 배경지식</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>1. 아리스토텔레스의 4원인설:</strong><br> 아리스토텔레스는 사물이 존재하는 원인을 질료인(재료), 형상인(형태), 동력인(원인제공자), 목적인(존재의 목적)의 네 가지로 설명했다. 본 지문에 등장하는 'final cause(목적인)'는 사물이 무엇을 위해 존재하는지 그 '궁극적 목적'을 뜻한다.</div>
+        <div class="divider"></div>
+        <div class="line-item"><strong>2. 목적론(Teleology):</strong><br> 우주와 자연의 모든 현상은 맹목적인 우연이나 기계적 인과관계에 의해서만 일어나는 것이 아니라, 어떠한 궁극적인 '목적'을 향해 나아간다는 철학적 세계관이다.</div>
+      </div>
+    </div>
+
+
+    <!-- ========================================== -->
+    <!-- [지문 4] 13강 3번                          -->
+    <!-- ========================================== -->
+    <hr class="passage-separator" />
+    
+    <div class="passage-container">
+      <div class="header-container">
+        <div class="hero-title">13강 3번 지문분석</div>
+        <div class="subtitle">Lio T 내신대비 지문분석서</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">00</div><h2>영어 본문 및 전체 해석</h2></div>
+      <div class="card no-break">
+        <div class="text-block-title">영어 본문</div>
+        <div class="eng-body">
+          Becoming aware of our internal sensations can help us handle our own emotions. Perhaps more surprisingly, the body's interoceptive faculty can also bring us into closer contact with other people's emotions. That's because the brain, on its own, has no direct access to the contents of other people's minds, no way to feel what others are feeling. Interpreting others' spoken words and facial expressions may yield only a coolly abstract sense of the emotions that stir within. The body acts as a critical conduit, supplying the brain with the visceral information it lacks. It does so in this way: When interacting with other people, we subtly and unconsciously mimic their facial expressions, gestures, posture, and vocal pitch. Then, via the interoception of our own bodies' signals, we perceive what the other person is feeling because we feel it in ourselves. We bring other people's feelings onboard, and the body is the bridge. In an act similar to taking a bite off our partner's plate, or borrowing an earbud to hear the song our friend is listening to, we are sampling their emotions.
+        </div>
+        <div class="divider"></div>
+        <div class="text-block-title">전체 해석</div>
+        <div class="kor-body">
+          우리의 내부 감각을 인식하게 되는 것은 우리가 우리 자신의 감정을 다루는 데 도움을 줄 수 있다. 아마 더 놀라운 것은, 신체의 내부 감각 수용 능력은 또한 우리를 다른 사람들의 감정과 더 긴밀하게 접촉하도록 이끌어 줄 수 있다는 것이다. 그것은 뇌가 독자적으로는 타인의 마음 내용물에 직접 접근할 수 없고, 타인이 느끼고 있는 것을 느낄 방법이 없기 때문이다. 다른 사람들의 말과 표정을 해석하는 것은 내면에서 일어나는(움직이는) 감정에 대한 차갑고 추상적인 감각만을 산출할지도 모른다. 신체는 중요한 전달자 역할을 하여, 뇌에 뇌가 부족한 본능적(내장적) 정보를 공급한다. 그것(신체)은 이런 방식으로 그렇게 한다: 다른 사람들과 상호작용할 때, 우리는 미묘하게 그리고 무의식적으로 그들의 표정, 몸짓, 자세, 그리고 목소리의 높낮이를 모방한다. 그런 다음, 우리 자신의 신체 신호에 대한 내부 감각 수용을 통해, 우리는 그것을 우리 자신 안에서 느끼기 때문에 다른 사람이 느끼고 있는 것을 인식한다. 우리는 다른 사람들의 감정을 (우리 몸에) 탑승시키며, 신체는 그 다리이다. 파트너의 접시에서 한 입 베어 먹거나 친구가 듣고 있는 노래를 듣기 위해 이어폰 한쪽을 빌리는 것과 유사한 행동으로, 우리는 그들의 감정을 '시식(표본 추출)하고' 있는 것이다.
+        </div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">01</div><h2>직독직해 및 어휘 정리</h2></div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 1</div>
+        <div class="sentence-en">Becoming aware / of our internal sensations / can help / us / handle / our own emotions.</div>
+        <div class="sentence-ko">인식하게 되는 것은 / 우리의 내부 감각을 / 도울 수 있다 / 우리가 / 다루도록 / 우리 자신의 감정을.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> become aware of - ~을 인식하다, internal sensation - 내부 감각, handle - 다루다</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 2</div>
+        <div class="sentence-en">Perhaps more surprisingly, / the body's interoceptive faculty / can also bring / us / into closer contact / with other people's emotions.</div>
+        <div class="sentence-ko">아마 더 놀라운 것은, / 신체의 내부 감각 수용 능력은 / 또한 데려갈 수 있다 / 우리를 / 더 긴밀한 접촉으로 / 타인들의 감정과의.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> interoceptive - 내부 감각 수용의, 내수용성의, faculty - 능력 기능, contact - 접촉</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 3</div>
+        <div class="sentence-en">That's because / the brain, / on its own, / has / no direct access / to the contents / of other people's minds, / no way / to feel / what others are feeling.</div>
+        <div class="sentence-ko">그것은 ~때문이다 / 뇌가, / 독자적으로는(그 자체로는), / 갖지 않는다(못한다) / 직접적인 접근을 / 내용물에 / 타인들의 마음의, / 방법이 없다 / 느낄 / 타인들이 느끼고 있는 것을.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> on its own - 독자적으로, 스스로, access to - ~에 대한 접근</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 4</div>
+        <div class="sentence-en">Interpreting / others' spoken words and facial expressions / may yield / only a coolly abstract sense / of the emotions / that / stir / within.</div>
+        <div class="sentence-ko">해석하는 것은 / 타인들의 말과 표정을 / 산출할지도 모른다 / 오직 차갑게 추상적인 감각만을 / 감정에 대한 / (~하는) / 움직이는(일어나는) / 내면에서.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> interpret - 해석하다, facial expression - 표정, yield - 산출하다, 낳다, coolly - 차갑게, 냉정하게, abstract - 추상적인, stir - 움직이다, 휘젓다, 일어나다</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 5</div>
+        <div class="sentence-en">The body / acts / as a critical conduit, / supplying / the brain / with the visceral information / it lacks.</div>
+        <div class="sentence-ko">신체는 / 역할을 한다 / 중요한 전달자로서, / 공급하면서 / 뇌에 / 본능적인(내장적인) 정보를 / 그것(뇌)이 부족한.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> conduit - 전달자, 파이프, 도관, supply A with B - A에게 B를 공급하다, visceral - 본능적인, 내장의, lack - 부족하다</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 6</div>
+        <div class="sentence-en">It / does so / in this way: / When interacting / with other people, / we / subtly and unconsciously mimic / their facial expressions, gestures, posture, / and vocal pitch.</div>
+        <div class="sentence-ko">그것은 / 그렇게 한다 / 이 방식으로: / 상호작용할 때 / 타인들과, / 우리는 / 미묘하고 무의식적으로 모방한다 / 그들의 표정, 몸짓, 자세, / 그리고 목소리의 높낮이를.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> interact with - ~와 상호작용하다, subtly - 미묘하게, unconsciously - 무의식적으로, mimic - 모방하다, posture - 자세, vocal pitch - 목소리 높낮이</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 7</div>
+        <div class="sentence-en">Then, / via the interoception / of our own bodies' signals, / we / perceive / what the other person is feeling / because / we / feel it / in ourselves.</div>
+        <div class="sentence-ko">그런 다음, / 내부 감각 수용을 통해 / 우리 자신의 신체 신호에 대한, / 우리는 / 인식한다 / 상대방이 느끼고 있는 것을 / 왜냐하면 / 우리가 / 느끼기 때문이다 그것을 / 우리 자신 안에서.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> via - ~을 통하여, perceive - 인식하다, 지각하다</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 8</div>
+        <div class="sentence-en">We / bring / other people's feelings / onboard, / and / the body / is the bridge.</div>
+        <div class="sentence-ko">우리는 / 데려온다(가져온다) / 타인들의 감정을 / 배(차)에 탄 상태로(우리 몸 안으로), / 그리고 / 신체는 / 다리(연결 고리)이다.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> bring onboard - 탑승시키다, 합류시키다</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 9</div>
+        <div class="sentence-en">In an act / similar to taking a bite / off our partner's plate, / or borrowing an earbud / to hear the song / our friend is listening to, / we / are sampling / their emotions.</div>
+        <div class="sentence-ko">행동에서 / 한 입 베어 먹는 것과 유사한 / 우리 파트너의 접시에서, / 혹은 이어폰을 빌리는 것 (과 유사한) / 노래를 듣기 위해 / 우리 친구가 듣고 있는, / 우리는 / '시식'해보고(맛보고) 있는 것이다 / 그들의 감정을.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> take a bite - 한 입 베어 먹다, sample - 시식하다, 표본을 추출하다, 경험하다</div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">02</div><h2>어법 및 구문 포인트</h2></div>
+      <div class="card no-break">
+        <div class="point-block">
+          <div class="sentence-id">문장 1</div>
+          <div class="line-item"><strong>[can help us handle ...]</strong> 5형식 구문에서 `help`의 목적격 보어로 동사원형 `handle`이 왔다.</div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul><li>`to handle`로도 쓸 수 있으나, `handling`으로 쓰면 어법상 틀린다.</li></ul>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 4</div>
+          <div class="line-item"><strong>[Interpreting ... may yield ... emotions that stir within]</strong> 주어는 동명사구 `Interpreting...`이고 단수 동사 `may yield`가 연결되었다. `that`은 주격 관계대명사로 선행사 `the emotions`를 수식하며 복수 동사 `stir`가 왔다.</div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 5</div>
+          <div class="line-item"><strong>[supplying the brain with the visceral information it lacks]</strong> 능동의 부대상황을 나타내는 분사구문 `supplying`이다. 신체가 뇌에 정보를 '공급하면서'의 의미를 지닌다. `it lacks`는 목적격 관계대명사가 생략된 절로 앞의 `the visceral information`을 수식하며, 여기서 `it`은 `the brain`을 가리킨다.</div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul><li>`supplied` 수동형 분사를 쓰면 틀린다. `supply A with B` 전치사 사용에 유의하라.</li></ul>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 6</div>
+          <div class="line-item"><strong>[When interacting with other people]</strong> `When we interact...`에서 주어와 be동사가 생략(또는 접속사를 남긴 분사구문)된 형태이다. 우리가 능동적으로 상호작용하므로 현재분사 `interacting`이 적절하다.</div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">03</div><h2>문장 단위 내용 흐름 정리</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>[(1)-(2) 도입 (신체 감각의 놀라운 기능)] :</strong> 자신의 신체 내부 감각을 느끼는 것은 내 감정 통제뿐만 아니라, 타인의 감정을 깊이 이해(공감)하는 데 필수적이다.</div>
+        <div class="line-item"><strong>[(3)-(4) 뇌의 한계] :</strong> 뇌는 타인의 감정을 직접 읽어낼 수 없으며, 시각이나 청각(말, 표정) 정보만으로는 타인의 감정을 겉핥기식(추상적)으로만 파악할 수밖에 없다.</div>
+        <div class="line-item"><strong>[(5)-(7) 신체의 공감 메커니즘 (해결책)] :</strong> 이 한계를 극복하기 위해 '신체'가 다리 역할을 한다. 우리는 무의식적으로 타인의 표정과 자세를 신체로 똑같이 '모방'하고, 그 모방으로 인해 내 신체에 발생한 내부 감각 신호를 뇌가 감지함으로써 타인이 느끼는 감정을 내 안에서 똑같이 느끼게 된다.</div>
+        <div class="line-item"><strong>[(8)-(9) 결론 (비유)] :</strong> 결국 타인의 감정에 공감하는 것은, 남의 음식을 내 입으로 직접 한 입 먹어보며(sampling) 그 맛을 똑같이 경험하는 것과 같은 신체적 동기화 과정이다.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">04</div><h2>표현들의 연관성 정리</h2></div>
+      <div class="card no-break">
+        <h3>신체의 연결 역할</h3>
+        <div class="chip-row">
+          <span class="chip">Interoceptive faculty</span> <span class="arrow">=</span> <span class="chip">body acts as a critical conduit</span> <span class="arrow">=</span> <span class="chip">body is the bridge</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 20px;">타인의 감정을 이해하기 위해 뇌에 시각/청각 이상의 신체적(본능적) 정보를 전달해 주는 육체의 핵심 역할을 의미한다.</div>
+
+        <h3>감각의 대조</h3>
+        <div class="chip-row">
+          <span class="chip">Coolly abstract sense</span> <span class="arrow">↔</span> <span class="chip">Visceral information</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 20px;">이성과 뇌만으로 타인을 판단할 때의 한계(차갑고 추상적인 감각)와, 내 몸이 직접 모방하여 느끼는 생생한 감정(본능적이고 육체적인 정보)의 대조다.</div>
+
+        <h3>공감의 구체적 과정</h3>
+        <div class="chip-row">
+          <span class="chip">Mimic their facial expressions</span> <span class="arrow">=</span> <span class="chip">feel it in ourselves</span> <span class="arrow">=</span> <span class="chip">sampling their emotions</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 4px;">상대방의 외적 상태를 내 몸으로 복사하여, 내 안에서 그 감정의 맛(샘플)을 직접 느껴보는 '공감(empathy)'의 신체적 과정을 은유적으로 나타낸다.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">05</div><h2>소재와 주제문</h2></div>
+      <div class="card no-break" style="border-top-color: #f59e0b;">
+        <div class="line-item" style="margin-bottom: 12px;"><strong>핵심 소재:</strong> 타인의 감정을 공감하게 만드는 신체의 내부 감각(모방 메커니즘)</div>
+        <div class="mini-divider"></div>
+        <div class="label" style="margin-top: 8px;">주제문 (문장 5)</div>
+        <div class="sentence-en" style="margin-bottom: 8px;">The body acts as a critical conduit, supplying the brain with the visceral information it lacks.</div>
+        <div class="label" style="margin-top: 8px;">주제문 (문장 7)</div>
+        <div class="sentence-en" style="margin-bottom: 0;">Then, via the interoception of our own bodies' signals, we perceive what the other person is feeling because we feel it in ourselves.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">06</div><h2>지문의 요약 및 패러프레이징</h2></div>
+      <div class="card no-break">
+        <div class="summary-pair">
+          <div class="label">요약 / Summary</div>
+          <div class="sentence-en">Our bodies enable us to deeply understand others' emotions by unconsciously mimicking their physical expressions, thereby recreating and sampling those feelings within our own internal sensations.</div>
+          <div class="sentence-ko">우리의 신체는 타인의 신체적 표현을 무의식적으로 모방하고, 그럼으로써 우리 자신의 내부 감각 안에서 그 감정을 재현하고 시식하게 함으로써 타인의 감정을 깊이 이해할 수 있게 해준다.</div>
+        </div>
+        <div class="divider"></div>
+        <div class="summary-pair">
+          <div class="label">패러프레이징 / Paraphrasing</div>
+          <div class="sentence-en">True empathy goes beyond the brain's intellectual interpretation; it is rooted in our physical ability to mirror the gestures of others, allowing our bodies to serve as a bridge to directly experience and "taste" their emotional states.</div>
+          <div class="sentence-ko">진정한 공감은 뇌의 지적인 해석을 넘어선다. 그것은 타인의 몸짓을 거울처럼 따라 하는 우리의 신체적 능력에 뿌리를 두고 있으며, 우리의 신체가 그들의 감정 상태를 직접 경험하고 "맛보는" 다리 역할을 하도록 허용한다.</div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">07</div><h2>도움이 되는 배경지식</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>1. 거울 신경세포(Mirror Neurons):</strong><br> 타인의 행동을 관찰하기만 해도 자신이 직접 그 행동을 할 때와 똑같이 뇌의 신경세포가 활성화되는 현상. 본 지문에서 타인의 표정이나 제스처를 무의식적으로 모방(mimic)하여 감정을 함께 느낀다는 내용이 이 거울 신경 체계를 바탕으로 한 공감(empathy) 원리를 설명하고 있다.</div>
+        <div class="divider"></div>
+        <div class="line-item"><strong>2. 신체화된 인지(Embodied Cognition):</strong><br> 마음이나 생각(인지)이 단순히 뇌 안에서만 일어나는 정보 처리 과정이 아니라, 물리적인 신체의 경험과 감각에 크게 의존한다는 심리학 이론이다. "The body is the bridge(신체가 다리이다)"라는 표현이 이를 잘 대변한다.</div>
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>

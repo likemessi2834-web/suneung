@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>06강 전체 지문분석 - Lio T</title>
+  <style>
+    /* 디자인 시스템 변수 설정 */
+    :root {
+      --bg-color: #f4f7fb;
+      --text-main: #0f172a;
+      --text-sub: #334155;
+      --text-muted: #64748b;
+      --primary: #4f46e5;
+      --primary-light: #e0e7ff;
+      --secondary: #3b82f6;
+      --border-light: #e2e8f0;
+      --card-bg: #ffffff;
+      --radius: 12px;
+    }
+
+    /* 페이지 기본 설정 (세로 모드) */
+    @page {
+      size: A4 portrait;
+      margin: 15mm; 
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg-color);
+      color: var(--text-main);
+      font-family: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+      letter-spacing: -0.02em; 
+    }
+
+    body {
+      padding: 10px; 
+      display: flex;
+      justify-content: center;
+    }
+
+    .doc {
+      width: 100%;
+      max-width: 210mm; 
+    }
+
+    /* =========================================
+       지문 간 구분선 (화면용 vs 인쇄용)
+       ========================================= */
+    .passage-separator {
+      height: 4px;
+      background-image: repeating-linear-gradient(to right, #cbd5e1 0, #cbd5e1 10px, transparent 10px, transparent 20px);
+      margin: 80px 0;
+      border: none;
+      position: relative;
+    }
+    .passage-separator::after {
+      content: '▼ 다음 지문 (인쇄 시 무조건 새 페이지에서 시작됩니다) ▼';
+      position: absolute;
+      top: -26px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--bg-color);
+      padding: 0 16px;
+      color: #94a3b8;
+      font-weight: 700;
+      font-size: 10pt;
+    }
+
+    /* 공통 레이아웃 제어 */
+    .no-break { page-break-inside: avoid; break-inside: avoid; }
+    
+    .header-container { margin-bottom: 30px; text-align: center; }
+    .hero-title {
+      display: inline-block; margin: 0 0 10px 0; padding: 8px 24px; font-size: 22pt; font-weight: 800;
+      color: #ffffff; background: linear-gradient(135deg, var(--primary), var(--secondary));
+      border-radius: 999px; box-shadow: 0 4px 14px rgba(79, 70, 229, 0.25);
+    }
+    .subtitle { font-size: 13pt; font-weight: 600; color: var(--text-muted); }
+
+    .section-title {
+      display: flex; align-items: center; gap: 12px; margin: 30px 0 16px 0;
+      border-bottom: 2px solid var(--border-light); padding-bottom: 4px;
+      page-break-after: avoid; break-after: avoid;
+    }
+    .page-no {
+      width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+      background: var(--primary); color: white; font-weight: 700; font-size: 12pt; border-radius: 8px;
+    }
+    h2 { margin: 0; font-size: 16pt; font-weight: 700; color: var(--text-main); }
+
+    .card {
+      background: var(--card-bg); border: 1px solid var(--border-light); border-top: 4px solid var(--primary);
+      border-radius: var(--radius); padding: 8px 16px; margin-bottom: 16px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    }
+    
+    .text-block-title { font-size: 12pt; font-weight: 700; color: var(--primary); margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+    .text-block-title::before { content: ''; display: block; width: 6px; height: 6px; border-radius: 50%; background: var(--primary); }
+    .eng-body { font-size: 12pt; line-height: 1.7; font-weight: 500; color: var(--text-main); margin-bottom: 20px; text-align: justify; }
+    .divider { height: 1px; background: var(--border-light); margin: 20px 0; }
+    .mini-divider { height: 1px; background: var(--border-light); margin: 8px 0; }
+    .kor-body { font-size: 11.5pt; line-height: 1.7; color: var(--text-sub); text-align: justify; word-break: keep-all; }
+
+    .sentence-card {
+      background: var(--card-bg); border: 1px solid var(--border-light); border-left: 4px solid var(--secondary);
+      border-radius: 8px; padding: 8px 16px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    }
+    .sentence-id { display: inline-block; margin-bottom: 8px; padding: 2px 8px; border-radius: 6px; background: var(--primary-light); color: var(--primary); font-size: 9pt; font-weight: 700; }
+    .sentence-en { font-size: 12.5pt; font-weight: 600; line-height: 1.6; color: var(--text-main); margin-bottom: 4px; }
+    .sentence-ko { font-size: 9pt; line-height: 1.6; color: var(--text-sub); margin-bottom: 4px; word-break: keep-all; }
+    .vocab-box { display: inline-block; padding: 4px 8px; border-radius: 6px; background: #f8fafc; border: 1px dashed #cbd5e1; font-size: 9pt; color: var(--text-muted); }
+
+    .point-block { margin-bottom: 16px; }
+    .point-block:last-child { margin-bottom: 0; }
+    .line-item { font-size: 11.5pt; line-height: 1.7; margin: 0 0 8px 0; word-break: keep-all; }
+    .exam-note { margin-top: 8px; padding: 8px 12px; background: #fffbeb; border-left: 3px solid #f59e0b; border-radius: 0 6px 6px 0; font-size: 10.5pt; line-height: 1.6; color: #92400e; }
+    .exam-note ul { margin: 4px 0 0 0; padding-left: 20px; }
+    .exam-note li { margin-bottom: 4px; }
+    .exam-note li:last-child { margin-bottom: 0; }
+
+    .chip-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 8px 0 20px 0; }
+    .chip { padding: 4px 10px; border-radius: 999px; background: var(--primary-light); color: var(--primary); font-size: 10pt; font-weight: 600; }
+    .arrow { color: var(--text-muted); font-weight: 700; }
+    h3 { font-size: 12pt; margin: 0 0 8px 0; color: var(--text-main); }
+    .label { display: inline-block; font-size: 9.5pt; font-weight: 700; color: var(--secondary); background: #eff6ff; padding: 2px 6px; border-radius: 4px; margin-bottom: 6px; }
+    .summary-pair { margin-bottom: 20px; }
+    .summary-pair:last-child { margin-bottom: 0; }
+
+    /* =========================================
+       인쇄(Print) 전용 스타일 - 다중 지문 분할 처리
+       ========================================= */
+    @media print {
+      html, body { background: #ffffff !important; padding: 0; }
+      .doc { max-width: 100%; }
+
+      /* 지문 구분선을 강제 페이지 넘김으로 변환 */
+      .passage-separator {
+        page-break-before: always !important;
+        break-before: page !important;
+        margin: 0 !important;
+        height: 0 !important;
+        border: none !important;
+        background: none !important;
+      }
+      .passage-separator::after { display: none !important; }
+
+      .page-break { page-break-before: always !important; break-before: page !important; }
+      .card, .sentence-card { box-shadow: none !important; border: 1px solid #cbd5e1 !important; page-break-inside: avoid !important; break-inside: avoid !important; }
+      .section-title { page-break-after: avoid !important; break-after: avoid !important; }
+
+      .hero-title { background: #0f172a !important; color: white !important; }
+      .page-no { background: #0f172a !important; }
+      .sentence-id, .chip, .label { border: 1px solid #cbd5e1 !important; background: #f8fafc !important; color: #0f172a !important; }
+      .exam-note { background: #f8fafc !important; border-left-color: #94a3b8 !important; color: #334155 !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="doc">
+
+    <!-- ========================================== -->
+    <!-- [지문 2] 06강 1번                          -->
+    <!-- ========================================== -->
+    
+    <div class="passage-container">
+      <div class="header-container">
+        <div class="hero-title">06강 1번 지문분석</div>
+        <div class="subtitle">Lio T 내신대비 지문분석서</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">00</div><h2>영어 본문 및 전체 해석</h2></div>
+      <div class="card no-break">
+        <div class="text-block-title">영어 본문</div>
+        <div class="eng-body">
+          In the United States, the practice of permitting aliens to vote could be seen as compatible with the idea of an exclusionary citizenship, but that is a hard balance to maintain. If the vote, of all rights, is in the hands of noncitizens, why should they not count as citizens, and the entire distinction between resident alien and citizen be abandoned? Indeed, something like this thought probably lay behind the disappearance of alien voting: with universal adult citizen suffrage after 1920, the only way to maintain an exclusionary kind of citizenship was to restrict the vote to citizens and not residents. But no theory of "active" democracy can countenance this distinction: the laws concerning our common life must be made by all those who are taking part in it, and residence is the only convincing test of whether someone is taking part as is understood almost universally when it comes to questions of which citizens should have a voice in local government.
+        </div>
+        <div class="divider"></div>
+        <div class="text-block-title">전체 해석</div>
+        <div class="kor-body">
+          미국에서 외국인에게 투표를 허용하는 관행은 배타적 시민권이라는 개념과 양립할 수 있는 것으로 여겨질 수도 있었지만, 그것은 유지하기 어려운 균형이다. 만약 모든 권리 중에서 투표권이 비시민의 손에 있다면, 왜 그들이 시민으로 간주되어서는 안 되며, 거주 외국인과 시민 사이의 전체적인 구분이 폐기되어서는 안 되는가? 참으로, 아마도 이와 같은 생각이 외국인 투표권의 소멸 이면에 있었을 것이다. 1920년 이후의 보편적인 성인 시민 선거권과 함께, 배타적 성격의 시민권을 유지하는 유일한 방법은 거주자가 아닌 시민에게로 투표권을 제한하는 것이었다. 그러나 '능동적' 민주주의의 어떤 이론도 이러한 구분을 지지(용인)할 수 없다. 우리의 공동생활에 관한 법률은 그것(공동생활)에 참여하고 있는 모든 사람들에 의해 만들어져야 하며, 지역 정부에서 어떤 시민이 목소리를 내야 하는지에 대한 문제에 관한 한 거의 보편적으로 이해되듯이 거주야말로 누군가가 참여하고 있는지에 대한 유일하고 설득력 있는 기준(시험)이다.
+        </div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">01</div><h2>직독직해 및 어휘 정리</h2></div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 1</div>
+        <div class="sentence-en">In the United States, / the practice / of permitting aliens to vote / could be seen / as compatible / with the idea / of an exclusionary citizenship, / but / that / is a hard balance / to maintain.</div>
+        <div class="sentence-ko">미국에서, / 관행은 / 외국인에게 투표를 허용하는 / 여겨질 수 있었다 / 양립할 수 있는 것으로 / 개념과 / 배타적 시민권이라는, / 하지만 / 그것은 / 어려운 균형이다 / 유지하기.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> permit - 허용하다, alien - 외국인, compatible with - ~과 양립할 수 있는, exclusionary - 배타적인, citizenship - 시민권</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 2</div>
+        <div class="sentence-en">If the vote, / of all rights, / is / in the hands / of noncitizens, / why / should they not count / as citizens, / and the entire distinction / between resident alien and citizen / be abandoned?</div>
+        <div class="sentence-ko">만약 투표권이, / 모든 권리 중에서도, / 있다면 / 손에 / 비시민의, / 왜 / 그들이 간주되어서는 안 되는가 / 시민으로, / 그리고 전체적인 구분이 / 거주 외국인과 시민 사이의 / 폐기되어서는 (안 되는가)?</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> right - 권리, count as - ~로 간주되다, 여겨지다, distinction - 구분, 차이, resident alien - 거주 외국인, abandon - 버리다, 폐기하다</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 3</div>
+        <div class="sentence-en">Indeed, / something like this thought / probably lay / behind the disappearance / of alien voting: / with universal adult citizen suffrage / after 1920, / the only way / to maintain / an exclusionary kind of citizenship / was / to restrict / the vote / to citizens / and not residents.</div>
+        <div class="sentence-ko">참으로, / 이와 같은 어떤 생각이 / 아마도 있었을 것이다 / 소멸의 이면에 / 외국인 투표권의: / 보편적인 성인 시민 선거권과 함께 / 1920년 이후의, / 유일한 방법은 / 유지하는 / 배타적 성격의 시민권을 / ~였다 / 제한하는 것 / 투표권을 / 시민들에게 / 거주자가 아니라.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> lay behind - ~의 이면에 있다(lie의 과거형), disappearance - 소멸, 사라짐, universal - 보편적인, suffrage - 선거권, 참정권, restrict A to B - A를 B로 제한하다</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 4</div>
+        <div class="sentence-en">But / no theory / of "active" democracy / can countenance / this distinction: / the laws / concerning our common life / must be made / by all those / who / are taking part / in it, / and / residence / is the only convincing test / of whether / someone / is taking part / as is understood / almost universally / when it comes to questions / of which citizens / should have a voice / in local government.</div>
+        <div class="sentence-ko">그러나 / 어떤 이론도 / '능동적' 민주주의의 / 이 구분을 지지(용인)할 수 없다: / 법률은 / 우리의 공동생활에 관한 / 만들어져야 한다 / 모든 사람들에 의해 / (~하는) / 참여하고 있는 / 그것에, / 그리고 / 거주(지)는 / 유일한 설득력 있는 기준(시험)이다 / ~인지에 대한 / 누군가가 / 참여하고 있는지 / 이해되듯이 / 거의 보편적으로 / 문제에 관한 한 / 어떤 시민이 / 목소리를 내야 하는지에 대한 / 지역 정부에서.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> democracy - 민주주의, countenance - 지지하다, 용인하다, concerning - ~에 관한, take part in - ~에 참여하다, residence - 거주, convincing - 설득력 있는, when it comes to - ~에 관한 한</div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">02</div><h2>어법 및 구문 포인트</h2></div>
+      <div class="card no-break">
+        <div class="point-block">
+          <div class="sentence-id">문장 2</div>
+          <div class="line-item"><strong>[why should they not count as citizens, and the entire distinction ... be abandoned?]</strong> `why should`에 연결되는 두 개의 동사 원형 `count`와 `be abandoned`가 병렬 구조를 이루고 있다. '왜 그들이 시민으로 간주되지 않아야 하고, 왜 구분이 폐기되지 않아야 하는가?'라는 수사의문문이다.</div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul><li>병렬 구조의 두 번째 동사인 `be abandoned`에서 `be`가 생략되거나 다른 형태로 쓰이지 않도록 유의해야 한다.</li></ul>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 3</div>
+          <div class="line-item"><strong>[probably lay behind...]</strong> `lay`는 자동사 `lie`(-에 있다, 놓여 있다)의 과거형이다. (`lie - lay - lain`)</div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul><li>타동사 `laid`(-을 놓다)로 착각하여 출제될 수 있으므로 자동사/타동사의 구분을 명확히 해야 한다.</li></ul>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 4</div>
+          <div class="line-item"><strong>[as is understood almost universally]</strong> `as`는 유사 관계대명사처럼 쓰여 앞의 내용(거주가 참여의 기준이라는 것)을 받아 '~하듯이, ~한 것처럼'의 의미를 나타낸다.</div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul><li>수동태 `is understood`의 쓰임에 주의하며, `as it is understood`로도 이해할 수 있다.</li></ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">03</div><h2>문장 단위 내용 흐름 정리</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>[(1)-(2) 과거의 관행과 모순 제기] :</strong> 과거 미국에서는 외국인에게도 투표권을 허용했으나, 투표권을 주면서 시민권은 배타적으로 유지하려는 것은 모순(유지하기 힘든 균형)임을 지적한다.</div>
+        <div class="line-item"><strong>[(3) 외국인 투표권 폐지의 배경] :</strong> 1920년 이후 성인 시민에게 보편적 선거권이 주어지면서, 배타적 시민권을 지키기 위해 결국 투표권을 '거주자'가 아닌 '시민'에게만 주기로 제한하게 되었다.</div>
+        <div class="line-item"><strong>[(4) 필자의 주장 (민주주의적 관점)] :</strong> 진정한 능동적 민주주의에서는 이러한 구분(시민 vs 거주 외국인)을 지지할 수 없다. 공동체의 법은 그곳에 참여하는(거주하는) 모든 사람이 만들어야 하며, 지역 정치에서는 '거주' 자체가 참여의 가장 확실한 증거이기 때문이다.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">04</div><h2>표현들의 연관성 정리</h2></div>
+      <div class="card no-break">
+        <h3>권리에서 소외된 계층</h3>
+        <div class="chip-row">
+          <span class="chip">Aliens</span> <span class="arrow">=</span> <span class="chip">noncitizens</span> <span class="arrow">=</span> <span class="chip">resident alien</span> <span class="arrow">=</span> <span class="chip">residents</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 20px;">시민권을 갖지 못했지만 해당 지역에 거주하는 사람들을 의미한다.</div>
+
+        <h3>정치적 이념의 대립</h3>
+        <div class="chip-row">
+          <span class="chip">Exclusionary citizenship</span> <span class="arrow">↔</span> <span class="chip">"Active" democracy</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 20px;">소수의 시민에게만 권리를 제한하려는 배타적 태도와, 거주하며 참여하는 모든 이에게 권리를 주어야 한다는 능동적 민주주의의 대립이다.</div>
+
+        <h3>민주주의 참여의 증거</h3>
+        <div class="chip-row">
+          <span class="chip">Taking part in it</span> <span class="arrow">=</span> <span class="chip">residence</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 4px;">필자가 민주주의 사회에서 정치적 목소리를 내기 위한 핵심 조건으로 간주하는 요소다.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">05</div><h2>소재와 주제문</h2></div>
+      <div class="card no-break" style="border-top-color: #f59e0b;">
+        <div class="line-item" style="margin-bottom: 12px;"><strong>핵심 소재:</strong> 민주주의에서 진정한 참여와 거주자의 투표권 보장 필요성</div>
+        <div class="mini-divider"></div>
+        <div class="label" style="margin-top: 8px;">주제문 (문장 4)</div>
+        <div class="sentence-en" style="margin-bottom: 0;">But no theory of "active" democracy can countenance this distinction: the laws concerning our common life must be made by all those who are taking part in it, and residence is the only convincing test of whether someone is taking part...</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">06</div><h2>지문의 요약 및 패러프레이징</h2></div>
+      <div class="card no-break">
+        <div class="summary-pair">
+          <div class="label">요약 / Summary</div>
+          <div class="sentence-en">While the US restricted voting rights to citizens to maintain exclusionary citizenship, true active democracy requires that all participating residents have a voice in shaping the laws that govern their lives.</div>
+          <div class="sentence-ko">미국은 배타적 시민권을 유지하기 위해 시민에게 투표권을 제한했지만, 진정한 능동적 민주주의는 참여하는 모든 거주자가 자신의 삶을 지배하는 법을 형성하는 데 목소리를 낼 것을 요구한다.</div>
+        </div>
+        <div class="divider"></div>
+        <div class="summary-pair">
+          <div class="label">패러프레이징 / Paraphrasing</div>
+          <div class="sentence-en">Denying resident aliens the right to vote contradicts the core principle of active democracy, which states that living and participating in a community should be the only requirement for political representation.</div>
+          <div class="sentence-ko">거주 외국인에게 투표권을 거부하는 것은 공동체에 거주하고 참여하는 것이 정치적 대표성을 위한 유일한 요건이어야 한다는 능동적 민주주의의 핵심 원칙과 모순된다.</div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">07</div><h2>도움이 되는 배경지식</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>1. 외국인 투표권(Alien Voting):</strong><br> 역사적으로 미국의 여러 주에서는 인구 유입을 장려하기 위해 비시민권자(거주 외국인)에게도 지방선거 투표권을 부여했었으나, 제1차 세계대전 이후 반이민 정서와 시민권 강화의 일환으로 대부분 폐지되었다.</div>
+        <div class="divider"></div>
+        <div class="line-item"><strong>2. 주민 자치와 참정권:</strong><br> 현대 민주주의 이론에서는 국적(시민권)보다 실질적인 생활 터전(거주)에 기반한 '주민'의 권리를 중시하는 경향이 있으며, 이를 근거로 지방선거에서 외국인 영주권자에게 투표권을 부여하는 국가들이 늘고 있다(한국도 제한적으로 허용함).</div>
+      </div>
+    </div>
+
+
+    <!-- ========================================== -->
+    <!-- [지문 4] 06강 3번                          -->
+    <!-- ========================================== -->
+    <hr class="passage-separator" />
+    
+    <div class="passage-container">
+      <div class="header-container">
+        <div class="hero-title">06강 3번 지문분석</div>
+        <div class="subtitle">Lio T 내신대비 지문분석서</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">00</div><h2>영어 본문 및 전체 해석</h2></div>
+      <div class="card no-break">
+        <div class="text-block-title">영어 본문</div>
+        <div class="eng-body">
+          The reliance on the computer as a model for the operations of the human mind may well prove to be as limited as an earlier fascination with behaviorism. Psychologists have already begun to recognize the flaws of the mind-as-computer metaphor. Some have turned to cultural anthropology as a way of understanding the factors outside any particular individual's brain that help the individual make sense out of the world. Others, such as Jerome Bruner, one of the founders of cognitive psychology, find that the computer analogy carries with it an unfortunate shift "from the construction of meaning to the processing of information." Bruner's reflections on the limits of the machine model lead him back to a humanistic emphasis on narrative and story-telling as essential ingredients in understanding human cognition, a fascinating intellectual journey that reveals both the power and the limits of computers as guides to the way we think.
+        </div>
+        <div class="divider"></div>
+        <div class="text-block-title">전체 해석</div>
+        <div class="kor-body">
+          인간 마음의 작용을 위한 모델로서 컴퓨터에 의존하는 것은 행동주의에 대한 초기의 매료만큼이나 한계가 있는 것으로 판명될지도 모른다. 심리학자들은 이미 '컴퓨터로서의 마음'이라는 비유의 결함을 인식하기 시작했다. 어떤 이들은 개인이 세상을 이해하도록 돕는 특정 개인의 뇌 외부의 요인들을 이해하는 방법으로 문화 인류학으로 눈을 돌렸다. 인지 심리학의 창시자 중 한 명인 Jerome Bruner와 같은 다른 이들은 컴퓨터 비유가 "의미의 구성에서 정보의 처리로"의 유감스러운 전환을 수반한다는 것을 발견한다. 기계 모델의 한계에 대한 Bruner의 성찰은 그를 인간의 인지를 이해하는 데 필수적인 요소로서 서사와 스토리텔링에 대한 인본주의적 강조로 되돌아가게 하는데, 이는 우리가 생각하는 방식에 대한 길잡이로서 컴퓨터의 힘과 한계를 모두 드러내는 매력적인 지적 여정이다.
+        </div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">01</div><h2>직독직해 및 어휘 정리</h2></div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 1</div>
+        <div class="sentence-en">The reliance / on the computer / as a model / for the operations of the human mind / may well prove / to be as limited / as an earlier fascination / with behaviorism.</div>
+        <div class="sentence-ko">의존은 / 컴퓨터에 대한 / 모델로서 / 인간 마음의 작용을 위한 / 판명될지도 모른다 / 제한적인 것으로 / 초기의 매료만큼이나 / 행동주의에 대한.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> reliance - 의존, operation - 작용, 작동, may well - ~하는 것도 당연하다, ~일지도 모른다, limited - 제한된, 한계가 있는, fascination - 매료, 매력, behaviorism - 행동주의</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 2</div>
+        <div class="sentence-en">Psychologists / have already begun / to recognize / the flaws / of the mind-as-computer metaphor.</div>
+        <div class="sentence-ko">심리학자들은 / 이미 시작했다 / 인식하기 / 결함을 / '컴퓨터로서의 마음'이라는 비유의.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> flaw - 결함, 결점, metaphor - 비유, 은유</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 3</div>
+        <div class="sentence-en">Some / have turned / to cultural anthropology / as a way / of understanding / the factors / outside any particular individual's brain / that / help / the individual / make sense / out of the world.</div>
+        <div class="sentence-ko">어떤 이들은 / 눈을 돌렸다 / 문화 인류학으로 / 방법으로서 / 이해하는 / 요인들을 / 어떤 특정 개인의 뇌 외부의 / (~하는) / 돕는 / 그 개인이 / 이해하도록 / 세상을.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> turn to - ~로 눈을 돌리다, ~에 의지하다, anthropology - 인류학, make sense out of - ~을 이해하다</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 4</div>
+        <div class="sentence-en">Others, / such as Jerome Bruner, / one of the founders / of cognitive psychology, / find / that / the computer analogy / carries / with it / an unfortunate shift / "from the construction of meaning / to the processing of information."</div>
+        <div class="sentence-ko">다른 이들은, / Jerome Bruner와 같은, / 창시자 중 한 명인 / 인지 심리학의, / 발견한다 / ~라는 것을 / 컴퓨터 비유가 / 수반한다고 / 그것과 함께 / 유감스러운 전환을 / "의미의 구성에서 / 정보의 처리로"의.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> founder - 창시자, cognitive - 인지의, analogy - 비유, 유추, carry with it - 수반하다, shift - 전환, 변화, construction - 구성, processing - 처리</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 5</div>
+        <div class="sentence-en">Bruner's reflections / on the limits / of the machine model / lead / him / back to a humanistic emphasis / on narrative and story-telling / as essential ingredients / in understanding / human cognition, / a fascinating intellectual journey / that / reveals / both the power and the limits / of computers / as guides / to the way we think.</div>
+        <div class="sentence-ko">Bruner의 성찰은 / 한계에 대한 / 기계 모델의 / 이끈다 / 그를 / 인본주의적 강조로 되돌아 가도록 / 서사와 스토리텔링에 대한 / 필수적인 요소로서 / 이해하는 데 있어서 / 인간의 인지를, / (이것은) 매력적인 지적 여정이다 / (~하는) / 드러내는 / 힘과 한계를 모두 / 컴퓨터의 / 길잡이로서 / 우리가 생각하는 방식에 대한.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> reflection - 성찰, 반성, humanistic - 인본주의적인, emphasis - 강조, narrative - 서사, 이야기, ingredient - 요소, 재료, cognition - 인지, fascinating - 매력적인, intellectual - 지적인, reveal - 드러내다</div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">02</div><h2>어법 및 구문 포인트</h2></div>
+      <div class="card no-break">
+        <div class="point-block">
+          <div class="sentence-id">문장 1</div>
+          <div class="line-item"><strong>[may well prove to be as limited as...]</strong> `may well + 동사원형`은 '~하는 것도 무리가 아니다, 당연하다, 아마 ~일 것이다'라는 뜻의 관용 표현이다. `as limited as`의 원급 비교 구문을 사용하여 과거의 행동주의만큼이나 한계가 있음을 나타낸다.</div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul><li>`prove`는 2형식 동사 역할을 하므로 뒤에 보어인 `limited`가 형용사 형태로 와야 한다.</li></ul>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 3</div>
+          <div class="line-item"><strong>[the factors ... that help the individual make sense...]</strong> `that`은 주격 관계대명사로 선행사 `the factors`를 수식한다. `help`는 준사역동사로 목적어 `the individual` 뒤에 목적격 보어로 원형 부정사 `make`를 취했다.</div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul><li>선행사가 복수이므로 `help`의 수 일치에 주의해야 한다. 목적격 보어 자리에는 `to make`도 가능하지만, `making`은 틀린다.</li></ul>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 5</div>
+          <div class="line-item"><strong>[a fascinating intellectual journey that reveals...]</strong> 콤마 뒤의 `a fascinating intellectual journey`는 앞 내용(서사와 스토리텔링의 강조로 회귀한 것)을 부연 설명하는 동격 명사구다. `that`은 주격 관계대명사다.</div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul><li>선행사가 단수(`journey`)이므로 동사는 `reveals`로 단수형을 취한다.</li></ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">03</div><h2>문장 단위 내용 흐름 정리</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>[(1)-(2) 문제 제기] :</strong> 인간의 마음을 컴퓨터에 비유하는 관점은 과거의 행동주의처럼 큰 한계와 결함이 있음이 심리학자들에 의해 인식되고 있다.</div>
+        <div class="line-item"><strong>[(3) 대안 1 (문화 인류학)] :</strong> 컴퓨터 모델의 한계를 극복하기 위해, 일부는 뇌 내부의 기계적 작동이 아닌 외부 환경과 문화를 연구하는 인류학으로 시선을 돌렸다.</div>
+        <div class="line-item"><strong>[(4) 대안 2 (의미 구성의 상실 지적)] :</strong> 제롬 브루너 등은 컴퓨터 비유가 인간 고유의 '의미 구성' 능력을 단순한 '정보 처리'로 폄하했다고 비판한다.</div>
+        <div class="line-item"><strong>[(5) 결론] :</strong> 기계 모델에 대한 이러한 한계 인식은 인간의 인지를 이해하기 위해 정보 처리가 아닌 '서사와 스토리텔링'이라는 인본주의적 관점을 다시 강조하는 결과를 낳았다.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">04</div><h2>표현들의 연관성 정리</h2></div>
+      <div class="card no-break">
+        <h3>비판받는 초기 관점</h3>
+        <div class="chip-row">
+          <span class="chip">Computer as a model</span> <span class="arrow">=</span> <span class="chip">mind-as-computer metaphor</span> <span class="arrow">=</span> <span class="chip">machine model</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 20px;">인간의 뇌를 단순한 계산기처럼 바라보는 인지 심리학의 초기 관점으로, 필자가 비판하는 대상이다.</div>
+
+        <h3>정보 처리와 의미 창조의 대비</h3>
+        <div class="chip-row">
+          <span class="chip">Processing of information</span> <span class="arrow">↔</span> <span class="chip">Construction of meaning / narrative and story-telling</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 20px;">단순한 데이터의 연산(컴퓨터의 방식)과 인간만이 할 수 있는 주관적이고 문화적인 의미 창조 과정(인간의 방식)의 대비를 나타낸다.</div>
+
+        <h3>기계론적 모델의 문제점</h3>
+        <div class="chip-row">
+          <span class="chip">Flaws</span> <span class="arrow">=</span> <span class="chip">limits</span> <span class="arrow">=</span> <span class="chip">unfortunate shift</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 4px;">기계론적 모델이 가지고 있는 명백한 한계점들을 지적하는 표현들이다.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">05</div><h2>소재와 주제문</h2></div>
+      <div class="card no-break" style="border-top-color: #f59e0b;">
+        <div class="line-item" style="margin-bottom: 12px;"><strong>핵심 소재:</strong> 인간 마음을 컴퓨터에 비유하는 모델의 한계와 대안적 관점</div>
+        <div class="mini-divider"></div>
+        <div class="label" style="margin-top: 8px;">주제문 (문장 2)</div>
+        <div class="sentence-en" style="margin-bottom: 0;">Psychologists have already begun to recognize the flaws of the mind-as-computer metaphor.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">06</div><h2>지문의 요약 및 패러프레이징</h2></div>
+      <div class="card no-break">
+        <div class="summary-pair">
+          <div class="label">요약 / Summary</div>
+          <div class="sentence-en">Viewing the human mind simply as a computer is fundamentally flawed because it reduces the humanistic process of meaning construction into mere information processing.</div>
+          <div class="sentence-ko">인간의 마음을 단순히 컴퓨터로 보는 것은 의미 구성이라는 인본주의적 과정을 단순한 정보 처리로 축소하기 때문에 근본적으로 결함이 있다.</div>
+        </div>
+        <div class="divider"></div>
+        <div class="summary-pair">
+          <div class="label">패러프레이징 / Paraphrasing</div>
+          <div class="sentence-en">Recognizing the limitations of the machine metaphor, psychologists are shifting their focus away from data processing and toward cultural and narrative approaches to better understand human cognition.</div>
+          <div class="sentence-ko">기계 비유의 한계를 인식한 심리학자들은 인간의 인지를 더 잘 이해하기 위해 데이터 처리에서 벗어나 문화적이고 서사적인 접근법으로 초점을 옮기고 있다.</div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">07</div><h2>도움이 되는 배경지식</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>1. 인지 혁명과 컴퓨터 은유:</strong><br> 1950년대 행동주의(자극과 반응만 연구)에 반발하며 일어난 인지 혁명은 인간의 마음을 '정보 처리 장치(컴퓨터)'로 간주했다. 입력(input)이 뇌에서 알고리즘으로 처리되어 출력(output)된다는 관점이다.</div>
+        <div class="divider"></div>
+        <div class="line-item"><strong>2. 제롬 브루너의 후기 사상:</strong><br> 초기 인지 심리학의 창시자였던 브루너는 나중에 자신이 주도했던 '정보 처리' 모델에 회의를 느끼고, 인간은 이야기를 통해 세상의 의미를 구성한다는 '내러티브(서사) 심리학'을 주창했다. 본 지문은 이 사상적 전환을 핵심으로 다루고 있다.</div>
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>

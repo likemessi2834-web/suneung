@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>12강 전체 지문분석 - Lio T</title>
+  <style>
+    /* 디자인 시스템 변수 설정 */
+    :root {
+      --bg-color: #f4f7fb;
+      --text-main: #0f172a;
+      --text-sub: #334155;
+      --text-muted: #64748b;
+      --primary: #4f46e5;
+      --primary-light: #e0e7ff;
+      --secondary: #3b82f6;
+      --border-light: #e2e8f0;
+      --card-bg: #ffffff;
+      --radius: 12px;
+    }
+
+    /* 페이지 기본 설정 (세로 모드) */
+    @page {
+      size: A4 portrait;
+      margin: 15mm; 
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg-color);
+      color: var(--text-main);
+      font-family: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+      letter-spacing: -0.02em; 
+    }
+
+    body {
+      padding: 10px; 
+      display: flex;
+      justify-content: center;
+    }
+
+    .doc {
+      width: 100%;
+      max-width: 210mm; 
+    }
+
+    /* =========================================
+       지문 간 구분선 (화면용 vs 인쇄용)
+       ========================================= */
+    .passage-separator {
+      height: 4px;
+      background-image: repeating-linear-gradient(to right, #cbd5e1 0, #cbd5e1 10px, transparent 10px, transparent 20px);
+      margin: 80px 0;
+      border: none;
+      position: relative;
+    }
+    .passage-separator::after {
+      content: '▼ 다음 지문 (인쇄 시 무조건 새 페이지에서 시작됩니다) ▼';
+      position: absolute;
+      top: -26px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--bg-color);
+      padding: 0 16px;
+      color: #94a3b8;
+      font-weight: 700;
+      font-size: 10pt;
+    }
+
+    /* 공통 레이아웃 제어 */
+    .no-break { page-break-inside: avoid; break-inside: avoid; }
+    
+    .header-container { margin-bottom: 30px; text-align: center; }
+    .hero-title {
+      display: inline-block; margin: 0 0 10px 0; padding: 8px 24px; font-size: 22pt; font-weight: 800;
+      color: #ffffff; background: linear-gradient(135deg, var(--primary), var(--secondary));
+      border-radius: 999px; box-shadow: 0 4px 14px rgba(79, 70, 229, 0.25);
+    }
+    .subtitle { font-size: 13pt; font-weight: 600; color: var(--text-muted); }
+
+    .section-title {
+      display: flex; align-items: center; gap: 12px; margin: 30px 0 16px 0;
+      border-bottom: 2px solid var(--border-light); padding-bottom: 4px;
+      page-break-after: avoid; break-after: avoid;
+    }
+    .page-no {
+      width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+      background: var(--primary); color: white; font-weight: 700; font-size: 12pt; border-radius: 8px;
+    }
+    h2 { margin: 0; font-size: 16pt; font-weight: 700; color: var(--text-main); }
+
+    .card {
+      background: var(--card-bg); border: 1px solid var(--border-light); border-top: 4px solid var(--primary);
+      border-radius: var(--radius); padding: 8px 16px; margin-bottom: 16px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    }
+    
+    .text-block-title { font-size: 12pt; font-weight: 700; color: var(--primary); margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+    .text-block-title::before { content: ''; display: block; width: 6px; height: 6px; border-radius: 50%; background: var(--primary); }
+    .eng-body { font-size: 12pt; line-height: 1.7; font-weight: 500; color: var(--text-main); margin-bottom: 20px; text-align: justify; }
+    .divider { height: 1px; background: var(--border-light); margin: 20px 0; }
+    .mini-divider { height: 1px; background: var(--border-light); margin: 8px 0; }
+    .kor-body { font-size: 11.5pt; line-height: 1.7; color: var(--text-sub); text-align: justify; word-break: keep-all; }
+
+    .sentence-card {
+      background: var(--card-bg); border: 1px solid var(--border-light); border-left: 4px solid var(--secondary);
+      border-radius: 8px; padding: 8px 16px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    }
+    .sentence-id { display: inline-block; margin-bottom: 8px; padding: 2px 8px; border-radius: 6px; background: var(--primary-light); color: var(--primary); font-size: 9pt; font-weight: 700; }
+    .sentence-en { font-size: 12.5pt; font-weight: 600; line-height: 1.6; color: var(--text-main); margin-bottom: 4px; }
+    .sentence-ko { font-size: 9pt; line-height: 1.6; color: var(--text-sub); margin-bottom: 4px; word-break: keep-all; }
+    .vocab-box { display: inline-block; padding: 4px 8px; border-radius: 6px; background: #f8fafc; border: 1px dashed #cbd5e1; font-size: 9pt; color: var(--text-muted); }
+
+    .point-block { margin-bottom: 16px; }
+    .point-block:last-child { margin-bottom: 0; }
+    .line-item { font-size: 11.5pt; line-height: 1.7; margin: 0 0 8px 0; word-break: keep-all; }
+    .exam-note { margin-top: 8px; padding: 8px 12px; background: #fffbeb; border-left: 3px solid #f59e0b; border-radius: 0 6px 6px 0; font-size: 10.5pt; line-height: 1.6; color: #92400e; }
+    .exam-note ul { margin: 4px 0 0 0; padding-left: 20px; }
+    .exam-note li { margin-bottom: 4px; }
+    .exam-note li:last-child { margin-bottom: 0; }
+
+    .chip-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 8px 0 20px 0; }
+    .chip { padding: 4px 10px; border-radius: 999px; background: var(--primary-light); color: var(--primary); font-size: 10pt; font-weight: 600; }
+    .arrow { color: var(--text-muted); font-weight: 700; }
+    h3 { font-size: 12pt; margin: 0 0 8px 0; color: var(--text-main); }
+    .label { display: inline-block; font-size: 9.5pt; font-weight: 700; color: var(--secondary); background: #eff6ff; padding: 2px 6px; border-radius: 4px; margin-bottom: 6px; }
+    .summary-pair { margin-bottom: 20px; }
+    .summary-pair:last-child { margin-bottom: 0; }
+
+    /* =========================================
+       인쇄(Print) 전용 스타일 - 다중 지문 분할 처리
+       ========================================= */
+    @media print {
+      html, body { background: #ffffff !important; padding: 0; }
+      .doc { max-width: 100%; }
+
+      /* 지문 구분선을 강제 페이지 넘김으로 변환 */
+      .passage-separator {
+        page-break-before: always !important;
+        break-before: page !important;
+        margin: 0 !important;
+        height: 0 !important;
+        border: none !important;
+        background: none !important;
+      }
+      .passage-separator::after { display: none !important; }
+
+      .page-break { page-break-before: always !important; break-before: page !important; }
+      .card, .sentence-card { box-shadow: none !important; border: 1px solid #cbd5e1 !important; page-break-inside: avoid !important; break-inside: avoid !important; }
+      .section-title { page-break-after: avoid !important; break-after: avoid !important; }
+
+      .hero-title { background: #0f172a !important; color: white !important; }
+      .page-no { background: #0f172a !important; }
+      .sentence-id, .chip, .label { border: 1px solid #cbd5e1 !important; background: #f8fafc !important; color: #0f172a !important; }
+      .exam-note { background: #f8fafc !important; border-left-color: #94a3b8 !important; color: #334155 !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="doc">
+
+    <!-- ========================================== -->
+    <!-- [지문 2] 12강 1번                          -->
+    <!-- ========================================== -->
+    
+    <div class="passage-container">
+      <div class="header-container">
+        <div class="hero-title">12강 1번 지문분석</div>
+        <div class="subtitle">Lio T 내신대비 지문분석서</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">00</div><h2>영어 본문 및 전체 해석</h2></div>
+      <div class="card no-break">
+        <div class="text-block-title">영어 본문</div>
+        <div class="eng-body">
+          Moral outrage is the psychological tool that motivates people to punish wrongdoers, even at cost or risk to themselves. It is a "commitment device," something that commits people to punishment, even though trying to punish someone can be dangerous. When we witness unjust harm, whether someone committing interpersonal violence or obvious cheating, we have an embodied physical reaction. We get angry, our blood pressure spikes, our heart beats faster; we thirst for retribution. Outrage leads us to ignore (원문: recognize) the irrationality of risking our own safety to punish someone. In any single situation, there is rarely an immediate personal benefit for meting out punishment, and often there is real risk, because the person you are serving justice against could lash out at you or get revenge in the future. But the powerful feeling of outrage leads us to momentarily forget this unfavorable evaluation and get involved in a situation we would be better off avoiding, and science reveals how this feeling and forgetting is essential for maintaining a cooperative society.
+        </div>
+        <div class="divider"></div>
+        <div class="text-block-title">전체 해석</div>
+        <div class="kor-body">
+          도덕적 공분은 사람들에게 그들 자신에게 희생이나 위험이 따르더라도 잘못을 저지른 사람들을 처벌하도록 동기를 부여하는 심리적 도구이다. 그것은 "공약 장치"로, 누군가를 처벌하려는 것이 위험할 수 있음에도 불구하고 사람들이 처벌에 전념하게 만드는 것이다. 누군가 대인 폭력을 저지르는 것이든 명백한 부정행위이든 부당한 피해를 목격할 때, 우리는 구체화된 신체적 반응을 보인다. 우리는 화가 나고, 혈압이 급상승하며, 심장 박동이 빨라지고, 응징을 갈망한다. 공분은 누군가를 처벌하기 위해 우리 자신의 안전을 위험에 빠뜨리는 것의 비합리성을 '무시하도록(원문: 인식하도록)' 이끈다. 어떤 단일한 상황에서도, 처벌을 가하는 것에 대한 즉각적인 개인적 이익은 거의 없으며 종종 실질적인 위험이 따르는데, 당신이 정의를 집행하고 있는 대상인 그 사람이 당신을 맹렬히 공격하거나 미래에 복수할 수 있기 때문이다. 그러나 강력한 공분의 감정은 우리가 이런 불리한 평가를 순간적으로 잊고 피하는 편이 더 나을 상황에 관여하게 만들며, 과학은 이 감정과 (불리함을) 잊는 것이 협력적인 사회를 유지하는 데 어떻게 필수적인지를 밝혀준다.
+        </div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">01</div><h2>직독직해 및 어휘 정리</h2></div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 1</div>
+        <div class="sentence-en">Moral outrage / is the psychological tool / that / motivates people / to punish wrongdoers, / even at cost or risk / to themselves.</div>
+        <div class="sentence-ko">도덕적 공분은 / 심리적 도구이다 / (~하는) / 사람들에게 동기를 부여하는 / 잘못을 저지른 사람들을 처벌하도록, / 심지어 희생이나 위험을 감수하고서라도 / 그들 자신에게.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> moral - 도덕적인, outrage - 격분, 공분, motivate - 동기를 부여하다, wrongdoer - 잘못을 저지른 사람, at cost - 비용(희생)을 치르고</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 2</div>
+        <div class="sentence-en">It is a "commitment device," / something / that commits people / to punishment, / even though / trying to punish someone / can be dangerous.</div>
+        <div class="sentence-ko">그것은 "공약(전념) 장치"이다, / 즉 무언가이다 / 사람들이 전념(약속)하게 만드는 / 처벌에, / 비록 ~일지라도 / 누군가를 처벌하려고 노력하는 것이 / 위험할 수 있을지라도.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> commitment - 약속, 전념, 헌신, commit A to B - A를 B에 전념(헌신)하게 하다</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 3</div>
+        <div class="sentence-en">When we witness / unjust harm, / whether someone committing interpersonal violence / or obvious cheating, / we have / an embodied physical reaction.</div>
+        <div class="sentence-ko">우리가 목격할 때 / 부당한 피해를, / 누군가 대인 폭력을 저지르는 것이든 / 혹은 명백한 부정행위이든, / 우리는 겪는다 / 구체화된 신체적 반응을.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> witness - 목격하다, unjust - 부당한, interpersonal violence - 대인 폭력, obvious - 명백한, cheating - 부정행위, embodied - 구체화된, 체화된, physical - 신체적인</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 4</div>
+        <div class="sentence-en">We get angry, / our blood pressure spikes, / our heart beats faster; / we thirst for retribution.</div>
+        <div class="sentence-ko">우리는 화가 난다, / 혈압이 급상승한다, / 심장 박동이 더 빨라진다; / 우리는 응징을 갈망한다.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> spike - 급상승하다, thirst for - ~을 갈망하다, retribution - 응징, 징벌</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 5</div>
+        <div class="sentence-en">Outrage / leads us / to ignore (원문: recognize) / the irrationality / of risking our own safety / to punish someone.</div>
+        <div class="sentence-ko">공분은 / 우리를 이끈다 / 무시하도록 (원문: 인식하도록) / 비합리성을 / 우리 자신의 안전을 위험에 빠뜨리는 것의 / 누군가를 처벌하기 위해.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> ignore - 무시하다(원문 recognize는 '인식하다'), irrationality - 비합리성, risk - 위험을 무릅쓰다</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 6</div>
+        <div class="sentence-en">In any single situation, / there is rarely / an immediate personal benefit / for meting out punishment, / and often / there is real risk, / because / the person you are serving justice against / could lash out at you / or get revenge / in the future.</div>
+        <div class="sentence-ko">어떤 단일한 상황에서도, / 거의 없다 / 즉각적인 개인적 이익은 / 처벌을 가하는 것에 대한, / 그리고 종종 / 실질적인 위험이 있다, / 왜냐하면 / 당신이 정의를 집행하는 대상인 그 사람이 / 당신을 맹렬히 공격할 수 있기 때문이다 / 혹은 복수할 (수 있기 때문이다) / 미래에.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> rarely - 거의 ~않다, immediate - 즉각적인, mete out - (벌 등을) 가하다, 내리다, serve justice - 정의를 집행하다, lash out at - ~을 맹렬히 공격하다, get revenge - 복수하다</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 7</div>
+        <div class="sentence-en">But / the powerful feeling of outrage / leads us / to momentarily forget / this unfavorable evaluation / and get involved / in a situation / we would be better off avoiding, / and / science reveals / how / this feeling and forgetting / is essential / for maintaining a cooperative society.</div>
+        <div class="sentence-ko">그러나 / 강력한 공분의 감정은 / 우리를 이끈다 / 순간적으로 잊도록 / 이 불리한 평가를 / 그리고 관여하도록 / 상황에 / 우리가 피하는 편이 더 나을, / 그리고 / 과학은 밝혀준다 / 어떻게 / 이 감정과 잊음이 / 필수적인지를 / 협력적인 사회를 유지하는 데.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> momentarily - 순간적으로, unfavorable - 불리한, evaluation - 평가, get involved in - ~에 관여하다, 개입하다, be better off - ~하는 편이 더 낫다, maintain - 유지하다, cooperative - 협력적인</div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">02</div><h2>어법 및 구문 포인트</h2></div>
+      <div class="card no-break">
+        <div class="point-block">
+          <div class="sentence-id">문장 1</div>
+          <div class="line-item"><strong>[motivates people to punish wrongdoers]</strong> 5형식 구문으로 `motivate + 목적어 + to부정사` 형태를 취하여 '사람들이 처벌하도록 동기를 부여하다'라는 의미를 나타낸다.</div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul><li>목적격 보어 자리에 원형 부정사 `punish`나 동명사 `punishing`을 쓰지 않도록 주의해야 한다.</li></ul>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 3</div>
+          <div class="line-item"><strong>[whether someone committing ... or obvious cheating]</strong> 양보절 `whether A or B` 구조 안에 현재분사 `committing`이 명사 `someone`을 후치 수식하는 구조다.</div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul><li>누군가가 폭력을 '저지르는' 능동의 의미이므로 과거분사 `committed`를 쓰면 어법상 오답이다.</li></ul>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 5</div>
+          <div class="line-item"><strong>[leads us to ignore (recognize)]</strong> `lead + 목적어 + to부정사` 구문이다. 원문에서는 'recognize'로 출제되었으나, 앞뒤 문맥(분노로 인해 자신이 다칠 수 있다는 위험을 잊어버림)을 고려할 때 '비합리성을 무시하게 만든다'는 `ignore` 또는 `blind us to` 등이 논리상 적절하다.</div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 6</div>
+          <div class="line-item"><strong>[the person you are serving justice against]</strong> 선행사 `the person` 뒤에 목적격 관계대명사(`whom` 또는 `that`)가 생략된 구조로, 관계절 안의 전치사 `against`의 목적어가 빠져있다.</div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul><li>전치사 `against`가 빠지면 의미가 모호해지므로 끝까지 전치사가 남아있는지 확인해야 한다.</li></ul>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 7</div>
+          <div class="line-item"><strong>[leads us to momentarily forget ... and get involved in ...]</strong> 5형식 동사 `leads`의 목적격 보어로 두 개의 원형 부정사 `forget`과 `get`이 병렬 구조를 이루고 있다. (앞의 `to`는 공통 적용). `we would be better off avoiding`은 앞의 `a situation`을 꾸미는 목적격 관계대명사절이다.</div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul><li>`get` 자리에 `getting`이나 `gets`를 써서 병렬 구조를 깨뜨리지 않아야 한다.</li></ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">03</div><h2>문장 단위 내용 흐름 정리</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>[(1)-(4) 도덕적 공분의 개념과 신체적 반응] :</strong> 타인의 부당한 행위를 보았을 때, 자신에게 위험이 따르더라도 처벌하려는 강력한 감정(도덕적 공분)이 신체적 흥분(혈압 상승 등)과 함께 일어난다.</div>
+        <div class="line-item"><strong>[(5)-(6) 공분의 비합리성] :</strong> 타인을 처벌하는 것은 보복당할 위험만 있고 개인적 이익은 없기 때문에, 이성적으로 계산해보면 남의 일에 나서는 것은 매우 비합리적인 행동이다.</div>
+        <div class="line-item"><strong>[(7) 공분의 사회적 역할 (결론)] :</strong> 하지만 공분이라는 맹목적인 감정이 우리로 하여금 이러한 '불리함과 위험'을 잊고 뛰어들게 만들며, 역설적이게도 이 비합리적인 감정이 나쁜 놈들을 처벌하게 하여 사회 전체의 '협력'을 유지하는 필수 원동력이 된다.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">04</div><h2>표현들의 연관성 정리</h2></div>
+      <div class="card no-break">
+        <h3>불이익과 손해 계산</h3>
+        <div class="chip-row">
+          <span class="chip">Cost or risk</span> <span class="arrow">=</span> <span class="chip">irrationality</span> <span class="arrow">=</span> <span class="chip">unfavorable evaluation</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 20px;">남의 일에 나서서 악당을 처벌할 때 개인이 감수해야 하는 실질적인 불이익과 이성적인 손해 계산을 의미한다.</div>
+
+        <h3>본능적 심리 기제</h3>
+        <div class="chip-row">
+          <span class="chip">Commitment device</span> <span class="arrow">=</span> <span class="chip">thirst for retribution</span> <span class="arrow">=</span> <span class="chip">forget this unfavorable evaluation</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 20px;">개인의 손해를 감수하고서라도 기어이 처벌을 감행하게 만드는 맹목적이고 본능적인 심리 기제를 뜻한다.</div>
+
+        <h3>최종적인 사회적 결과</h3>
+        <div class="chip-row">
+          <span class="chip">Maintaining a cooperative society</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 4px;">개개인의 희생적인 처벌 행위(도덕적 공분)가 모여 이룩하는 최종적이고 긍정적인 사회적 결과를 의미한다.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">05</div><h2>소재와 주제문</h2></div>
+      <div class="card no-break" style="border-top-color: #f59e0b;">
+        <div class="line-item" style="margin-bottom: 12px;"><strong>핵심 소재:</strong> 사회의 협력을 유지하게 하는 심리적 장치로서의 도덕적 공분</div>
+        <div class="mini-divider"></div>
+        <div class="label" style="margin-top: 8px;">주제문 (문장 7)</div>
+        <div class="sentence-en" style="margin-bottom: 0;">But the powerful feeling of outrage leads us to momentarily forget this unfavorable evaluation and get involved in a situation we would be better off avoiding, and science reveals how this feeling and forgetting is essential for maintaining a cooperative society.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">06</div><h2>지문의 요약 및 패러프레이징</h2></div>
+      <div class="card no-break">
+        <div class="summary-pair">
+          <div class="label">요약 / Summary</div>
+          <div class="sentence-en">Moral outrage is a powerful psychological mechanism that overrides rational risk assessment, prompting individuals to punish wrongdoers, which is essential for maintaining a cooperative society.</div>
+          <div class="sentence-ko">도덕적 공분은 합리적인 위험 평가를 무효화하여 개인이 잘못을 저지른 자를 처벌하도록 유도하는 강력한 심리적 기제이며, 이는 협력적인 사회를 유지하는 데 필수적이다.</div>
+        </div>
+        <div class="divider"></div>
+        <div class="summary-pair">
+          <div class="label">패러프레이징 / Paraphrasing</div>
+          <div class="sentence-en">Even though intervening to punish bad behavior is personally risky and irrational, the intense emotion of moral anger causes us to ignore these costs, performing a vital function in upholding social cooperation and justice.</div>
+          <div class="sentence-ko">나쁜 행동을 처벌하기 위해 개입하는 것이 개인적으로 위험하고 비합리적일지라도, 도덕적 분노라는 강렬한 감정은 우리가 이러한 대가를 무시하게 만들며, 사회적 협력과 정의를 지탱하는 데 중요한 기능을 수행한다.</div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">07</div><h2>도움이 되는 배경지식</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>1. 진화심리학과 이타적 처벌(Altruistic Punishment):</strong><br> 진화심리학에 따르면, 인간은 자신에게 직접적인 이익이 돌아오지 않거나 심지어 비용이 발생함에도 불구하고 무임승차자나 규범 위반자를 처벌하는 '이타적 처벌' 성향을 진화시켰다. 이 성향(도덕적 공분) 덕분에 이기적인 개체들 사이에서도 협력적인 집단생활이 유지될 수 있었다.</div>
+        <div class="divider"></div>
+        <div class="line-item"><strong>2. 공약 장치(Commitment Device):</strong><br> 경제학이나 심리학에서 자신의 미래 행동을 강제하기 위해 현재 시점에 선택을 제한하는 장치를 말한다. 본문에서 분노 감정은 인간이 겁을 먹고 뒤로 물러서지 않도록 '처벌'에 스스로를 묶어두는 생물학적 공약 장치로 설명된다.</div>
+      </div>
+    </div>
+
+
+    <!-- ========================================== -->
+    <!-- [지문 4] 12강 3번                          -->
+    <!-- ========================================== -->
+    <hr class="passage-separator" />
+    
+    <div class="passage-container">
+      <div class="header-container">
+        <div class="hero-title">12강 3번 지문분석</div>
+        <div class="subtitle">Lio T 내신대비 지문분석서</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">00</div><h2>영어 본문 및 전체 해석</h2></div>
+      <div class="card no-break">
+        <div class="text-block-title">영어 본문</div>
+        <div class="eng-body">
+          Dietary supplements are not drugs. A drug is intended to diagnose, cure, mitigate, treat, or prevent disease. Before marketing, drugs must undergo extensive studies of effectiveness, safety, interactions with other substances, and dosing. The FDA gives formal premarket approval to a drug and monitors its safety after the drug is on the market. If a drug is subsequently shown to be dangerous, the FDA can act quickly to have it removed from the market. None of this is true for dietary supplements. The current law gives the FDA only limited authority over supplements. This makes it difficult (원문: possible) for the government to remove unsafe supplements from the marketplace. The FDA does not evaluate the safety and effectiveness of supplements before they hit the marketplace. There are some legislators in Congress who want to improve the law by requiring supplement makers to put safer products on the shelves and label products more clearly. The objective is to ensure that consumers can tell the difference between dietary supplements that are safe and those that have potentially serious side effects or drug interactions.
+        </div>
+        <div class="divider"></div>
+        <div class="text-block-title">전체 해석</div>
+        <div class="kor-body">
+          식이 보충제(건강보조식품)는 약물이 아니다. 약물은 질병을 진단, 완치, 완화, 치료 또는 예방하도록 의도된 것이다. 시판하기 전에, 약물은 효과, 안전성, 다른 물질과의 상호 작용, 그리고 복용량에 대한 광범위한 연구를 거쳐야 한다. FDA(미국 식품의약국)는 약물에 공식적인 시판 전 승인을 내어주고, 그 약물이 시장에 나온 후에 그것의 안전성을 감시한다. 만약 약물이 나중에 위험한 것으로 밝혀지면, FDA는 그것이 시장에서 제거되게 하도록 신속하게 조치할 수 있다. 이 중 어느 것도 식이 보충제에는 해당하지 않는다. 현행법은 FDA에게 보충제에 대한 제한적인 권한만을 부여한다. 이것은 정부가 시장에서 안전하지 않은 보충제를 제거하는 것을 '어렵게(원문: 가능하게)' 만든다. FDA는 보충제가 시장에 나오기 전에 그것의 안전성과 효과를 평가하지 않는다. 의회에는 보충제 제조업체들이 더 안전한 제품을 진열대에 올리고 제품에 더 명확하게 라벨을 붙이도록 요구함으로써 법을 개선하고자 하는 일부 입법자들이 있다. 그 목적은 소비자들이 안전한 식이 보충제와 잠재적으로 심각한 부작용이나 약물 상호 작용을 가진 것들을 구별할 수 있도록 보장하는 것이다.
+        </div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">01</div><h2>직독직해 및 어휘 정리</h2></div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 1</div>
+        <div class="sentence-en">Dietary supplements / are not drugs.</div>
+        <div class="sentence-ko">식이 보충제는 / 약물이 아니다.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> dietary - 식단의, 식이의, supplement - 보충(제), drug - 약물, 약</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 2</div>
+        <div class="sentence-en">A drug / is intended / to diagnose, cure, mitigate, treat, / or prevent disease.</div>
+        <div class="sentence-ko">약물은 / 의도된다 / 진단, 완치, 완화, 치료, / 혹은 질병을 예방하도록.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> intend - 의도하다, diagnose - 진단하다, mitigate - 완화하다, prevent - 예방하다</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 3</div>
+        <div class="sentence-en">Before marketing, / drugs / must undergo / extensive studies / of effectiveness, safety, interactions / with other substances, / and dosing.</div>
+        <div class="sentence-ko">시판(마케팅) 전에, / 약물은 / 거쳐야 한다 / 광범위한 연구를 / 효과, 안전성, 상호 작용에 대한 / 다른 물질과의, / 그리고 복용량(에 대한).</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> undergo - 겪다, 거치다, extensive - 광범위한, interaction - 상호 작용, substance - 물질, dosing - 복용량, 투여량</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 4</div>
+        <div class="sentence-en">The FDA / gives / formal premarket approval / to a drug / and monitors / its safety / after the drug is on the market.</div>
+        <div class="sentence-ko">FDA(식품의약국)는 / 준다 / 공식적인 시판 전 승인을 / 약물에 / 그리고 감시한다 / 그것의 안전성을 / 약물이 시장에 나온 후에.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> formal - 공식적인, premarket - 시판 전의, approval - 승인, monitor - 감시하다</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 5</div>
+        <div class="sentence-en">If a drug / is subsequently shown / to be dangerous, / the FDA / can act quickly / to have it removed / from the market.</div>
+        <div class="sentence-ko">만약 약물이 / 나중에 밝혀지면 / 위험한 것으로, / FDA는 / 신속하게 조치할 수 있다 / 그것이 제거되게 하도록 / 시장에서.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> subsequently - 그 뒤에, 나중에, remove - 제거하다</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 6</div>
+        <div class="sentence-en">None of this / is true / for dietary supplements.</div>
+        <div class="sentence-ko">이 중 어느 것도 / 사실이 아니다(해당하지 않는다) / 식이 보충제에는.</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 7</div>
+        <div class="sentence-en">The current law / gives / the FDA / only limited authority / over supplements.</div>
+        <div class="sentence-ko">현행법은 / 준다 / FDA에게 / 단지 제한적인 권한만을 / 보충제에 대한.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> current - 현재의, authority - 권한, 권위</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 8</div>
+        <div class="sentence-en">This / makes it difficult (원문: possible) / for the government / to remove / unsafe supplements / from the marketplace.</div>
+        <div class="sentence-ko">이것은 / (~을) 어렵게(원문: 가능하게) 만든다 / 정부가 / 제거하는 것을 / 안전하지 않은 보충제를 / 시장에서.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> unsafe - 안전하지 않은</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 9</div>
+        <div class="sentence-en">The FDA / does not evaluate / the safety and effectiveness / of supplements / before they hit the marketplace.</div>
+        <div class="sentence-ko">FDA는 / 평가하지 않는다 / 안전성과 효과를 / 보충제의 / 그것들이 시장에 나오기 전에.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> evaluate - 평가하다, hit the marketplace - 시장에 나오다, 출시되다</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 10</div>
+        <div class="sentence-en">There are / some legislators / in Congress / who want to improve the law / by requiring / supplement makers / to put / safer products / on the shelves / and label products / more clearly.</div>
+        <div class="sentence-ko">있다 / 일부 입법자들이 / 의회에 / (~하는) 법을 개선하기를 원하는 / 요구함으로써 / 보충제 제조업체들이 / 놓도록 / 더 안전한 제품을 / 진열대에 / 그리고 제품에 라벨을 붙이도록 / 더 명확하게.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> legislator - 입법자, 국회의원, Congress - (미국) 의회, require A to B - A가 B하도록 요구하다, shelf - 선반, 진열대, label - 라벨을 붙이다, 표기하다</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 11</div>
+        <div class="sentence-en">The objective / is to ensure / that / consumers / can tell the difference / between dietary supplements / that are safe / and those / that have potentially serious side effects / or drug interactions.</div>
+        <div class="sentence-ko">목적은 / 보장하는 것이다 / ~를 / 소비자들이 / 차이를 구별할 수 있도록 / 식이 보충제 사이의 / (~한) 안전한 / 그리고 것들(보충제들) (사이의) / (~한) 잠재적으로 심각한 부작용을 가진 / 혹은 약물 상호 작용을 (가진).</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> objective - 목적, 목표, ensure - 보장하다, tell the difference - 차이를 구별하다, side effect - 부작용</div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">02</div><h2>어법 및 구문 포인트</h2></div>
+      <div class="card no-break">
+        <div class="point-block">
+          <div class="sentence-id">문장 5</div>
+          <div class="line-item"><strong>[act quickly to have it removed]</strong> 사역동사 `have` + 목적어(`it`) + 목적격 보어(`removed`) 구문이다. 목적어인 약물(`it`)이 시장에서 '제거되는' 수동의 관계이므로 과거분사 `removed`가 쓰였다.</div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul><li>목적격 보어 자리에 능동형 동사원형 `remove`나 현재분사 `removing`을 쓰면 어법상 틀리게 된다.</li></ul>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 6</div>
+          <div class="line-item"><strong>[None of this is true]</strong> 부정 대명사 `None`이 주어로 쓰여 전체 문장을 부정한다. 앞서 나열된 깐깐한 약물 규제 절차들을 하나로 묶어 `this`로 받았다.</div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 8</div>
+          <div class="line-item"><strong>[This makes it difficult (possible) for the government to remove...]</strong> 가목적어 `it`과 진목적어 `to remove`를 사용한 5형식 구문이다. `for the government`는 투부정사의 의미상 주어다.</div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul><li>진목적어 자리에 동명사가 오기보다는 `to부정사` 형태가 원칙적으로 선호된다. 원문에서는 `possible(가능한)`로 출제되었으나, 전후 문맥상 FDA의 권한이 '제한적(limited)'이기 때문에 위험한 보충제를 제거하기가 '어렵다(difficult / hard)'고 해야 논리가 맞다.</li></ul>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 10</div>
+          <div class="line-item"><strong>[by requiring supplement makers to put ... and (to) label ...]</strong> `require + 목적어 + to부정사` 구문이 전치사 `by` 뒤에 동명사 `requiring` 형태로 왔다. `to put`과 `label`은 목적격 보어로 병렬 연결되어 있다.</div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">03</div><h2>문장 단위 내용 흐름 정리</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>[(1)-(5) 약물에 대한 엄격한 규제] :</strong> 약물은 질병 치료를 목적으로 하므로 시장 출시 전후로 FDA의 광범위한 실험과 엄격한 관리, 승인, 회수 조치를 받는다.</div>
+        <div class="line-item"><strong>[(6)-(9) 식이 보충제의 허술한 규제] :</strong> 하지만 식이 보충제는 약물이 아니므로 이러한 통제를 받지 않는다. FDA의 권한이 제한적이어서 출시 전 안전성 평가도 없고 문제 발생 시 회수도 어렵다.</div>
+        <div class="line-item"><strong>[(10)-(11) 법 개정의 필요성] :</strong> 이에 따라 의회 일각에서는 소비자가 부작용이 있는 위험한 보충제와 안전한 보충제를 구별할 수 있도록, 성분 표기를 명확히 하고 규제를 강화하는 법률 개선을 추진하고 있다.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">04</div><h2>표현들의 연관성 정리</h2></div>
+      <div class="card no-break">
+        <h3>규제 대상의 대조</h3>
+        <div class="chip-row">
+          <span class="chip">Drugs</span> <span class="arrow">↔</span> <span class="chip">Dietary supplements</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 20px;">법적 지위, 목적, 그리고 국가의 통제 및 규제 수준이 완전히 다른 두 가지 대립적 개념이다.</div>
+
+        <h3>규제 수준의 대조</h3>
+        <div class="chip-row">
+          <span class="chip">Extensive studies / formal premarket approval</span> <span class="arrow">↔</span> <span class="chip">Limited authority / does not evaluate</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 20px;">약물에 가해지는 철저한 검증 절차와, 식이 보충제에 적용되는 허술한 규제의 차이를 보여준다.</div>
+
+        <h3>문제 발생 시 대응 능력</h3>
+        <div class="chip-row">
+          <span class="chip">To have it removed (약물)</span> <span class="arrow">↔</span> <span class="chip">Difficult to remove (보충제)</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 4px;">문제가 발생했을 때 FDA가 취할 수 있는 조치 능력의 확연한 차이를 강조한다.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">05</div><h2>소재와 주제문</h2></div>
+      <div class="card no-break" style="border-top-color: #f59e0b;">
+        <div class="line-item" style="margin-bottom: 12px;"><strong>핵심 소재:</strong> 철저히 규제되는 약물과 달리 규제의 사각지대에 있는 식이 보충제</div>
+        <div class="mini-divider"></div>
+        <div class="label" style="margin-top: 8px;">주제문 (문장 6)</div>
+        <div class="sentence-en" style="margin-bottom: 8px;">None of this is true for dietary supplements.</div>
+        <div class="label" style="margin-top: 8px;">주제문 (문장 9)</div>
+        <div class="sentence-en" style="margin-bottom: 0;">The FDA does not evaluate the safety and effectiveness of supplements before they hit the marketplace.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">06</div><h2>지문의 요약 및 패러프레이징</h2></div>
+      <div class="card no-break">
+        <div class="summary-pair">
+          <div class="label">요약 / Summary</div>
+          <div class="sentence-en">Unlike prescription drugs which undergo rigorous FDA testing and regulation, dietary supplements face limited oversight, prompting efforts by lawmakers to impose stricter safety and labeling laws.</div>
+          <div class="sentence-ko">엄격한 FDA의 테스트와 규제를 거치는 처방 약물과 달리, 식이 보충제는 제한적인 감독을 받으며, 이는 입법자들이 더 엄격한 안전 및 라벨링 법을 도입하려는 노력으로 이어진다.</div>
+        </div>
+        <div class="divider"></div>
+        <div class="summary-pair">
+          <div class="label">패러프레이징 / Paraphrasing</div>
+          <div class="sentence-en">Dietary supplements escape the stringent pre-market evaluations and governmental controls applied to drugs, creating a potential public health risk that legislators are currently seeking to address through better regulatory standards.</div>
+          <div class="sentence-ko">식이 보충제는 약물에 적용되는 엄격한 시판 전 평가와 정부 통제를 벗어나며, 이는 입법자들이 현재 더 나은 규제 기준을 통해 해결하고자 하는 잠재적인 공중 보건 위험을 야기한다.</div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">07</div><h2>도움이 되는 배경지식</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>1. DSHEA (Dietary Supplement Health and Education Act):</strong><br> 1994년 미국에서 제정된 식이 보충제 건강 교육법. 이 법안으로 인해 식이 보충제는 일반적인 '식품'의 범주로 분류되어, 제약 회사처럼 시장 출시 전에 FDA의 승인을 받을 필요가 없어졌다. 본문에서 지적하는 보충제 규제 완화의 근본적 배경이 되는 법안이다.</div>
+        <div class="divider"></div>
+        <div class="line-item"><strong>2. 건강기능식품의 부작용:</strong><br> 비타민, 홍삼, 다이어트 보조제 등은 약이 아니기 때문에 가볍게 여겨지지만, 특정 처방약과 함께 먹으면 심각한 간 독성이나 약물 상호 작용(drug interactions)을 일으킬 수 있어 본문처럼 명확한 라벨링과 소비자 주의가 필요하다.</div>
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>

@@ -1,0 +1,1058 @@
+<!DOCTYPE html>
+
+<html lang="ko">
+
+<head>
+
+  <meta charset="UTF-8" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>07강 전체 지문분석 - Lio T</title>
+
+  <style>
+
+    /* 디자인 시스템 변수 설정 */
+
+    :root {
+
+      --bg-color: #f4f7fb;
+
+      --text-main: #0f172a;
+
+      --text-sub: #334155;
+
+      --text-muted: #64748b;
+
+      --primary: #4f46e5;
+
+      --primary-light: #e0e7ff;
+
+      --secondary: #3b82f6;
+
+      --border-light: #e2e8f0;
+
+      --card-bg: #ffffff;
+
+      --radius: 12px;
+
+    }
+
+
+
+    /* 페이지 기본 설정 (세로 모드) */
+
+    @page {
+
+      size: A4 portrait;
+
+      margin: 15mm; 
+
+    }
+
+
+
+    * {
+
+      box-sizing: border-box;
+
+      -webkit-print-color-adjust: exact !important;
+
+      print-color-adjust: exact !important;
+
+    }
+
+
+
+    html, body {
+
+      margin: 0;
+
+      padding: 0;
+
+      background: var(--bg-color);
+
+      color: var(--text-main);
+
+      font-family: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+
+      letter-spacing: -0.02em; 
+
+    }
+
+
+
+    body {
+
+      padding: 10px; 
+
+      display: flex;
+
+      justify-content: center;
+
+    }
+
+
+
+    .doc {
+
+      width: 100%;
+
+      max-width: 210mm; 
+
+    }
+
+
+
+    /* =========================================
+
+       지문 간 구분선 (화면용 vs 인쇄용)
+
+       ========================================= */
+
+    .passage-separator {
+
+      height: 4px;
+
+      background-image: repeating-linear-gradient(to right, #cbd5e1 0, #cbd5e1 10px, transparent 10px, transparent 20px);
+
+      margin: 80px 0;
+
+      border: none;
+
+      position: relative;
+
+    }
+
+    .passage-separator::after {
+
+      content: '▼ 다음 지문 (인쇄 시 무조건 새 페이지에서 시작됩니다) ▼';
+
+      position: absolute;
+
+      top: -26px;
+
+      left: 50%;
+
+      transform: translateX(-50%);
+
+      background: var(--bg-color);
+
+      padding: 0 16px;
+
+      color: #94a3b8;
+
+      font-weight: 700;
+
+      font-size: 10pt;
+
+    }
+
+
+
+    /* 공통 레이아웃 제어 */
+
+    .no-break { page-break-inside: avoid; break-inside: avoid; }
+
+    
+
+    .header-container { margin-bottom: 30px; text-align: center; }
+
+    .hero-title {
+
+      display: inline-block; margin: 0 0 10px 0; padding: 8px 24px; font-size: 22pt; font-weight: 800;
+
+      color: #ffffff; background: linear-gradient(135deg, var(--primary), var(--secondary));
+
+      border-radius: 999px; box-shadow: 0 4px 14px rgba(79, 70, 229, 0.25);
+
+    }
+
+    .subtitle { font-size: 13pt; font-weight: 600; color: var(--text-muted); }
+
+
+
+    .section-title {
+
+      display: flex; align-items: center; gap: 12px; margin: 30px 0 16px 0;
+
+      border-bottom: 2px solid var(--border-light); padding-bottom: 4px;
+
+      page-break-after: avoid; break-after: avoid;
+
+    }
+
+    .page-no {
+
+      width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+
+      background: var(--primary); color: white; font-weight: 700; font-size: 12pt; border-radius: 8px;
+
+    }
+
+    h2 { margin: 0; font-size: 16pt; font-weight: 700; color: var(--text-main); }
+
+
+
+    .card {
+
+      background: var(--card-bg); border: 1px solid var(--border-light); border-top: 4px solid var(--primary);
+
+      border-radius: var(--radius); padding: 8px 16px; margin-bottom: 16px;
+
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+
+    }
+
+    
+
+    .text-block-title { font-size: 12pt; font-weight: 700; color: var(--primary); margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+
+    .text-block-title::before { content: ''; display: block; width: 6px; height: 6px; border-radius: 50%; background: var(--primary); }
+
+    .eng-body { font-size: 12pt; line-height: 1.7; font-weight: 500; color: var(--text-main); margin-bottom: 20px; text-align: justify; }
+
+    .divider { height: 1px; background: var(--border-light); margin: 20px 0; }
+
+    .mini-divider { height: 1px; background: var(--border-light); margin: 8px 0; }
+
+    .kor-body { font-size: 11.5pt; line-height: 1.7; color: var(--text-sub); text-align: justify; word-break: keep-all; }
+
+
+
+    .sentence-card {
+
+      background: var(--card-bg); border: 1px solid var(--border-light); border-left: 4px solid var(--secondary);
+
+      border-radius: 8px; padding: 8px 16px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+
+    }
+
+    .sentence-id { display: inline-block; margin-bottom: 8px; padding: 2px 8px; border-radius: 6px; background: var(--primary-light); color: var(--primary); font-size: 9pt; font-weight: 700; }
+
+    .sentence-en { font-size: 12.5pt; font-weight: 600; line-height: 1.6; color: var(--text-main); margin-bottom: 4px; }
+
+    .sentence-ko { font-size: 9pt; line-height: 1.6; color: var(--text-sub); margin-bottom: 4px; word-break: keep-all; }
+
+    .vocab-box { display: inline-block; padding: 4px 8px; border-radius: 6px; background: #f8fafc; border: 1px dashed #cbd5e1; font-size: 9pt; color: var(--text-muted); }
+
+
+
+    .point-block { margin-bottom: 16px; }
+
+    .point-block:last-child { margin-bottom: 0; }
+
+    .line-item { font-size: 11.5pt; line-height: 1.7; margin: 0 0 8px 0; word-break: keep-all; }
+
+    .exam-note { margin-top: 8px; padding: 8px 12px; background: #fffbeb; border-left: 3px solid #f59e0b; border-radius: 0 6px 6px 0; font-size: 10.5pt; line-height: 1.6; color: #92400e; }
+
+    .exam-note ul { margin: 4px 0 0 0; padding-left: 20px; }
+
+    .exam-note li { margin-bottom: 4px; }
+
+    .exam-note li:last-child { margin-bottom: 0; }
+
+
+
+    .chip-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 8px 0 20px 0; }
+
+    .chip { padding: 4px 10px; border-radius: 999px; background: var(--primary-light); color: var(--primary); font-size: 10pt; font-weight: 600; }
+
+    .arrow { color: var(--text-muted); font-weight: 700; }
+
+    h3 { font-size: 12pt; margin: 0 0 8px 0; color: var(--text-main); }
+
+    .label { display: inline-block; font-size: 9.5pt; font-weight: 700; color: var(--secondary); background: #eff6ff; padding: 2px 6px; border-radius: 4px; margin-bottom: 6px; }
+
+    .summary-pair { margin-bottom: 20px; }
+
+    .summary-pair:last-child { margin-bottom: 0; }
+
+
+
+    /* =========================================
+
+       인쇄(Print) 전용 스타일 - 다중 지문 분할 처리
+
+       ========================================= */
+
+    @media print {
+
+      html, body { background: #ffffff !important; padding: 0; }
+
+      .doc { max-width: 100%; }
+
+
+
+      /* 지문 구분선을 강제 페이지 넘김으로 변환 */
+
+      .passage-separator {
+
+        page-break-before: always !important;
+
+        break-before: page !important;
+
+        margin: 0 !important;
+
+        height: 0 !important;
+
+        border: none !important;
+
+        background: none !important;
+
+      }
+
+      .passage-separator::after { display: none !important; }
+
+
+
+      .page-break { page-break-before: always !important; break-before: page !important; }
+
+      .card, .sentence-card { box-shadow: none !important; border: 1px solid #cbd5e1 !important; page-break-inside: avoid !important; break-inside: avoid !important; }
+
+      .section-title { page-break-after: avoid !important; break-after: avoid !important; }
+
+
+
+      .hero-title { background: #0f172a !important; color: white !important; }
+
+      .page-no { background: #0f172a !important; }
+
+      .sentence-id, .chip, .label { border: 1px solid #cbd5e1 !important; background: #f8fafc !important; color: #0f172a !important; }
+
+      .exam-note { background: #f8fafc !important; border-left-color: #94a3b8 !important; color: #334155 !important; }
+
+    }
+
+  </style>
+
+</head>
+
+<body>
+
+  <div class="doc">
+
+
+
+    <!-- ========================================== -->
+
+    <!-- [지문 2] 07강 1번                          -->
+
+    <!-- ========================================== -->
+
+    
+
+    <div class="passage-container">
+
+      <div class="header-container">
+
+        <div class="hero-title">07강 1번 지문분석</div>
+
+        <div class="subtitle">Lio T 내신대비 지문분석서</div>
+
+      </div>
+
+
+
+      <div class="section-title no-break"><div class="page-no">00</div><h2>영어 본문 및 전체 해석</h2></div>
+
+      <div class="card no-break">
+
+        <div class="text-block-title">영어 본문</div>
+
+        <div class="eng-body">
+
+          You've probably heard that it takes about ten thousand hours of practice to become an expert in anything - a musical instrument, a sport, chess, cooking, or a foreign language. The research by K. Anders Ericsson on this topic has been written about many times, and it was made even more famous when Malcolm Gladwell described it in his bestselling book Outliers. However, recently, a cohort of researchers reexamined the studies and research behind the 10K figure and said, quite dramatically, that the ten-thousand-hour rule was utter nonsense. Specifically, there is nothing particularly special about ten thousand hours, and while practice is clearly important to boost performance, other factors may play an even more important role. What are those other factors that get us to expert levels of performance? Pure innate talent? Intelligence? Luck of the draw? Perseverance? Hard work? Yes, it's all of that... and more. Age, experience, and environment all play a role. In other words, there's no one certain factor that can predict or ensure mastery or optimal performance of anything.
+
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="text-block-title">전체 해석</div>
+
+        <div class="kor-body">
+
+          당신은 악기, 스포츠, 체스, 요리, 또는 외국어 등 어떤 분야에서든 전문가가 되려면 약 1만 시간의 연습이 필요하다는 말을 아마 들어보았을 것이다. 이 주제에 관한 K. Anders Ericsson의 연구는 여러 번 쓰였으며, Malcolm Gladwell이 그의 베스트셀러 '아웃라이어'에서 그것을 묘사했을 때 훨씬 더 유명해졌다. 그러나 최근 한 무리의 연구자들이 1만 시간 수치 이면의 연구와 조사를 재검토했고, 1만 시간의 법칙은 완전한 헛소리라고 꽤 극적으로 말했다. 구체적으로, 1만 시간에 대해 특별히 특별한 것은 없으며, 성과를 높이는 데 연습이 분명 중요하지만, 다른 요인들이 훨씬 더 중요한 역할을 할 수 있다. 우리를 전문가 수준의 성과로 이끄는 그러한 다른 요인들은 무엇인가? 순전한 타고난 재능인가? 지능인가? 운인가? 인내심인가? 노력인가? 그렇다, 그 모든 것... 그리고 그 이상이다. 나이, 경험, 그리고 환경이 모두 역할을 한다. 다시 말해서, 어떤 것의 숙달이나 최적의 성과를 예측하거나 보장할 수 있는 단 하나의 확실한 요인은 없다.
+
+        </div>
+
+      </div>
+
+
+
+      <div class="section-title no-break page-break"><div class="page-no">01</div><h2>직독직해 및 어휘 정리</h2></div>
+
+      <div class="sentence-card no-break">
+
+        <div class="sentence-id">문장 1</div>
+
+        <div class="sentence-en">You / 've probably heard / that / it / takes / about ten thousand hours / of practice / to become / an expert / in anything / - a musical instrument, a sport, chess, cooking, or a foreign language.</div>
+
+        <div class="sentence-ko">당신은 / 아마 들어보았을 것이다 / ~라는 것을 / (시간이) 걸린다는 것을 / 약 1만 시간이 / 연습의 / 되는 데 / 전문가가 / 어느 분야에서든 / - 악기, 스포츠, 체스, 요리, 또는 외국어.</div>
+
+        <div class="mini-divider"></div>
+
+        <div class="vocab-box"><strong>어휘:</strong> expert - 전문가, instrument - 악기</div>
+
+      </div>
+
+      <div class="sentence-card no-break">
+
+        <div class="sentence-id">문장 2</div>
+
+        <div class="sentence-en">The research / by K. Anders Ericsson / on this topic / has been written about / many times, / and / it / was made / even more famous / when / Malcolm Gladwell / described / it / in his bestselling book / Outliers.</div>
+
+        <div class="sentence-ko">연구는 / K. Anders Ericsson의 / 이 주제에 대한 / ~에 대해 쓰여져 왔다 / 여러 번, / 그리고 / 그것은 / 만들어졌다 / 훨씬 더 유명하게 / ~했을 때 / Malcolm Gladwell이 / 묘사했을 때 / 그것을 / 그의 베스트셀러 책에서 / '아웃라이어'.</div>
+
+        <div class="mini-divider"></div>
+
+        <div class="vocab-box"><strong>어휘:</strong> describe - 묘사하다</div>
+
+      </div>
+
+      <div class="sentence-card no-break">
+
+        <div class="sentence-id">문장 3</div>
+
+        <div class="sentence-en">However, / recently, / a cohort / of researchers / reexamined / the studies and research / behind the 10K figure / and said, / quite dramatically, / that / the ten-thousand-hour rule / was / utter nonsense.</div>
+
+        <div class="sentence-ko">그러나, / 최근에, / 한 무리의 / 연구자들이 / 재검토했다 / 공부와 연구를 / 1만(10K) 수치 이면의 / 그리고 말했다, / 꽤 극적으로, / ~라고 / 1만 시간의 법칙이 / ~라고 / 완전한 헛소리(라고).</div>
+
+        <div class="mini-divider"></div>
+
+        <div class="vocab-box"><strong>어휘:</strong> cohort - 집단, 무리, reexamine - 재검토하다, figure - 수치, 인물, utter - 완전한, 순전한, nonsense - 헛소리, 터무니없는 생각</div>
+
+      </div>
+
+      <div class="sentence-card no-break">
+
+        <div class="sentence-id">문장 4</div>
+
+        <div class="sentence-en">Specifically, / there is / nothing particularly special / about ten thousand hours, / and / while / practice / is clearly important / to boost performance, / other factors / may play / an even more important role.</div>
+
+        <div class="sentence-ko">구체적으로, / 있다 / 특별히 특별한 것은 아무것도 (없다) / 1만 시간에 대해, / 그리고 / ~이긴 하지만 / 연습이 / 분명히 중요하긴 (하지만) / 성과를 높이는 데, / 다른 요인들이 / 할 수도 있다 / 훨씬 더 중요한 역할을.</div>
+
+        <div class="mini-divider"></div>
+
+        <div class="vocab-box"><strong>어휘:</strong> specifically - 구체적으로, boost - 높이다, 증진시키다</div>
+
+      </div>
+
+      <div class="sentence-card no-break">
+
+        <div class="sentence-id">문장 5</div>
+
+        <div class="sentence-en">What are / those other factors / that / get us / to expert levels / of performance?</div>
+
+        <div class="sentence-ko">무엇인가 / 그러한 다른 요인들은 / (~하는) / 우리를 이끄는 / 전문가 수준으로 / 성과의?</div>
+
+      </div>
+
+      <div class="sentence-card no-break">
+
+        <div class="sentence-id">문장 6</div>
+
+        <div class="sentence-en">Pure innate talent? Intelligence? Luck of the draw? Perseverance? Hard work?</div>
+
+        <div class="sentence-ko">순전한 타고난 재능? 지능? 운? 인내심? 힘든 노력?</div>
+
+        <div class="mini-divider"></div>
+
+        <div class="vocab-box"><strong>어휘:</strong> innate - 타고난, 선천적인, luck of the draw - 제비뽑기의 운(우연히 정해지는 운), perseverance - 인내심</div>
+
+      </div>
+
+      <div class="sentence-card no-break">
+
+        <div class="sentence-id">문장 7</div>
+
+        <div class="sentence-en">Yes, / it's all of that / ... and more.</div>
+
+        <div class="sentence-ko">그렇다, / 그 모든 것이다 / ... 그리고 그 이상이다.</div>
+
+      </div>
+
+      <div class="sentence-card no-break">
+
+        <div class="sentence-id">문장 8</div>
+
+        <div class="sentence-en">Age, experience, and environment / all play / a role.</div>
+
+        <div class="sentence-ko">나이, 경험, 그리고 환경이 / 모두 한다 / 역할을.</div>
+
+      </div>
+
+      <div class="sentence-card no-break">
+
+        <div class="sentence-id">문장 9</div>
+
+        <div class="sentence-en">In other words, / there's / no one certain factor / that / can predict / or ensure / mastery or optimal performance / of anything.</div>
+
+        <div class="sentence-ko">다시 말해서, / 없다 / 단 하나의 확실한 요인은 / (~하는) / 예측할 수 있는 / 혹은 보장할 수 있는 / 숙달이나 최적의 성과를 / 어떤 것의.</div>
+
+        <div class="mini-divider"></div>
+
+        <div class="vocab-box"><strong>어휘:</strong> ensure - 보장하다, 확실하게 하다, mastery - 숙달, optimal - 최적의</div>
+
+      </div>
+
+
+
+      <div class="section-title no-break page-break"><div class="page-no">02</div><h2>어법 및 구문 포인트</h2></div>
+
+      <div class="card no-break">
+
+        <div class="point-block">
+
+          <div class="sentence-id">문장 1</div>
+
+          <div class="line-item"><strong>[it takes about ten thousand hours of practice to become...]</strong> `it`은 가주어, `to become` 이하가 진주어로 쓰인 `It takes + 시간/노력 + to부정사` 구문(~하는 데 시간/노력이 걸리다)이다.</div>
+
+          <div class="exam-note">
+
+            <strong>[시험 출제 요소 및 주의점]</strong>
+
+            <ul><li>`to become` 자리에 `becoming`이나 원형 부정사 `become`을 쓰면 틀린 문법이 된다.</li></ul>
+
+          </div>
+
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="point-block">
+
+          <div class="sentence-id">문장 2</div>
+
+          <div class="line-item"><strong>[it was made even more famous]</strong> `make + 목적어 + 형용사`의 5형식 문장이 수동태로 쓰인 구조다. (목적어 `it`이 주어 자리로 이동, `was made` 뒤에 목적격 보어 `famous`가 남음) 비교급 강조 부사인 `even`이 `more`를 꾸며주고 있다.</div>
+
+          <div class="exam-note">
+
+            <strong>[시험 출제 요소 및 주의점]</strong>
+
+            <ul><li>목적격 보어 자리이므로 부사인 `famously`를 쓰지 않도록 주의해야 한다. 비교급 강조 자리에는 `very`를 쓸 수 없다(`much`, `still`, `far`, `a lot`은 가능).</li></ul>
+
+          </div>
+
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="point-block">
+
+          <div class="sentence-id">문장 4</div>
+
+          <div class="line-item"><strong>[nothing particularly special]</strong> `-thing`으로 끝나는 대명사는 형용사가 뒤에서 앞을 수식하는 후치 수식 구조를 취한다.</div>
+
+          <div class="exam-note">
+
+            <strong>[시험 출제 요소 및 주의점]</strong>
+
+            <ul><li>`particularly special nothing`으로 어순이 도치되어 출제될 경우 오답이다.</li></ul>
+
+          </div>
+
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="point-block">
+
+          <div class="sentence-id">문장 9</div>
+
+          <div class="line-item"><strong>[no one certain factor that can predict or ensure]</strong> `that`은 주격 관계대명사로 선행사 `no one certain factor`를 수식하며, 조동사 `can` 뒤에 동사원형 `predict`와 `ensure`가 병렬 연결되었다.</div>
+
+        </div>
+
+      </div>
+
+
+
+      <div class="section-title no-break"><div class="page-no">03</div><h2>문장 단위 내용 흐름 정리</h2></div>
+
+      <div class="card no-break">
+
+        <div class="line-item"><strong>[(1)-(2) 통념 제시] :</strong> 전문가가 되기 위해 '1만 시간의 연습'이 필수적이라는 유명한 1만 시간의 법칙을 소개한다.</div>
+
+        <div class="line-item"><strong>[(3)-(4) 통념 반박 (반전)] :</strong> 최근 연구에 따르면 이 1만 시간의 법칙은 헛소리이며, 연습만으로 모든 것이 결정되지 않고 다른 요인들이 더 중요할 수 있음을 밝힌다.</div>
+
+        <div class="line-item"><strong>[(5)-(8) 다양한 변수 나열] :</strong> 전문가 수준의 성과를 만드는 데에는 재능, 지능, 운, 인내심, 나이, 경험, 환경 등 수많은 복합적 요인들이 영향을 미친다.</div>
+
+        <div class="line-item"><strong>[(9) 결론] :</strong> 어떤 분야의 완벽한 숙달을 예측하거나 보장해 주는 '단 하나의 절대적인 요인(예: 1만 시간의 연습)'은 존재하지 않는다.</div>
+
+      </div>
+
+
+
+      <div class="section-title no-break"><div class="page-no">04</div><h2>표현들의 연관성 정리</h2></div>
+
+      <div class="card no-break">
+
+        <h3>기존의 통념</h3>
+
+        <div class="chip-row">
+
+          <span class="chip">Ten thousand hours of practice</span> <span class="arrow">=</span> <span class="chip">ten-thousand-hour rule</span>
+
+        </div>
+
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 20px;">오직 '연습의 양'만이 성공을 보장한다는 기존의 통념을 대표하는 키워드다.</div>
+
+
+
+        <h3>통념에 대한 비판</h3>
+
+        <div class="chip-row">
+
+          <span class="chip">Utter nonsense</span> <span class="arrow">=</span> <span class="chip">nothing particularly special</span>
+
+        </div>
+
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 20px;">기존의 1만 시간의 법칙이 지닌 한계와 허상을 필자가 강력하게 비판하는 표현이다.</div>
+
+
+
+        <h3>성공의 복합적 요인들</h3>
+
+        <div class="chip-row">
+
+          <span class="chip">Other factors</span> <span class="arrow">=</span> <span class="chip">innate talent, intelligence, luck, perseverance, age, experience, environment</span>
+
+        </div>
+
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 4px;">성공과 숙달을 이루는 데 필요한 다양하고 복합적인 변수들을 지칭한다.</div>
+
+      </div>
+
+
+
+      <div class="section-title no-break"><div class="page-no">05</div><h2>소재와 주제문</h2></div>
+
+      <div class="card no-break" style="border-top-color: #f59e0b;">
+
+        <div class="line-item" style="margin-bottom: 12px;"><strong>핵심 소재:</strong> 전문가가 되는 과정에서 작용하는 다양한 요인 (1만 시간 법칙의 허구)</div>
+
+        <div class="mini-divider"></div>
+
+        <div class="label" style="margin-top: 8px;">주제문 (문장 9)</div>
+
+        <div class="sentence-en" style="margin-bottom: 0;">In other words, there's no one certain factor that can predict or ensure mastery or optimal performance of anything.</div>
+
+      </div>
+
+
+
+      <div class="section-title no-break"><div class="page-no">06</div><h2>지문의 요약 및 패러프레이징</h2></div>
+
+      <div class="card no-break">
+
+        <div class="summary-pair">
+
+          <div class="label">요약 / Summary</div>
+
+          <div class="sentence-en">Contrary to the popular ten-thousand-hour rule, mastery is not guaranteed by practice alone; it is influenced by a complex combination of innate, environmental, and personal factors.</div>
+
+          <div class="sentence-ko">대중적인 1만 시간의 법칙과 달리, 숙달은 연습만으로 보장되지 않으며, 선천적, 환경적, 개인적 요인의 복잡한 결합에 의해 영향을 받는다.</div>
+
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="summary-pair">
+
+          <div class="label">패러프레이징 / Paraphrasing</div>
+
+          <div class="sentence-en">The notion that reaching expert status requires exactly 10,000 hours is a myth; achieving optimal performance actually depends on multiple diverse variables rather than just one solitary metric.</div>
+
+          <div class="sentence-ko">전문가 지위에 도달하려면 정확히 1만 시간이 필요하다는 개념은 근거 없는 믿음이다. 최적의 성과를 달성하는 것은 실제로는 단지 하나의 고립된 지표보다는 다수의 다양한 변수에 의존한다.</div>
+
+        </div>
+
+      </div>
+
+
+
+      <div class="section-title no-break"><div class="page-no">07</div><h2>도움이 되는 배경지식</h2></div>
+
+      <div class="card no-break">
+
+        <div class="line-item"><strong>1. 1만 시간의 법칙(10,000-Hour Rule):</strong><br> 안데르스 에릭슨의 연구를 바탕으로 말콤 글래드웰이 저서 <아웃라이어>에서 유행시킨 개념으로, 누구든 1만 시간을 노력하면 그 분야의 전문가가 될 수 있다는 이론이다.</div>
+
+        <div class="divider"></div>
+
+        <div class="line-item"><strong>2. 재현성 위기(Replication Crisis):</strong><br> 최근 심리학과 행동과학 등에서 과거의 유명한 실험들을 다시 검증했을 때 같은 결과가 나오지 않는 현상을 뜻한다. 본문의 1만 시간 법칙 역시 재검증 결과 단순한 시간 투자보다 유전적 요인, 시작 연령, 코칭의 질 등 다른 요소가 크게 작용한다는 것이 밝혀졌다.</div>
+
+      </div>
+
+    </div>
+
+
+
+
+
+    <!-- ========================================== -->
+
+    <!-- [지문 4] 07강 3번                          -->
+
+    <!-- ========================================== -->
+
+    <hr class="passage-separator" />
+
+    
+
+    <div class="passage-container">
+
+      <div class="header-container">
+
+        <div class="hero-title">07강 3번 지문분석</div>
+
+        <div class="subtitle">Lio T 내신대비 지문분석서</div>
+
+      </div>
+
+
+
+      <div class="section-title no-break"><div class="page-no">00</div><h2>영어 본문 및 전체 해석</h2></div>
+
+      <div class="card no-break">
+
+        <div class="text-block-title">영어 본문</div>
+
+        <div class="eng-body">
+
+          In 2012, the Yale School of Architecture held a symposium called "Is Drawing Dead?" The bold title reflects a growing sense that the architect's freehand sketch is being displaced by the computer. The transition from sketchpad to screen entails, many architects believe, a loss of creativity, of adventurousness. Thanks to the precision and apparent completeness of screen renderings, a designer working at a computer has a tendency to lock in, visually and cognitively, on a design at an early stage. He bypasses much of the reflective and exploratory playfulness that springs from the uncertainty and ambiguity of sketching. Researchers term this phenomenon "premature fixation" and trace its cause to "the disincentive for design changes once a large amount of detail and interconnectedness is built too quickly into a CAD (Computer-Aided Design) model." The designer at the computer also tends to emphasize formal experimentation at the expense of expressiveness. By weakening an architect's "personal, emotional connection with the work," a renowned American architect and designer Michael Graves argues, CAD software produces designs that, "while complex and interesting in their own way," often "lack the emotional content of a design derived from hand."
+
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="text-block-title">전체 해석</div>
+
+        <div class="kor-body">
+
+          2012년에 예일 대학교 건축 대학원은 "드로잉은 죽었는가?"라는 심포지엄을 열었다. 이 대담한 제목은 건축가의 맨손 스케치가 컴퓨터에 의해 대체되고 있다는 커지는 인식을 반영한다. 스케치북에서 화면으로의 전환은 창의성과 모험심의 상실을 수반한다고 많은 건축가들은 믿는다. 화면 렌더링의 정밀함과 겉보기의 완전함 덕분에, 컴퓨터로 작업하는 디자이너는 초기 단계에 디자인을 시각적으로 그리고 인지적으로 고정시키는(확정해 버리는) 경향이 있다. 그는 스케치의 불확실성과 모호함에서 비롯되는 성찰적이고 탐구적인 유희성의 많은 부분을 우회한다(건너뛴다). 연구자들은 이 현상을 '조기 고정'이라고 부르며 그 원인을 "대량의 세부 사항과 상호 연결성이 CAD(컴퓨터 지원 설계) 모델에 너무 빨리 구축되고 나면 디자인 변경에 대한 의욕이 꺾이는 것"으로 추적한다. 컴퓨터 앞의 디자이너는 또한 표현성을 희생하면서 형태적인 실험을 강조하는 경향이 있다. 건축가의 "작품과의 개인적이고 감정적인 연결"을 약화시킴으로써, CAD 소프트웨어는 "나름의 방식으로 복잡하고 흥미롭긴 하지만" 종종 "손에서 파생된 디자인의 감정적 내용이 결여된" 디자인을 생산한다고 저명한 미국 건축가이자 디자이너인 Michael Graves는 주장한다.
+
+        </div>
+
+      </div>
+
+
+
+      <div class="section-title no-break page-break"><div class="page-no">01</div><h2>직독직해 및 어휘 정리</h2></div>
+
+      <div class="sentence-card no-break">
+
+        <div class="sentence-id">문장 1</div>
+
+        <div class="sentence-en">In 2012, / the Yale School of Architecture / held / a symposium / called "Is Drawing Dead?"</div>
+
+        <div class="sentence-ko">2012년에, / 예일 건축 대학원은 / 열었다 / 심포지엄을 / "드로잉은 죽었는가?"라고 불리는.</div>
+
+        <div class="mini-divider"></div>
+
+        <div class="vocab-box"><strong>어휘:</strong> architecture - 건축, symposium - 심포지엄, 학술 토론회</div>
+
+      </div>
+
+      <div class="sentence-card no-break">
+
+        <div class="sentence-id">문장 2</div>
+
+        <div class="sentence-en">The bold title / reflects / a growing sense / that / the architect's freehand sketch / is being displaced / by the computer.</div>
+
+        <div class="sentence-ko">이 대담한 제목은 / 반영한다 / 커지는 인식을 / ~라는 / 건축가의 맨손 스케치가 / 대체되고 있다는 / 컴퓨터에 의해.</div>
+
+        <div class="mini-divider"></div>
+
+        <div class="vocab-box"><strong>어휘:</strong> bold - 대담한, reflect - 반영하다, freehand - 맨손의(자로 그리지 않은), displace - 대체하다, 쫓아내다</div>
+
+      </div>
+
+      <div class="sentence-card no-break">
+
+        <div class="sentence-id">문장 3</div>
+
+        <div class="sentence-en">The transition / from sketchpad to screen / entails, / many architects believe, / a loss / of creativity, / of adventurousness.</div>
+
+        <div class="sentence-ko">전환은 / 스케치북에서 화면으로의 / 수반한다, / 많은 건축가들이 믿기에, / 상실을 / 창의성의, / 모험심의.</div>
+
+        <div class="mini-divider"></div>
+
+        <div class="vocab-box"><strong>어휘:</strong> transition - 전환, 이행, entail - 수반하다, adventurousness - 모험심</div>
+
+      </div>
+
+      <div class="sentence-card no-break">
+
+        <div class="sentence-id">문장 4</div>
+
+        <div class="sentence-en">Thanks to the precision / and apparent completeness / of screen renderings, / a designer / working at a computer / has a tendency / to lock in, / visually and cognitively, / on a design / at an early stage.</div>
+
+        <div class="sentence-ko">정밀함 덕분에 / 그리고 겉보기의 완전함 (덕분에) / 화면 렌더링의, / 디자이너는 / 컴퓨터로 작업하는 / 경향이 있다 / 고정시키는(확정짓는), / 시각적으로 그리고 인지적으로, / 디자인을 / 초기 단계에.</div>
+
+        <div class="mini-divider"></div>
+
+        <div class="vocab-box"><strong>어휘:</strong> precision - 정밀함, apparent - 겉보기의, completeness - 완전함, lock in - 고정시키다, 확정짓다, cognitively - 인지적으로</div>
+
+      </div>
+
+      <div class="sentence-card no-break">
+
+        <div class="sentence-id">문장 5</div>
+
+        <div class="sentence-en">He / bypasses / much of the reflective and exploratory playfulness / that / springs / from the uncertainty and ambiguity / of sketching.</div>
+
+        <div class="sentence-ko">그는 / 우회한다(건너뛴다) / 성찰적이고 탐구적인 유희성의 많은 부분을 / (~하는) / 비롯되는 / 불확실성과 모호함으로부터 / 스케치하는 것의.</div>
+
+        <div class="mini-divider"></div>
+
+        <div class="vocab-box"><strong>어휘:</strong> bypass - 우회하다, 건너뛰다, reflective - 성찰적인, exploratory - 탐구적인, playfulness - 유희성, spring from - ~에서 비롯되다, 발생하다, ambiguity - 모호함</div>
+
+      </div>
+
+      <div class="sentence-card no-break">
+
+        <div class="sentence-id">문장 6</div>
+
+        <div class="sentence-en">Researchers / term / this phenomenon / "premature fixation" / and trace / its cause / to "the disincentive / for design changes / once / a large amount of detail and interconnectedness / is built / too quickly / into a CAD (Computer-Aided Design) model."</div>
+
+        <div class="sentence-ko">연구자들은 / 지칭한다 / 이 현상을 / '조기 고정'이라고 / 그리고 추적한다 / 그것의 원인을 / "의욕을 꺾는 것(제약)으로 / 디자인 변경에 대한 / 일단 ~하고 나면 / 많은 양의 세부 사항과 상호 연결성이 / 구축되고 (나면) / 너무 빨리 / CAD(컴퓨터 지원 설계) 모델 안에."</div>
+
+        <div class="mini-divider"></div>
+
+        <div class="vocab-box"><strong>어휘:</strong> term - 지칭하다, 부르다, phenomenon - 현상, premature - 시기상조의, 조기의, fixation - 고정, 집착, trace A to B - A의 원인을 B로 추적하다, disincentive - 의욕을 꺾는 것, 제약, interconnectedness - 상호 연결성</div>
+
+      </div>
+
+      <div class="sentence-card no-break">
+
+        <div class="sentence-id">문장 7</div>
+
+        <div class="sentence-en">The designer / at the computer / also tends to emphasize / formal experimentation / at the expense of expressiveness.</div>
+
+        <div class="sentence-ko">디자이너는 / 컴퓨터 앞의 / 또한 강조하는 경향이 있다 / 형태적인 실험을 / 표현성을 희생하면서.</div>
+
+        <div class="mini-divider"></div>
+
+        <div class="vocab-box"><strong>어휘:</strong> formal - 형태적인, 공식적인, experimentation - 실험, at the expense of - ~을 희생하여, expressiveness - 표현성</div>
+
+      </div>
+
+      <div class="sentence-card no-break">
+
+        <div class="sentence-id">문장 8</div>
+
+        <div class="sentence-en">By weakening / an architect's "personal, emotional connection / with the work," / a renowned American architect and designer Michael Graves / argues, / CAD software / produces / designs / that, / "while complex and interesting / in their own way," / often "lack / the emotional content / of a design / derived from hand."</div>
+
+        <div class="sentence-ko">약화시킴으로써 / 건축가의 "개인적이고 감정적인 연결을 / 작품과의," / 저명한 미국 건축가이자 디자이너인 Michael Graves는 / 주장한다, / CAD 소프트웨어가 / 생산한다고 / 디자인을 / (~하는) / "복잡하고 흥미롭긴 하지만 / 나름의 방식으로는," / 종종 "결여한 / 감정적 내용을 / 디자인의 / 손으로부터 파생된."</div>
+
+        <div class="mini-divider"></div>
+
+        <div class="vocab-box"><strong>어휘:</strong> weaken - 약화시키다, renowned - 저명한, lack - 결여하다, ~이 없다, derived - 파생된</div>
+
+      </div>
+
+
+
+      <div class="section-title no-break page-break"><div class="page-no">02</div><h2>어법 및 구문 포인트</h2></div>
+
+      <div class="card no-break">
+
+        <div class="point-block">
+
+          <div class="sentence-id">문장 2</div>
+
+          <div class="line-item"><strong>[a growing sense that the architect's freehand sketch is being displaced]</strong> `that`은 앞의 명사 `sense`와 뒤의 완전한 문장을 동격으로 이어주는 접속사다. `is being displaced`는 진행 수동태로 '대체되고 있는 중이다'라는 뉘앙스를 준다.</div>
+
+          <div class="exam-note">
+
+            <strong>[시험 출제 요소 및 주의점]</strong>
+
+            <ul>
+
+              <li>동격의 접속사 `that`을 관계대명사 `which`로 바꿔 쓸 수 없음을 명심하라. 진행 수동태(`be + being + p.p.`) 형태가 제대로 쓰였는지 확인한다.</li>
+
+            </ul>
+
+          </div>
+
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="point-block">
+
+          <div class="sentence-id">문장 3</div>
+
+          <div class="line-item"><strong>[entails, many architects believe, a loss...]</strong> 주어 `The transition`에 대한 동사가 `entails`다. 중간에 삽입절 `many architects believe`가 콤마와 함께 들어갔다.</div>
+
+          <div class="exam-note">
+
+            <strong>[시험 출제 요소 및 주의점]</strong>
+
+            <ul><li>주어가 단수(`The transition`)이므로 동사 `entails`에 `-s`가 붙어야 한다. 삽입절 때문에 주어와 동사 거리가 멀어져 수 일치를 놓치기 쉽다.</li></ul>
+
+          </div>
+
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="point-block">
+
+          <div class="sentence-id">문장 6</div>
+
+          <div class="line-item"><strong>[Researchers term this phenomenon "premature fixation"]</strong> `term`은 5형식 동사로 쓰여 `this phenomenon`이 목적어, `"premature fixation"`이 목적격 보어 역할을 한다.</div>
+
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="point-block">
+
+          <div class="sentence-id">문장 8</div>
+
+          <div class="line-item"><strong>[produces designs that, "while complex...", often "lack..."]</strong> `that`은 선행사 `designs`를 수식하는 주격 관계대명사로, 관계절 내의 본동사는 `lack`이다. `while (they are) complex and interesting`은 접속사만 남고 주어와 be동사가 생략된 분사구문이다. `derived from hand`의 `derived`는 과거분사로 앞의 `a design`을 수식한다.</div>
+
+          <div class="exam-note">
+
+            <strong>[시험 출제 요소 및 주의점]</strong>
+
+            <ul><li>선행사가 복수(`designs`)이므로 동사 `lack`이 원형으로 온 점을 확인하라. `derived`를 현재분사 `deriving`으로 쓰면 문법상 어색하다.</li></ul>
+
+          </div>
+
+        </div>
+
+      </div>
+
+
+
+      <div class="section-title no-break"><div class="page-no">03</div><h2>문장 단위 내용 흐름 정리</h2></div>
+
+      <div class="card no-break">
+
+        <div class="line-item"><strong>[(1)-(2) 화두 제시] :</strong> 수작업 스케치가 컴퓨터로 대체되는 건축계의 현실에 대해 의문을 던지는 심포지엄을 소개함.</div>
+
+        <div class="line-item"><strong>[(3) 핵심 문제 지적] :</strong> 스케치에서 컴퓨터(CAD)로의 전환은 창의성과 모험심의 상실을 가져온다고 지적함.</div>
+
+        <div class="line-item"><strong>[(4)-(6) 창의성 상실의 원인 분석] :</strong> 컴퓨터 렌더링은 너무 일찍 시각적 완성도를 제공하여 디자이너가 초기 단계에서 디자인을 '조기 고정'하게 만듦. 이로 인해 스케치 특유의 불확실성이 주는 '탐구적 유희성'이 사라짐.</div>
+
+        <div class="line-item"><strong>[(7)-(8) 결과 및 결론] :</strong> 컴퓨터 디자인은 형태적 실험에 치중하게 되어, 결국 수작업이 주던 건축가와 작품 간의 '감정적 연결과 표현성'이 결여된 디자인을 양산하게 됨.</div>
+
+      </div>
+
+
+
+      <div class="section-title no-break"><div class="page-no">04</div><h2>표현들의 연관성 정리</h2></div>
+
+      <div class="card no-break">
+
+        <h3>수작업 스케치의 긍정적 특성</h3>
+
+        <div class="chip-row">
+
+          <span class="chip">Freehand sketch</span> <span class="arrow">=</span> <span class="chip">uncertainty and ambiguity</span> <span class="arrow">=</span> <span class="chip">exploratory playfulness</span> <span class="arrow">=</span> <span class="chip">emotional connection</span>
+
+        </div>
+
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 20px;">컴퓨터 도입 이전의 수작업이 갖는 긍정적이고 창의적인 특성들을 의미한다.</div>
+
+
+
+        <h3>컴퓨터 작업의 특성과 한계</h3>
+
+        <div class="chip-row">
+
+          <span class="chip">Computer (CAD)</span> <span class="arrow">=</span> <span class="chip">precision and apparent completeness</span> <span class="arrow">=</span> <span class="chip">premature fixation</span> <span class="arrow">=</span> <span class="chip">formal experimentation</span>
+
+        </div>
+
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 20px;">수작업의 반대편에 있는 컴퓨터 작업의 특징들로, 완벽해 보이지만 조기에 사고를 닫아버리는 부정적 요소를 내포한다.</div>
+
+
+
+        <h3>상실된 본질적 가치</h3>
+
+        <div class="chip-row">
+
+          <span class="chip">Loss of creativity</span> <span class="arrow">=</span> <span class="chip">lack the emotional content</span>
+
+        </div>
+
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 4px;">디지털 도구 도입으로 인해 최종적으로 발생한 건축 디자인의 본질적 가치 훼손을 요약한다.</div>
+
+      </div>
+
+
+
+      <div class="section-title no-break"><div class="page-no">05</div><h2>소재와 주제문</h2></div>
+
+      <div class="card no-break" style="border-top-color: #f59e0b;">
+
+        <div class="line-item" style="margin-bottom: 12px;"><strong>핵심 소재:</strong> 컴퓨터 설계(CAD)가 건축 디자인의 창의성과 감정적 표현에 미치는 부정적 영향</div>
+
+        <div class="mini-divider"></div>
+
+        <div class="label" style="margin-top: 8px;">주제문 (문장 3)</div>
+
+        <div class="sentence-en" style="margin-bottom: 0;">The transition from sketchpad to screen entails, many architects believe, a loss of creativity, of adventurousness.</div>
+
+      </div>
+
+
+
+      <div class="section-title no-break"><div class="page-no">06</div><h2>지문의 요약 및 패러프레이징</h2></div>
+
+      <div class="card no-break">
+
+        <div class="summary-pair">
+
+          <div class="label">요약 / Summary</div>
+
+          <div class="sentence-en">The transition from hand-drawn sketches to computer-aided design in architecture leads to a loss of creativity and emotional connection, as the software's premature precision limits exploratory playfulness.</div>
+
+          <div class="sentence-ko">건축에서 손으로 그린 스케치에서 컴퓨터 지원 설계로의 전환은 소프트웨어의 조기 정밀함이 탐구적인 유희성을 제한함에 따라 창의성과 감정적 연결의 상실로 이어진다.</div>
+
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="summary-pair">
+
+          <div class="label">패러프레이징 / Paraphrasing</div>
+
+          <div class="sentence-en">Utilizing CAD programs instead of freehand sketching restricts an architect's inventive process, causing "premature fixation" on a design and resulting in structures that lack human expressiveness and emotional depth.</div>
+
+          <div class="sentence-ko">맨손 스케치 대신 CAD 프로그램을 활용하는 것은 건축가의 창의적 과정을 제한하여 디자인에 대한 '조기 고정'을 유발하고 인간의 표현력과 감정적 깊이가 결여된 구조물을 낳는다.</div>
+
+        </div>
+
+      </div>
+
+
+
+      <div class="section-title no-break"><div class="page-no">07</div><h2>도움이 되는 배경지식</h2></div>
+
+      <div class="card no-break">
+
+        <div class="line-item"><strong>1. 조기 고정(Premature fixation):</strong><br> 창의적 작업 과정에서 다양한 대안을 충분히 모색하기 전에, 너무 이른 시점에 하나의 아이디어나 결과물에 마음을 정해버리는 심리적 현상. CAD의 깔끔한 렌더링이 이를 유발한다고 본문은 지적한다.</div>
+
+        <div class="divider"></div>
+
+        <div class="line-item"><strong>2. 건축 스케치의 불확실성:</strong><br> 펜과 종이로 하는 거친 스케치는 정확하지 않기 때문에 선을 긋는 과정에서 우연히 새로운 형태를 발견하거나 상상력을 개입시킬 '여백'을 남겨둔다. 이를 본문에서는 '모호함에서 비롯되는 유희성(exploratory playfulness)'이라 표현했다.</div>
+
+      </div>
+
+    </div>
+
+
+
+  </div>
+
+</body>
+
+</html>
+
+
+

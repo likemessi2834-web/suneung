@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>23강 지문분석 (1번, 3번) - Lio T</title>
+  <style>
+    /* 디자인 시스템 변수 설정 */
+    :root {
+      --bg-color: #f4f7fb;
+      --text-main: #0f172a;
+      --text-sub: #334155;
+      --text-muted: #64748b;
+      --primary: #4f46e5;
+      --primary-light: #e0e7ff;
+      --secondary: #3b82f6;
+      --border-light: #e2e8f0;
+      --card-bg: #ffffff;
+      --radius: 12px;
+    }
+
+    /* 페이지 기본 설정 (세로 모드) */
+    @page {
+      size: A4 portrait;
+      margin: 15mm; 
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg-color);
+      color: var(--text-main);
+      font-family: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+      letter-spacing: -0.02em; 
+    }
+
+    body {
+      padding: 10px; 
+      display: flex;
+      justify-content: center;
+    }
+
+    .doc {
+      width: 100%;
+      max-width: 210mm; 
+    }
+
+    /* =========================================
+       지문 간 구분선 (화면용 vs 인쇄용)
+       ========================================= */
+    .passage-separator {
+      height: 4px;
+      background-image: repeating-linear-gradient(to right, #cbd5e1 0, #cbd5e1 10px, transparent 10px, transparent 20px);
+      margin: 80px 0;
+      border: none;
+      position: relative;
+    }
+    .passage-separator::after {
+      content: '▼ 다음 지문 (인쇄 시 무조건 새 페이지에서 시작됩니다) ▼';
+      position: absolute;
+      top: -26px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--bg-color);
+      padding: 0 16px;
+      color: #94a3b8;
+      font-weight: 700;
+      font-size: 10pt;
+    }
+
+    /* 공통 레이아웃 제어 */
+    .no-break { page-break-inside: avoid; break-inside: avoid; }
+    
+    .header-container { margin-bottom: 30px; text-align: center; }
+    .hero-title {
+      display: inline-block; margin: 0 0 10px 0; padding: 8px 24px; font-size: 22pt; font-weight: 800;
+      color: #ffffff; background: linear-gradient(135deg, var(--primary), var(--secondary));
+      border-radius: 999px; box-shadow: 0 4px 14px rgba(79, 70, 229, 0.25);
+    }
+    .subtitle { font-size: 13pt; font-weight: 600; color: var(--text-muted); }
+
+    .section-title {
+      display: flex; align-items: center; gap: 12px; margin: 30px 0 16px 0;
+      border-bottom: 2px solid var(--border-light); padding-bottom: 4px;
+      page-break-after: avoid; break-after: avoid;
+    }
+    .page-no {
+      width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+      background: var(--primary); color: white; font-weight: 700; font-size: 12pt; border-radius: 8px;
+    }
+    h2 { margin: 0; font-size: 16pt; font-weight: 700; color: var(--text-main); }
+
+    .card {
+      background: var(--card-bg); border: 1px solid var(--border-light); border-top: 4px solid var(--primary);
+      border-radius: var(--radius); padding: 8px 16px; margin-bottom: 16px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    }
+    
+    .text-block-title { font-size: 12pt; font-weight: 700; color: var(--primary); margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+    .text-block-title::before { content: ''; display: block; width: 6px; height: 6px; border-radius: 50%; background: var(--primary); }
+    .eng-body { font-size: 12pt; line-height: 1.7; font-weight: 500; color: var(--text-main); margin-bottom: 20px; text-align: justify; }
+    .divider { height: 1px; background: var(--border-light); margin: 20px 0; }
+    .mini-divider { height: 1px; background: var(--border-light); margin: 8px 0; }
+    .kor-body { font-size: 11.5pt; line-height: 1.7; color: var(--text-sub); text-align: justify; word-break: keep-all; }
+
+    .sentence-card {
+      background: var(--card-bg); border: 1px solid var(--border-light); border-left: 4px solid var(--secondary);
+      border-radius: 8px; padding: 8px 16px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    }
+    .sentence-id { display: inline-block; margin-bottom: 8px; padding: 2px 8px; border-radius: 6px; background: var(--primary-light); color: var(--primary); font-size: 9pt; font-weight: 700; }
+    .sentence-en { font-size: 12.5pt; font-weight: 600; line-height: 1.6; color: var(--text-main); margin-bottom: 4px; }
+    .sentence-ko { font-size: 9pt; line-height: 1.6; color: var(--text-sub); margin-bottom: 4px; word-break: keep-all; }
+    .vocab-box { display: inline-block; padding: 4px 8px; border-radius: 6px; background: #f8fafc; border: 1px dashed #cbd5e1; font-size: 9pt; color: var(--text-muted); margin-bottom: 4px;}
+    .analysis-text { font-size: 9.5pt; color: var(--text-muted); line-height: 1.5; margin-top: 4px;}
+
+    .point-block { margin-bottom: 16px; }
+    .point-block:last-child { margin-bottom: 0; }
+    .line-item { font-size: 11.5pt; line-height: 1.7; margin: 0 0 8px 0; word-break: keep-all; }
+    .exam-note { margin-top: 8px; padding: 8px 12px; background: #fffbeb; border-left: 3px solid #f59e0b; border-radius: 0 6px 6px 0; font-size: 10.5pt; line-height: 1.6; color: #92400e; }
+    .exam-note ul { margin: 4px 0 0 0; padding-left: 20px; }
+    .exam-note li { margin-bottom: 4px; }
+    .exam-note li:last-child { margin-bottom: 0; }
+
+    .chip-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 8px 0 20px 0; }
+    .chip { padding: 4px 10px; border-radius: 999px; background: var(--primary-light); color: var(--primary); font-size: 10pt; font-weight: 600; }
+    .arrow { color: var(--text-muted); font-weight: 700; }
+    h3 { font-size: 12pt; margin: 0 0 8px 0; color: var(--text-main); }
+    .label { display: inline-block; font-size: 9.5pt; font-weight: 700; color: var(--secondary); background: #eff6ff; padding: 2px 6px; border-radius: 4px; margin-bottom: 6px; }
+    .summary-pair { margin-bottom: 20px; }
+    .summary-pair:last-child { margin-bottom: 0; }
+
+    .img-box { text-align: center; padding: 20px; margin: 10px 0; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px; color: var(--text-muted); font-size: 11pt;}
+
+    /* =========================================
+       인쇄(Print) 전용 스타일 - 다중 지문 분할 처리
+       ========================================= */
+    @media print {
+      html, body { background: #ffffff !important; padding: 0; }
+      .doc { max-width: 100%; }
+
+      .passage-separator {
+        page-break-before: always !important;
+        break-before: page !important;
+        margin: 0 !important;
+        height: 0 !important;
+        border: none !important;
+        background: none !important;
+      }
+      .passage-separator::after { display: none !important; }
+
+      .page-break { page-break-before: always !important; break-before: page !important; }
+      .card, .sentence-card { box-shadow: none !important; border: 1px solid #cbd5e1 !important; page-break-inside: avoid !important; break-inside: avoid !important; }
+      .section-title { page-break-after: avoid !important; break-after: avoid !important; }
+
+      .hero-title { background: #0f172a !important; color: white !important; }
+      .page-no { background: #0f172a !important; }
+      .sentence-id, .chip, .label { border: 1px solid #cbd5e1 !important; background: #f8fafc !important; color: #0f172a !important; }
+      .exam-note { background: #f8fafc !important; border-left-color: #94a3b8 !important; color: #334155 !important; }
+      .img-box { background: #ffffff !important; border-color: #94a3b8 !important; color: #334155 !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="doc">
+
+    <!-- ========================================== -->
+    <!-- [지문 2] 23강 1번                          -->
+    <!-- ========================================== -->
+    <div class="passage-container">
+      <div class="header-container">
+        <div class="hero-title">23강 1번 지문분석</div>
+        <div class="subtitle">Lio T 내신대비 지문분석서</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">00</div><h2>영어 본문 및 전체 해석</h2></div>
+      <div class="card no-break">
+        <div class="text-block-title">영어 본문</div>
+        <div class="eng-body">
+          There is one important thing to note about momentum. Since motion is relative, only relative velocities are relevant. In fact, when you think about it, all velocities are relative. Thus, on the surface of the earth, we always reckon velocity with respect to the ground — the velocity of the earth itself does not matter. There is a true story of a French pilot in World War II who stretched his hand out of his small airplane window and caught a bullet. How is this possible? The velocity of the bullet must have been about the same as the velocity of his plane. This can happen, because a bullet slows down to such a velocity toward the end of its flight path due to the action of air drag. Since only relative velocity matters, the momentum of the bullet was negligible as far as the pilot was concerned. Thus, he would have had little problem in catching the bullet.
+        </div>
+        <div class="divider"></div>
+        <div class="text-block-title">전체 해석</div>
+        <div class="kor-body">
+          운동량에 대해 주목해야 할 중요한 것이 하나 있다. 운동은 상대적이기 때문에 상대 속도만이 의미가 있다. 사실, 생각해 보면 모든 속도는 상대적이다. 따라서 지구 표면에서 우리는 항상 지면에 대한 상대적인 속도를 계산하며, 지구 자체의 속도는 중요하지 않다. 제2차 세계 대전 중 한 프랑스 조종사가 소형 비행기 창문 밖으로 손을 뻗어 총알을 잡았다는 실화가 있다. 이것이 어떻게 가능한가? 총알의 속도가 그의 비행기 속도와 거의 같았음이 틀림없다. 이런 일은 일어날 수 있는데, 왜냐하면 총알은 공기 저항의 작용 때문에 비행 경로의 끝 무렵에 그 정도의 속도로 느려지기 때문이다. 오직 상대 속도만이 중요하기 때문에, 조종사의 입장에서는 총알의 운동량이 무시할 만한 수준이었다. 따라서 그가 총알을 잡는 데에는 거의 문제가 없었을 것이다.
+        </div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">01</div><h2>직독직해 및 어휘 정리</h2></div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 1</div>
+        <div class="sentence-en">There / is / one important thing / to note / about momentum.</div>
+        <div class="sentence-ko">있다 / 한 가지 중요한 것이 / 주목해야 할 / 운동량에 대해.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> note - 주목하다, momentum - 운동량</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 운동량에 있어 중요한 한 가지 사실을 도입한다.<br>
+          <strong>역할:</strong> 물리학적 개념인 '운동량'을 화두로 던지며 독자의 이목을 끈다.
+        </div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 2</div>
+        <div class="sentence-en">Since motion is relative, / only relative velocities / are / relevant.</div>
+        <div class="sentence-ko">운동은 상대적이기 때문에 / 오직 상대 속도만이 / 이다 / 의미가 있다(유의미하다).</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> relative - 상대적인, velocity - 속도, relevant - 관련 있는(유의미한)</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 물체의 움직임은 상대적이므로, 상대 속도만이 유의미한 개념이다.<br>
+          <strong>역할:</strong> 글의 핵심 개념인 '상대 속도'의 원리를 직접적으로 선언한다.
+        </div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 3</div>
+        <div class="sentence-en">In fact, / when you think about it, / all velocities / are / relative.</div>
+        <div class="sentence-ko">사실 / 생각해 보면 / 모든 속도는 / 상대적이다.</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 세상의 모든 속도는 관찰자에 따라 달라지는 상대적인 것이다.<br>
+          <strong>역할:</strong> 속도의 본질이 본디 상대적이라는 사실을 강조하여 보편화한다.
+        </div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 4</div>
+        <div class="sentence-en">Thus, / on the surface of the earth, / we / always reckon / velocity / with respect to the ground / — the velocity of the earth itself / does not matter.</div>
+        <div class="sentence-ko">따라서 / 지구 표면에서 / 우리는 / 항상 계산한다 / 속도를 / 지면에 대하여 / 즉 지구 자체의 속도는 / 중요하지 않다.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> reckon - 계산하다(생각하다), with respect to - ~에 관하여(~에 대하여), matter - 중요하다</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 일상에서 속도는 지면을 기준으로 측정될 뿐, 지구가 우주를 도는 엄청난 속도는 체감되거나 중요하게 다뤄지지 않는다.<br>
+          <strong>역할:</strong> 상대 속도 개념을 우리가 일상에서 속도를 측정하는 방식(지면 기준)에 적용하여 설명한다.
+        </div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 5</div>
+        <div class="sentence-en">There / is / a true story / of a French pilot / in World War II / who stretched his hand / out of his small airplane window / and caught a bullet.</div>
+        <div class="sentence-ko">실화가 있다 / 한 프랑스 조종사의 / 제2차 세계 대전 중의 / (그는) 자신의 손을 뻗었다 / 소형 비행기 창문 밖으로 / 그리고 총알을 잡았다.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> stretch - 뻗다, bullet - 총알</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 2차 대전 당시 조종사가 비행기 밖으로 손을 뻗어 날아가는 총알을 맨손으로 잡은 실화가 있다.<br>
+          <strong>역할:</strong> 극적인 일화(총알 잡기)를 제시하여 상대 속도 원리의 놀라운 적용 사례를 소개한다.
+        </div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 6</div>
+        <div class="sentence-en">How / is / this / possible? The velocity of the bullet / must have been / about the same / as the velocity of his plane.</div>
+        <div class="sentence-ko">어떻게 / 이것이 / 가능한가? 총알의 속도가 / 였음이 틀림없다 / 거의 같았음이 / 그의 비행기 속도와.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> must have p.p. - ~였음에 틀림없다</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 총알을 잡을 수 있었던 이유는 비행기와 총알의 속도가 비슷했기 때문이다.<br>
+          <strong>역할:</strong> 믿기 힘든 일화에 대해 물리학적(상대 속도) 원인을 해명한다.
+        </div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 7</div>
+        <div class="sentence-en">This / can happen, / because a bullet slows down / to such a velocity / toward the end of its flight path / due to the action of air drag.</div>
+        <div class="sentence-ko">이런 일은 일어날 수 있다 / 왜냐하면 총알이 느려지기 때문에 / 그 정도의 속도로 / 비행 경로의 끝 무렵에 / 공기 저항의 작용으로 인해.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> air drag - 공기 저항</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 총알이 비행 끝 무렵 공기 저항을 받아 비행기 속도만큼 느려졌기 때문에 가능한 일이었다.<br>
+          <strong>역할:</strong> 총알의 속도가 비행기만큼 느려질 수 있는 물리적 조건(공기 저항)을 덧붙여 일화의 타당성을 입증한다.
+        </div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 8</div>
+        <div class="sentence-en">Since only relative velocity matters, / the momentum / of the bullet / was / negligible / as far as the pilot was concerned.</div>
+        <div class="sentence-ko">오직 상대 속도만이 중요하기 때문에 / 운동량은 / 총알의 / 무시할 만한 수준이었다 / 조종사의 입장에서는.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> negligible - 무시할 수 있는, as far as ~ be concerned - ~에 관한 한(~의 입장에서는)</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 조종사와 총알의 상대 속도가 거의 0에 가까웠으므로, 조종사가 느끼는 총알의 파괴력(운동량)은 미미했다.<br>
+          <strong>역할:</strong> 첫 문장의 '운동량' 개념으로 돌아와, 상대 속도가 0에 수렴하면 상대적 운동량도 미미해짐을 논리적으로 결론짓는다.
+        </div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 9</div>
+        <div class="sentence-en">Thus, / he / would have had / little problem / in catching the bullet.</div>
+        <div class="sentence-ko">따라서 / 그는 / 거의 문제가 없었을 것이다 / 총알을 잡는 데에.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> have problem in ~ing - ~하는 데 문제를 겪다</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 그래서 조종사는 부상 없이 총알을 쉽게 잡을 수 있었다.<br>
+          <strong>역할:</strong> 실화의 결말을 물리학 법칙을 통해 완벽하게 해설하며 글을 맺는다.
+        </div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">02</div><h2>어법 및 구문 포인트</h2></div>
+      <div class="card no-break">
+        <div class="point-block">
+          <div class="sentence-id">문장 6</div>
+          <div class="line-item"><strong>[The velocity of the bullet must have been about the same as the velocity of his plane.]</strong></div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul>
+              <li>조동사 + <code>have p.p.</code> 구문 중 하나인 <code>must have been</code>(~였음에 틀림없다)이 쓰여 과거 사실에 대한 강한 추측을 나타낸다. <code>should have been</code>이나 <code>cannot have been</code> 등으로 혼동하지 않아야 한다.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 8</div>
+          <div class="line-item"><strong>[the momentum of the bullet was negligible as far as the pilot was concerned.]</strong></div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul>
+              <li><code>as far as ~ be concerned</code>는 '~에 관한 한', '~의 입장에서는'이라는 뜻의 관용적 표현이다.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">03</div><h2>문장 단위 내용 흐름 정리</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>[원리 제시 (문장 1~4)] :</strong> 물리적 운동은 상대적이므로 모든 속도는 상대 속도이며, 절대적인 지구의 속도는 무시됨을 설명함.</div>
+        <div class="line-item"><strong>[일화 소개 (문장 5)] :</strong> 2차 세계 대전 중 프랑스 조종사가 비행 중 맨손으로 총알을 잡은 일화 제시.</div>
+        <div class="line-item"><strong>[원리 적용 및 분석 (문장 6~7)] :</strong> 공기 저항으로 총알 속도가 줄어들어 비행기 속도와 거의 같아진 물리적 상황을 분석함.</div>
+        <div class="line-item"><strong>[결론 (문장 8~9)] :</strong> 두 물체의 속도가 같아 상대 속도가 0에 가까웠기 때문에, 조종사 입장에서 총알의 운동량이 무시할 만한 수준이 되어 잡을 수 있었음을 규명함.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">04</div><h2>표현들의 연관성 정리</h2></div>
+      <div class="card no-break">
+        <h3>속도의 상대성</h3>
+        <div class="chip-row">
+          <span class="chip">relative velocities</span> <span class="arrow">=</span> <span class="chip">all velocities are relative</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 20px;">속도가 절대적 수치가 아니라 관찰자와의 관계 속에서 정해짐을 반복적으로 강조하는 표현이다.</div>
+
+        <h3>상대 속도 = 0 인 상황</h3>
+        <div class="chip-row">
+          <span class="chip">velocity of the bullet ... same as the velocity of his plane</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 20px;">상대 속도 원리가 극단적으로 작용하여 두 물체의 속도 차이가 거의 '0'이 된 상황을 나타낸다.</div>
+
+        <h3>운동량의 상쇄</h3>
+        <div class="chip-row">
+          <span class="chip">negligible momentum</span> <span class="arrow">=</span> <span class="chip">little problem in catching</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 4px;">상대 속도가 0에 수렴할 때, 물체가 지닌 상대적 파괴력(운동량) 역시 사라져 위험하지 않음을 보여준다.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">05</div><h2>소재와 주제문</h2></div>
+      <div class="card no-break" style="border-top-color: #f59e0b;">
+        <div class="line-item" style="margin-bottom: 12px;"><strong>핵심 소재:</strong> 상대 속도의 원리와 그에 따른 상대적 운동량</div>
+        <div class="mini-divider"></div>
+        <div class="label" style="margin-top: 8px;">주제문 (문장 2, 8)</div>
+        <div class="sentence-en" style="margin-bottom: 0;">Since motion is relative, only relative velocities are relevant. Since only relative velocity matters, the momentum of the bullet was negligible as far as the pilot was concerned.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">06</div><h2>지문의 요약 및 패러프레이징</h2></div>
+      <div class="card no-break">
+        <div class="summary-pair">
+          <div class="label">요약 / Summary</div>
+          <div class="sentence-en">Because momentum and velocity are relative, when a flying bullet and an airplane traveled at nearly the same speed, the bullet's relative momentum became negligible to the pilot, allowing him to catch it barehanded.</div>
+          <div class="sentence-ko">운동량과 속도는 상대적이기 때문에, 날아가는 총알과 비행기의 속도가 거의 같을 경우 조종사에게 총알의 상대적 운동량은 무시할 만한 수준이 되어 맨손으로 잡을 수 있었다.</div>
+        </div>
+        <div class="divider"></div>
+        <div class="summary-pair">
+          <div class="label">패러프레이징 / Paraphrasing</div>
+          <div class="sentence-en">The true story of a French pilot catching a bullet demonstrates a fundamental principle of physics: when an observer and an object move at identical speeds, their relative velocity becomes zero, effectively neutralizing any destructive impact.</div>
+          <div class="sentence-ko">프랑스 조종사가 총알을 잡은 실화는 물리학의 기본 원리를 증명한다. 관찰자와 대상이 동일한 속도로 이동할 때 상대 속도는 영(0)이 되며, 그 결과 파괴적인 충격량도 상쇄된다.</div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">07</div><h2>도움이 되는 배경지식</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>1. 상대 속도 (Relative Velocity):</strong><br> 관찰자가 움직이고 있을 때, 관찰자가 보는 다른 물체의 속도를 말한다. 기차가 100km/h로 달릴 때 나란히 100km/h로 달리는 자동차를 보면 정지해 있는 것처럼 보이는 것이 상대 속도의 원리다.</div>
+        <div class="divider"></div>
+        <div class="line-item"><strong>2. 운동량 (Momentum):</strong><br> 물체의 질량과 속도를 곱한 물리량(p=mv)이다. 조종사의 손(비행기)과 총알의 상대 속도가 0에 가깝다면, 조종사 손에 부딪히는 총알의 상대적 속도가 0이므로 충돌 시 손에 전달되는 운동량(충격)도 거의 없게 된다.</div>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- [지문 4] 23강 3번                          -->
+    <!-- ========================================== -->
+    <hr class="passage-separator" />
+    
+    <div class="passage-container">
+      <div class="header-container">
+        <div class="hero-title">23강 3번 지문분석</div>
+        <div class="subtitle">Lio T 내신대비 지문분석서</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">00</div><h2>영어 본문 및 전체 해석</h2></div>
+      <div class="card no-break">
+        <div class="text-block-title">영어 본문</div>
+        <div class="eng-body">
+          Living things are not confined to the familiar temperate realm of land, water, and sunlight inhabited by plants and plant-eating animals. They can be found in the darkest depths of the ocean, in hot volcanic mud, in pools beneath the frozen surface of the Antarctic, and buried kilometers deep in the Earth’s crust. The creatures that live in these extreme environments are generally unfamiliar, not only because they are inaccessible, but also because they are mostly microscopic. In more homely habitats, too, most organisms are too small for us to see without special equipment: they tend to go unnoticed, unless they cause a disease or rot the timbers of our houses. Yet microorganisms make up most of the total mass of living matter on our planet. Only recently, through new methods of molecular analysis and specifically through the analysis of DNA sequences, have we begun to get a picture of life on Earth that is not grossly distorted by our biased perspective as large animals living on dry land.
+        </div>
+        <div class="divider"></div>
+        <div class="text-block-title">전체 해석</div>
+        <div class="kor-body">
+          생명체는 식물과 초식 동물이 서식하는 익숙한 온화한 영역의 육지, 물, 햇빛에만 국한되지 않는다. 그것들은 바다의 가장 어두운 심해, 뜨거운 화산 진흙 속, 남극의 얼어붙은 표면 아래의 물웅덩이 속, 그리고 지각 깊숙이 수 킬로미터 묻힌 곳에서도 발견될 수 단수 있다. 이러한 극한 환경에 사는 생물들은 일반적으로 우리에게 낯선데, 그것들에 접근하기 어려워서일 뿐만 아니라 대부분 미세하기 때문이기도 하다. 보다 편안한 서식지에서도 역시, 대부분의 유기체들은 특별한 장비 없이는 우리가 볼 수 없을 정도로 너무 작다. 그것들은 질병을 일으키거나 우리 집의 목재를 썩게 하지 않는 한 눈에 띄지 않는 경향이 있다. 하지만 미생물은 우리 행성의 살아있는 물질의 전체 질량 중 대부분을 차지한다. 최근에야 분자 분석의 새로운 방법, 특히 DNA 서열 분석을 통해서, 육지에 사는 거대 동물로서의 우리의 편향된 시각에 의해 심하게 왜곡되지 않은 지구 생명체의 그림을 얻기 시작했다.
+        </div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">01</div><h2>직독직해 및 어휘 정리</h2></div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 1</div>
+        <div class="sentence-en">Living things / are not confined / to the familiar temperate realm / of land, water, and sunlight / inhabited by plants and plant-eating animals.</div>
+        <div class="sentence-ko">생명체는 / 국한되지 않는다 / 익숙한 온화한 영역에 / 육지, 물, 그리고 햇빛의 / 식물과 초식동물이 서식하는.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> confine - 국한하다, temperate - 온화한, realm - 영역, inhabit - 서식하다</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 생명체는 우리가 잘 아는 평범하고 온화한 환경에만 존재하는 것이 아니다.<br>
+          <strong>역할:</strong> 기존의 좁은 시각(눈에 보이는 동식물 중심)을 타파하며 글의 화두를 던진다.
+        </div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 2</div>
+        <div class="sentence-en">They / can be found / in the darkest depths of the ocean, in hot volcanic mud, in pools beneath the frozen surface of the Antarctic, / and buried kilometers deep / in the Earth’s crust.</div>
+        <div class="sentence-ko">그것들은 / 발견될 수 있다 / 바다의 가장 어두운 심해에서, 뜨거운 화산 진흙 속에서, 남극의 얼어붙은 표면 아래 물웅덩이 속에서 / 그리고 수 킬로미터 깊이에 묻힌 채 / 지각에.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> depth - 깊은 곳, volcanic mud - 화산 진흙, crust - 지각</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 생물들은 심해, 화산 지대, 남극 얼음 밑 등 지구의 극한 환경 어디에나 존재한다.<br>
+          <strong>역할:</strong> 앞 문장의 부정문을 보충하여, 생명체가 거주하는 환경의 놀라운 범위를 나열한다.
+        </div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 3</div>
+        <div class="sentence-en">The creatures / that live in these extreme environments / are / generally unfamiliar, / not only because they are inaccessible, / but also because they are mostly microscopic.</div>
+        <div class="sentence-ko">생물들은 / 이러한 극한 환경에 사는 / 일반적으로 낯설다 / 그들이 접근하기 어려워서일 뿐만 아니라 / 그들이 대개 미세하기 때문에.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> extreme - 극한의, inaccessible - 접근하기 어려운, microscopic - 미세한(현미경으로 봐야 할 만큼)</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 이런 극한의 생물들이 우리에게 낯선 이유는 도달하기 어렵고 눈에 보이지 않게 작기 때문이다.<br>
+          <strong>역할:</strong> 우리가 지구 생태계의 상당 부분을 인식하지 못했던 물리적, 크기적 한계를 설명한다.
+        </div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 4</div>
+        <div class="sentence-en">In more homely habitats, / too, / most organisms / are / too small / for us to see / without special equipment: / they / tend to go / unnoticed, / unless they cause a disease or rot the timbers of our houses.</div>
+        <div class="sentence-ko">더 편안한 서식지에서도 / 역시 / 대부분의 유기체는 / 너무 작다 / 우리가 볼 수 없을 정도로 / 특별한 장비 없이는 / 그것들은 / 띠지 않는 경향이 있다 / 눈에 / 질병을 일으키거나 집의 목재를 썩게 하지 않는 한.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> homely - 편안한(아늑한), unnoticed - 눈에 띄지 않는, rot - 썩게 하다, timber - 목재</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 척박한 곳뿐만 아니라 평범한 일상 환경에서도 미생물은 너무 작아 피해를 주지 않는 한 알아차리기 힘들다.<br>
+          <strong>역할:</strong> '미세함'이라는 속성이 비단 극한 환경 생물에만 국한되지 않고 일상 속 생물들에게도 적용되어 우리가 생태계를 편협하게 보고 있었음을 증명한다.
+        </div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 5</div>
+        <div class="sentence-en">Yet / microorganisms / make up / most / of the total mass of living matter / on our planet.</div>
+        <div class="sentence-ko">하지만 / 미생물은 / 차지한다 / 대부분을 / 살아있는 물질의 전체 질량 중 / 우리 행성의.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> microorganism - 미생물, make up - 차지하다(구성하다), mass - 질량</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 우리 눈에 보이지 않지만, 미생물은 지구 생물체 질량의 압도적인 대부분을 차지한다.<br>
+          <strong>역할:</strong> 역접 연결사 'Yet'을 통해, 인간의 인식을 뛰어넘는 미생물의 거대한 생태적 비중을 강조한다.
+        </div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 6</div>
+        <div class="sentence-en">Only recently, / through new methods of molecular analysis / and specifically through the analysis of DNA sequences, / have / we / begun to get / a picture / of life on Earth / that is not grossly distorted / by our biased perspective / as large animals living on dry land.</div>
+        <div class="sentence-ko">최근에야 / 분자 분석의 새로운 방법을 통해 / 그리고 특히 DNA 서열 분석을 통해 / 우리는 / 얻기 시작했다 / 지구 생명체의 그림을 / 심하게 왜곡되지 않은 / 우리의 편향된 시각에 의해 / 육지에 사는 거대 동물로서의.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> molecular - 분자의, sequence - 서열, grossly - 심하게, distort - 왜곡하다, biased - 편향된</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> DNA 분석 등 현대 과학 기술 덕분에 비로소 우리는 '거대 육상 동물'이라는 편협한 시각에서 벗어나 지구 생명체의 참모습을 보게 되었다.<br>
+          <strong>역할:</strong> 과학 기술의 발전이 인간 중심의 편견을 깨고 진정한 생물 다양성의 실체를 파악하게 해주었음을 결론짓는다.
+        </div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">02</div><h2>어법 및 구문 포인트</h2></div>
+      <div class="card no-break">
+        <div class="point-block">
+          <div class="sentence-id">문장 3</div>
+          <div class="line-item"><strong>[The creatures that live in these extreme environments are generally unfamiliar, not only because they are inaccessible, but also because they are mostly microscopic.]</strong></div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul>
+              <li><code>not only A but also B</code> 상관접속사 구문이 사용되었다. A와 B 자리에는 각각 <code>because</code> 부사절이 병렬 구조를 이루고 있다.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 6</div>
+          <div class="line-item"><strong>[Only recently, through new methods ..., have we begun to get a picture of life on Earth that is not grossly distorted by our biased perspective...]</strong></div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul>
+              <li>부사구 <code>Only recently</code>가 문장 맨 앞으로 강조되어 나오면서 주어와 동사의 도치가 일어났다. 본동사가 현재완료(<code>have begun</code>)이므로 조동사 역할을 하는 <code>have</code>가 주어 <code>we</code> 앞으로 도치된 형태(<code>have we begun</code>)를 취한다. 어순 배열 문제로 자주 출제된다.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">03</div><h2>문장 단위 내용 흐름 정리</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>[편견 타파 (문장 1~2)] :</strong> 생명체는 동식물이 사는 친숙한 환경뿐만 아니라 심해, 얼음 아래 등 극한 환경에도 존재함.</div>
+        <div class="line-item"><strong>[인식의 한계 (문장 3~4)] :</strong> 이러한 생명체들은 접근이 어렵고 너무 '미세하여(microscopic)' 병을 유발하지 않는 한 우리의 일상 환경에서도 눈에 띄지 않음.</div>
+        <div class="line-item"><strong>[진실 규명 (문장 5)] :</strong> 눈에 띄진 않지만 사실 미생물이 지구 생태계 질량의 대다수를 차지하고 있음.</div>
+        <div class="line-item"><strong>[결론 (문장 6)] :</strong> 인간은 거대 육상 동물이라는 편향된 시각에 갇혀 있었으나, 최근 DNA 분석 기술을 통해 비로소 왜곡 없는 전체 생태계의 참모습을 이해하기 시작함.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">04</div><h2>표현들의 연관성 정리</h2></div>
+      <div class="card no-break">
+        <h3>미생물의 물리적 한계</h3>
+        <div class="chip-row">
+          <span class="chip">microscopic</span> <span class="arrow">=</span> <span class="chip">too small</span> <span class="arrow">=</span> <span class="chip">unnoticed</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 20px;">눈에 보이지 않아 인간이 인식하지 못했던 미생물의 물리적 한계를 묘사하는 단어들이다.</div>
+
+        <h3>인간 중심의 착각</h3>
+        <div class="chip-row">
+          <span class="chip">grossly distorted</span> <span class="arrow">=</span> <span class="chip">biased perspective</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 20px;">거대한 동물만 눈에 보이기 때문에 생겨난 인간 중심의 생태계에 대한 착각과 오만을 가리킨다.</div>
+
+        <h3>편견을 부순 과학 기술</h3>
+        <div class="chip-row">
+          <span class="chip">molecular analysis</span> <span class="arrow">=</span> <span class="chip">analysis of DNA sequences</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 4px;">미세한 생물들의 존재를 입증하고 인간의 편견을 부숴준 '과학 기술적 도구'를 나타낸다.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">05</div><h2>소재와 주제문</h2></div>
+      <div class="card no-break" style="border-top-color: #f59e0b;">
+        <div class="line-item" style="margin-bottom: 12px;"><strong>핵심 소재:</strong> 미생물의 거대한 생태적 비중과 이에 대한 인간 편견의 극복</div>
+        <div class="mini-divider"></div>
+        <div class="label" style="margin-top: 8px;">주제문 (문장 5, 6)</div>
+        <div class="sentence-en" style="margin-bottom: 0;">Yet microorganisms make up most of the total mass of living matter on our planet. Only recently, through new methods of molecular analysis and specifically through the analysis of DNA sequences, have we begun to get a picture of life on Earth that is not grossly distorted by our biased perspective as large animals living on dry land.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">06</div><h2>지문의 요약 및 패러프레이징</h2></div>
+      <div class="card no-break">
+        <div class="summary-pair">
+          <div class="label">요약 / Summary</div>
+          <div class="sentence-en">Although invisible microorganisms account for most of the living mass on Earth, humans have failed to recognize this due to a biased perspective as large animals, only recently discovering the true picture of the ecosystem through DNA analysis technologies.</div>
+          <div class="sentence-ko">지구 생명체의 질량 대부분은 보이지 않는 미생물이 차지하지만 인간은 거대 동물의 편향된 시각에 갇혀 이를 인식하지 못하다가 최근 DNA 분석 기술을 통해 생태계의 참모습을 깨닫고 있다.</div>
+        </div>
+        <div class="divider"></div>
+        <div class="summary-pair">
+          <div class="label">패러프레이징 / Paraphrasing</div>
+          <div class="sentence-en">Confined to a limited worldview centered on visible flora and fauna as massive land mammals, we are finally confronting the truth—thanks to modern molecular biology—that imperceptible microbes are the overwhelming majority in Earth's biosphere.</div>
+          <div class="sentence-ko">거대한 육상 포유류인 우리는 육안으로 보이는 동식물 중심의 제한된 세계관을 지니고 있었으나, 현대 분자 생물학의 발달로 인해 눈에 띄지 않는 미생물들이 지구 생물권의 압도적 주류라는 진실을 마주하게 되었다.</div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">07</div><h2>도움이 되는 배경지식</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>1. 극한 미생물 (Extremophile):</strong><br> 산소가 없는 곳, 100도가 넘는 화산 열수구, 강산성 환경, 방사능이 가득한 환경 등 일반적인 생명체라면 죽을 수밖에 없는 극한의 환경에서 오히려 잘 번식하는 미생물을 말한다.</div>
+        <div class="divider"></div>
+        <div class="line-item"><strong>2. 생물 질량 (Biomass):</strong><br> 지구상의 생물들은 코끼리나 고래처럼 덩치가 큰 동물들이 질량의 대다수를 차지할 것 같지만, 실제로는 눈에 보이지 않는 박테리아, 고세균, 진균류 등의 총 질량이 거대 동물의 질량을 압도적으로 뛰어넘는다.</div>
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>

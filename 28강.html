@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>28강 지문분석 (1번, 3번) - Lio T</title>
+  <style>
+    /* 디자인 시스템 변수 설정 */
+    :root {
+      --bg-color: #f4f7fb;
+      --text-main: #0f172a;
+      --text-sub: #334155;
+      --text-muted: #64748b;
+      --primary: #4f46e5;
+      --primary-light: #e0e7ff;
+      --secondary: #3b82f6;
+      --border-light: #e2e8f0;
+      --card-bg: #ffffff;
+      --radius: 12px;
+    }
+
+    /* 페이지 기본 설정 (세로 모드) */
+    @page {
+      size: A4 portrait;
+      margin: 15mm; 
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg-color);
+      color: var(--text-main);
+      font-family: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+      letter-spacing: -0.02em; 
+    }
+
+    body {
+      padding: 10px; 
+      display: flex;
+      justify-content: center;
+    }
+
+    .doc {
+      width: 100%;
+      max-width: 210mm; 
+    }
+
+    /* =========================================
+       지문 간 구분선 (화면용 vs 인쇄용)
+       ========================================= */
+    .passage-separator {
+      height: 4px;
+      background-image: repeating-linear-gradient(to right, #cbd5e1 0, #cbd5e1 10px, transparent 10px, transparent 20px);
+      margin: 80px 0;
+      border: none;
+      position: relative;
+    }
+    .passage-separator::after {
+      content: '▼ 다음 지문 (인쇄 시 무조건 새 페이지에서 시작됩니다) ▼';
+      position: absolute;
+      top: -26px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--bg-color);
+      padding: 0 16px;
+      color: #94a3b8;
+      font-weight: 700;
+      font-size: 10pt;
+    }
+
+    /* 공통 레이아웃 제어 */
+    .no-break { page-break-inside: avoid; break-inside: avoid; }
+    
+    .header-container { margin-bottom: 30px; text-align: center; }
+    .hero-title {
+      display: inline-block; margin: 0 0 10px 0; padding: 8px 24px; font-size: 22pt; font-weight: 800;
+      color: #ffffff; background: linear-gradient(135deg, var(--primary), var(--secondary));
+      border-radius: 999px; box-shadow: 0 4px 14px rgba(79, 70, 229, 0.25);
+    }
+    .subtitle { font-size: 13pt; font-weight: 600; color: var(--text-muted); }
+
+    .section-title {
+      display: flex; align-items: center; gap: 12px; margin: 30px 0 16px 0;
+      border-bottom: 2px solid var(--border-light); padding-bottom: 4px;
+      page-break-after: avoid; break-after: avoid;
+    }
+    .page-no {
+      width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+      background: var(--primary); color: white; font-weight: 700; font-size: 12pt; border-radius: 8px;
+    }
+    h2 { margin: 0; font-size: 16pt; font-weight: 700; color: var(--text-main); }
+
+    .card {
+      background: var(--card-bg); border: 1px solid var(--border-light); border-top: 4px solid var(--primary);
+      border-radius: var(--radius); padding: 8px 16px; margin-bottom: 16px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    }
+    
+    .text-block-title { font-size: 12pt; font-weight: 700; color: var(--primary); margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+    .text-block-title::before { content: ''; display: block; width: 6px; height: 6px; border-radius: 50%; background: var(--primary); }
+    .eng-body { font-size: 12pt; line-height: 1.7; font-weight: 500; color: var(--text-main); margin-bottom: 20px; text-align: justify; }
+    .divider { height: 1px; background: var(--border-light); margin: 20px 0; }
+    .mini-divider { height: 1px; background: var(--border-light); margin: 8px 0; }
+    .kor-body { font-size: 11.5pt; line-height: 1.7; color: var(--text-sub); text-align: justify; word-break: keep-all; }
+
+    .sentence-card {
+      background: var(--card-bg); border: 1px solid var(--border-light); border-left: 4px solid var(--secondary);
+      border-radius: 8px; padding: 8px 16px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    }
+    .sentence-id { display: inline-block; margin-bottom: 8px; padding: 2px 8px; border-radius: 6px; background: var(--primary-light); color: var(--primary); font-size: 9pt; font-weight: 700; }
+    .sentence-en { font-size: 12.5pt; font-weight: 600; line-height: 1.6; color: var(--text-main); margin-bottom: 4px; }
+    .sentence-ko { font-size: 9pt; line-height: 1.6; color: var(--text-sub); margin-bottom: 4px; word-break: keep-all; }
+    .vocab-box { display: inline-block; padding: 4px 8px; border-radius: 6px; background: #f8fafc; border: 1px dashed #cbd5e1; font-size: 9pt; color: var(--text-muted); margin-bottom: 4px;}
+    .analysis-text { font-size: 9.5pt; color: var(--text-muted); line-height: 1.5; margin-top: 4px;}
+
+    .point-block { margin-bottom: 16px; }
+    .point-block:last-child { margin-bottom: 0; }
+    .line-item { font-size: 11.5pt; line-height: 1.7; margin: 0 0 8px 0; word-break: keep-all; }
+    .exam-note { margin-top: 8px; padding: 8px 12px; background: #fffbeb; border-left: 3px solid #f59e0b; border-radius: 0 6px 6px 0; font-size: 10.5pt; line-height: 1.6; color: #92400e; }
+    .exam-note ul { margin: 4px 0 0 0; padding-left: 20px; }
+    .exam-note li { margin-bottom: 4px; }
+    .exam-note li:last-child { margin-bottom: 0; }
+
+    .chip-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 8px 0 20px 0; }
+    .chip { padding: 4px 10px; border-radius: 999px; background: var(--primary-light); color: var(--primary); font-size: 10pt; font-weight: 600; }
+    .arrow { color: var(--text-muted); font-weight: 700; }
+    h3 { font-size: 12pt; margin: 0 0 8px 0; color: var(--text-main); }
+    .label { display: inline-block; font-size: 9.5pt; font-weight: 700; color: var(--secondary); background: #eff6ff; padding: 2px 6px; border-radius: 4px; margin-bottom: 6px; }
+    .summary-pair { margin-bottom: 20px; }
+    .summary-pair:last-child { margin-bottom: 0; }
+
+    .img-box { text-align: center; padding: 20px; margin: 10px 0; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px; color: var(--text-muted); font-size: 11pt;}
+
+    /* =========================================
+       인쇄(Print) 전용 스타일 - 다중 지문 분할 처리
+       ========================================= */
+    @media print {
+      html, body { background: #ffffff !important; padding: 0; }
+      .doc { max-width: 100%; }
+
+      .passage-separator {
+        page-break-before: always !important;
+        break-before: page !important;
+        margin: 0 !important;
+        height: 0 !important;
+        border: none !important;
+        background: none !important;
+      }
+      .passage-separator::after { display: none !important; }
+
+      .page-break { page-break-before: always !important; break-before: page !important; }
+      .card, .sentence-card { box-shadow: none !important; border: 1px solid #cbd5e1 !important; page-break-inside: avoid !important; break-inside: avoid !important; }
+      .section-title { page-break-after: avoid !important; break-after: avoid !important; }
+
+      .hero-title { background: #0f172a !important; color: white !important; }
+      .page-no { background: #0f172a !important; }
+      .sentence-id, .chip, .label { border: 1px solid #cbd5e1 !important; background: #f8fafc !important; color: #0f172a !important; }
+      .exam-note { background: #f8fafc !important; border-left-color: #94a3b8 !important; color: #334155 !important; }
+      .img-box { background: #ffffff !important; border-color: #94a3b8 !important; color: #334155 !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="doc">
+
+    <!-- ========================================== -->
+    <!-- [지문 2] 28강 1번                          -->
+    <!-- ========================================== -->
+    <div class="passage-container">
+      <div class="header-container">
+        <div class="hero-title">28강 1번 지문분석</div>
+        <div class="subtitle">Lio T 내신대비 지문분석서</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">00</div><h2>영어 본문 및 전체 해석</h2></div>
+      <div class="card no-break">
+        <div class="text-block-title">영어 본문</div>
+        <div class="eng-body">
+          People like pictures of the savanna, even if they have never been there. In one study, people of different ages (8, 11, 15, 18, 35, and over 70 years) looked at images of tropical forests, deciduous forests, coniferous forests, deserts, and the East African savanna. Eight-year-old children said that they would like to live in or visit the savanna more than any other environment. After the age of 15, people also liked deciduous and coniferous forests. Since none of these people had visited savannas, the implication is that this preference was programmed into their brains. This programmed preference is called “the savanna hypothesis.” As people get older, this preference gets modified by where they have lived. Synek and Grammer, researchers in evolutionary psychology, confirmed these findings in a different study. They showed that young children in Austria prefer landscapes thinly dotted with trees and with low mountains, scenes that resemble the savanna. After puberty, their preferences shifted to areas with denser trees and higher mountains, again, presumably, because of more experience with these terrains.
+        </div>
+        <div class="divider"></div>
+        <div class="text-block-title">전체 해석</div>
+        <div class="kor-body">
+          사람들은 사바나에 가본 적이 없을지라도 사바나 사진을 좋아한다. 한 연구에서, 다양한 연령대(8세, 11세, 15세, 18세, 35세, 그리고 70세 이상)의 사람들이 열대 우림, 낙엽수림, 침엽수림, 사막, 그리고 동아프리카 사바나의 이미지들을 보았다. 8세 아이들은 다른 어떤 환경보다 사바나에 살거나 방문하고 싶다고 말했다. 15세 이후에는, 사람들은 낙엽수림과 침엽수림도 좋아했다. 이 사람들 중 아무도 사바나를 방문한 적이 없었기 때문에, 이는 이 선호도가 그들의 뇌 속에 프로그램되어 있었다는 것을 암시한다. 이 프로그램된 선호도는 "사바나 가설"이라고 불린다. 나이가 들면서, 이 선호도는 그들이 살아온 곳에 의해 수정된다. 진화 심리학 연구자인 Synek과 Grammer는 다른 연구에서 이러한 결과들을 확인했다. 그들은 오스트리아의 어린아이들이 나무가 드문드문 있고 낮은 산이 있는 풍경, 즉 사바나와 닮은 풍경을 선호한다는 것을 보여주었다. 사춘기 이후에 그들의 선호도는 나무가 빽빽하고 더 높은 산이 있는 지역으로 옮겨갔는데, 이 역시 아마도 이러한 지형을 더 많이 경험했기 때문일 것이다.
+        </div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">01</div><h2>직독직해 및 어휘 정리</h2></div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 1</div>
+        <div class="sentence-en">People / like / pictures of the savanna, / even if they have never been there.</div>
+        <div class="sentence-ko">사람들은 / 좋아한다 / 사바나의 사진을 / 비록 그들이 그곳에 가본 적이 전혀 없을지라도.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> even if - 비록 ~일지라도</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 인간은 가본 적도 없는 사바나 풍경을 본능적으로 선호한다.<br>
+          <strong>역할:</strong> 진화 심리학적 호기심을 유발하는 현상을 제시하며 글을 시작한다.
+        </div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 2</div>
+        <div class="sentence-en">In one study, / people / of different ages / (8, 11, 15, 18, 35, and over 70 years) / looked at / images of tropical forests, deciduous forests, coniferous forests, deserts, and the East African savanna.</div>
+        <div class="sentence-ko">한 연구에서 / 사람들은 / 다양한 연령대의 / (8, 11, 15, 18, 35, 70세 이상의) / 보았다 / 열대 우림, 낙엽수림, 침엽수림, 사막, 그리고 동아프리카 사바나의 이미지들을.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> tropical - 열대의, deciduous - 낙엽성의, coniferous - 침엽수의</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 여러 연령대를 대상으로 다양한 자연경관에 대한 선호도 연구가 진행되었다.<br>
+          <strong>역할:</strong> 선호도를 입증하기 위한 구체적인 과학적 실험 설정을 소개한다.
+        </div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 3</div>
+        <div class="sentence-en">Eight-year-old children / said / that they would like to live in or visit / the savanna / more than any other environment.</div>
+        <div class="sentence-ko">8세 아이들은 / 말했다 / 그들이 살거나 방문하고 싶다고 / 사바나에 / 다른 어떤 환경보다 더.</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 가장 어린 8세 아이들은 압도적으로 사바나 환경을 선호했다.<br>
+          <strong>역할:</strong> 후천적 경험의 영향이 적은 어린아이들의 본능적 선호가 사바나를 향해 있음을 보여준다.
+        </div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 4</div>
+        <div class="sentence-en">After the age of 15, / people / also liked / deciduous and coniferous forests.</div>
+        <div class="sentence-ko">15세 이후에는 / 사람들은 / 또한 좋아했다 / 낙엽수림과 침엽수림도.</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 15세가 넘으면서 다른 숲(낙엽수림 등)에 대한 선호도도 생겨났다.<br>
+          <strong>역할:</strong> 나이가 들며 선호도에 변화가 생김을 보여주는 데이터이다.
+        </div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 5</div>
+        <div class="sentence-en">Since none of these people had visited savannas, / the implication / is / that this preference was programmed / into their brains.</div>
+        <div class="sentence-ko">이 사람들 중 아무도 사바나를 방문한 적이 없었기 때문에 / 암시하는 바는 / 이 선호도가 프로그램되어 있었다는 것이다 / 그들의 뇌 속에.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> implication - 암시(함축)</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 사바나 방문 경험 없이도 선호한다는 것은 이 선호가 선천적(유전적)으로 뇌에 각인되었음을 뜻한다.<br>
+          <strong>역할:</strong> 3번 문장의 결과에 대한 진화 생물학적 원인(선천적 프로그램)을 도출한다.
+        </div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 6</div>
+        <div class="sentence-en">This programmed preference / is called / “the savanna hypothesis.” / As people get older, / this preference / gets modified / by where they have lived.</div>
+        <div class="sentence-ko">이 프로그램된 선호도는 / 불린다 / "사바나 가설"이라고 / 사람들이 나이가 들면서 / 이 선호도는 / 수정된다 / 그들이 살아온 곳에 의해.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> hypothesis - 가설, modify - 수정하다</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 이를 '사바나 가설'이라 부르며, 선천적 선호도는 나이가 들며 후천적 거주 환경에 의해 수정된다.<br>
+          <strong>역할:</strong> 핵심 이론 명칭을 소개하고, 본능적 선호가 후천적 경험으로 인해 어떻게 변하는지(4번 문장의 원인) 설명한다.
+        </div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 7</div>
+        <div class="sentence-en">Synek and Grammer, / researchers in evolutionary psychology, / confirmed / these findings / in a different study.</div>
+        <div class="sentence-ko">Synek과 Grammer는 / 진화 심리학 연구자인 / 확인했다 / 이러한 결과들을 / 다른 연구에서.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> evolutionary psychology - 진화 심리학</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 진화 심리학자들이 또 다른 연구로 이 결과를 교차 검증했다.<br>
+          <strong>역할:</strong> 다른 문화권(오스트리아)의 추가 연구를 도입하여 가설의 신빙성을 높인다.
+        </div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 8</div>
+        <div class="sentence-en">They / showed / that young children in Austria prefer / landscapes / thinly dotted with trees and with low mountains, / scenes that resemble the savanna.</div>
+        <div class="sentence-ko">그들은 / 보여주었다 / 오스트리아의 어린아이들이 선호한다는 것을 / 풍경을 / 나무가 드문드문 있고 낮은 산이 있는 / (즉) 사바나와 닮은 풍경(을).</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> thinly - 드문드문(얇게), dotted with - ~이 점재하는(점점이 있는), resemble - 닮다</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 오스트리아 아이들 역시 자신들의 거주 환경과 무관하게 사바나 형태의 탁 트인 풍경을 선호했다.<br>
+          <strong>역할:</strong> 사바나 가설이 특정 인종이나 지역에 국한되지 않는 인류 보편적 본능임을 증명한다.
+        </div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 9</div>
+        <div class="sentence-en">After puberty, / their preferences / shifted / to areas / with denser trees and higher mountains, / again, presumably, / because of more experience / with these terrains.</div>
+        <div class="sentence-ko">사춘기 이후에 / 그들의 선호도는 / 옮겨갔다 / 지역으로 / 나무가 빽빽하고 더 높은 산이 있는 / 이 역시 아마도 / 더 많은 경험 때문일 것이다 / 이러한 지형에 대한.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> puberty - 사춘기, denser - 더 빽빽한, presumably - 아마도, terrain - 지형</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 그러나 이들도 자라면서 자신들의 실제 주변 환경(울창한 숲, 산)을 더 경험함에 따라 선호도가 변했다.<br>
+          <strong>역할:</strong> 나이가 들며 '경험'에 의해 본능적 선호가 '수정'된다는 명제를 재차 입증하며 글을 맺는다.
+        </div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">02</div><h2>어법 및 구문 포인트</h2></div>
+      <div class="card no-break">
+        <div class="point-block">
+          <div class="sentence-id">문장 5</div>
+          <div class="line-item"><strong>[Since none of these people had visited savannas, the implication is that this preference was programmed into their brains.]</strong></div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul>
+              <li>대과거 <code>had visited</code>가 쓰였다. 이미 이루어진 연구 결과(과거 시점)보다 '사바나를 방문한 적이 없다'는 사실이 더 앞선 과거이기 때문에 과거완료를 사용했다.</li>
+              <li><code>none of</code>는 복수 명사가 오더라도 단/복수 취급이 모두 가능하지만, 전체가 부정되는 의미를 갖는다.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 6</div>
+          <div class="line-item"><strong>[As people get older, this preference gets modified by where they have lived.]</strong></div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul>
+              <li><code>get modified</code>는 <code>be modified</code>와 같은 수동태 표현으로, '수정되다'라는 상태의 변화를 강조한다.</li>
+              <li>전치사 <code>by</code>의 목적어로 간접의문문 명사절 <code>where they have lived</code>가 쓰였다.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">03</div><h2>문장 단위 내용 흐름 정리</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>[현상 및 1차 연구 (문장 1~4)] :</strong> 사람들은 사바나를 가보지 않았음에도 선호하며, 특히 어린아이들일수록 사바나에 대한 선호가 압도적으로 높고 나이가 들면 주변 숲에 대한 선호도 생김.</div>
+        <div class="line-item"><strong>[가설 정립 (문장 5~6)] :</strong> 이를 통해 사바나에 대한 선호는 선천적으로 뇌에 '프로그램'되어 있다는 '사바나 가설'이 도출되며, 이 본능은 나이가 들면서 '거주지 경험'에 의해 점차 수정됨.</div>
+        <div class="line-item"><strong>[추가 입증 (문장 7~9)] :</strong> 오스트리아를 대상으로 한 다른 연구에서도, 어린이는 탁 트인 사바나 환경을 선호하지만 사춘기 이후에는 자신이 경험한 빽빽한 산지 지형으로 선호도가 옮겨가는 현상이 동일하게 발견됨.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">04</div><h2>표현들의 연관성 정리</h2></div>
+      <div class="card no-break">
+        <h3>선천적 본능 (유전자)</h3>
+        <div class="chip-row">
+          <span class="chip">programmed into their brains</span> <span class="arrow">=</span> <span class="chip">the savanna hypothesis</span> <span class="arrow">=</span> <span class="chip">young children prefer</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 20px;">인간이 생존에 유리했던 아프리카 사바나 환경을 선천적, 본능적으로 갈망하도록 유전자에 새겨져 있음을 나타낸다.</div>
+
+        <h3>후천적 경험에 의한 변화</h3>
+        <div class="chip-row">
+          <span class="chip">gets modified</span> <span class="arrow">=</span> <span class="chip">shifted</span> <span class="arrow">=</span> <span class="chip">more experience</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 4px;">선천적 본능이 절대적인 것은 아니며, 개인이 살아가면서 쌓는 '후천적 환경 노출과 경험'에 의해 적응적으로 변형됨을 의미한다.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">05</div><h2>소재와 주제문</h2></div>
+      <div class="card no-break" style="border-top-color: #f59e0b;">
+        <div class="line-item" style="margin-bottom: 12px;"><strong>핵심 소재:</strong> 사바나 가설: 인류의 선천적 환경 선호와 후천적 경험에 의한 수정</div>
+        <div class="mini-divider"></div>
+        <div class="label" style="margin-top: 8px;">주제문 (문장 6)</div>
+        <div class="sentence-en" style="margin-bottom: 0;">This programmed preference is called “the savanna hypothesis.” As people get older, this preference gets modified by where they have lived.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">06</div><h2>지문의 요약 및 패러프레이징</h2></div>
+      <div class="card no-break">
+        <div class="summary-pair">
+          <div class="label">요약 / Summary</div>
+          <div class="sentence-en">Humans are innately programmed to prefer the savanna landscape of their evolutionary origins (the savanna hypothesis), but this preference is modified as they age based on the terrains they actually inhabit and experience.</div>
+          <div class="sentence-ko">인류는 진화적 기원인 사바나 풍경을 선천적으로 선호하도록 뇌에 프로그램되어 있지만(사바나 가설), 이러한 선호는 나이가 들면서 개인이 실제로 거주하고 경험한 지형에 따라 수정된다.</div>
+        </div>
+        <div class="divider"></div>
+        <div class="summary-pair">
+          <div class="label">패러프레이징 / Paraphrasing</div>
+          <div class="sentence-en">Our brains evolved to feel an innate aesthetic and survival attraction to the open plains of Africa, the cradle of our ancestors, from birth. Over time, however, continuous exposure to the actual environments in which individuals live readjusts these primal instincts to suit regional characteristics.</div>
+          <div class="sentence-ko">우리의 뇌는 태어날 때부터 조상들의 요람이었던 아프리카의 탁 트인 평원(사바나)에 깊은 미학적, 생존적 끌림을 느끼도록 진화했다. 그러나 세월이 흐르며 각자가 몸담고 살아가는 실제 환경의 지속적인 노출이 이러한 원초적 본능을 지역 특성에 맞게 재조정한다.</div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">07</div><h2>도움이 되는 배경지식</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>사바나 가설 (Savanna Hypothesis):</strong><br> 진화 심리학의 대표적 가설로, 초기 인류가 아프리카 사바나(탁 트여 있어 시야 확보가 유리하고, 맹수를 피할 나무가 드문드문 존재하는 환경)에서 진화했기 때문에, 현대인들도 그곳을 본능적으로 안전하고 아름다운 곳으로 느낀다는 이론이다.</div>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- [지문 4] 28강 3번                          -->
+    <!-- ========================================== -->
+    <hr class="passage-separator" />
+    
+    <div class="passage-container">
+      <div class="header-container">
+        <div class="hero-title">28강 3번 지문분석</div>
+        <div class="subtitle">Lio T 내신대비 지문분석서</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">00</div><h2>영어 본문 및 전체 해석</h2></div>
+      <div class="card no-break">
+        <div class="text-block-title">영어 본문</div>
+        <div class="eng-body">
+          Much research in social psychology has documented some of the key strategies that people rely upon in defending the belief I am good. For example, when people perform poorly at something, they tend to trivialize their failures. This trivialization disarms those failures and prevents them from overwriting their life stories. Imagine, say, that someone fails a calculus test. A common defensive response is to conclude that this test was just not that important to them. They may say to themselves, “Who cares about calculus anyway. I’m not going to become a mathematician.” In contrast, people will typically show the precise opposite pattern for their successes and will interpret those events as being of outsize importance. So if someone aces a calculus test, they may think to themselves about how crucial calculus is for their future career success and how it’s key to getting into graduate school or getting a highly desired job as an engineer or a financial analyst. By titrating how importantly people view their successes and failures, they can shape their emotional reactions to these events in a way that enables them to tell a more convincing story that I am good.
+        </div>
+        <div class="divider"></div>
+        <div class="text-block-title">전체 해석</div>
+        <div class="kor-body">
+          사회 심리학의 많은 연구는 사람들이 '나는 훌륭하다'라는 믿음을 방어할 때 의존하는 주요 전략 중 일부를 기록해 왔다. 예를 들어, 사람들이 어떤 일에서 형편없는 성과를 낼 때, 그들은 자신의 실패를 대수롭지 않게 여기는 경향이 있다. 이러한 축소(대수롭지 않게 여김)는 그 실패들을 무력화시키고 그것들이 그들의 인생 이야기를 덮어쓰는 것을 막아준다. 가령 누군가가 미적분 시험에 낙제했다고 상상해 보자. 흔한 방어적 반응은 이 시험이 그들에게 그냥 그다지 중요하지 않았다고 결론 내리는 것이다. 그들은 속으로 "어차피 미적분에 누가 신경이나 쓰겠어. 나는 수학자가 되지는 않을 거니까."라고 말할지도 모른다. 대조적으로, 사람들은 자신의 성공에 대해서는 전형적으로 정확히 반대의 패턴을 보여줄 것이며 그러한 사건들을 엄청나게 중요한 것으로 해석할 것이다. 그래서 만약 누군가가 미적분 시험에서 만점을 받는다면, 그들은 미적분이 미래의 직업적 성공을 위해 얼마나 중요한지, 그리고 그것이 대학원에 진학하거나 엔지니어 혹은 재무 분석가로서 매우 바라는 직장을 얻는 데 얼마나 핵심적인지에 대해 속으로 생각할지도 모른다. 사람들이 자신의 성공과 실패를 얼마나 중요하게 보느냐를 조정함으로써, 그들은 '나는 훌륭하다'라는 더 설득력 있는 이야기를 할 수 있게 해주는 방식으로 이러한 사건들에 대한 자신의 감정적 반응을 형성할 수 있다.
+        </div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">01</div><h2>직독직해 및 어휘 정리</h2></div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 1</div>
+        <div class="sentence-en">Much research / in social psychology / has documented / some of the key strategies / that people rely upon / in defending the belief / I am good.</div>
+        <div class="sentence-ko">많은 연구가 / 사회 심리학의 / 기록해 왔다 / 주요 전략 중 일부를 / 사람들이 의존하는 / 믿음을 방어할 때 / 나는 훌륭하다는.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> document - 기록하다, strategy - 전략, rely upon - ~에 의존하다</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 사람들은 자존감('나는 훌륭해')을 지키기 위해 특정한 심리적 전략들을 사용한다.<br>
+          <strong>역할:</strong> 글의 핵심 주제인 '자아상 보호를 위한 심리적 방어 기제'를 소개한다.
+        </div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 2</div>
+        <div class="sentence-en">For example, / when people perform poorly / at something, / they / tend to trivialize / their failures.</div>
+        <div class="sentence-ko">예를 들어 / 사람들이 형편없이 수행할 때 / 어떤 일에서 / 그들은 대수롭지 않게 여기는 경향이 있다 / 그들의 실패를.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> trivialize - 대수롭지 않게 여기다(축소하다)</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 대표적인 전략으로, 사람들은 무언가에 실패했을 때 그 의미를 축소해버린다.<br>
+          <strong>역할:</strong> 핵심 전략의 첫 번째 구체적 양상(실패의 축소)을 제시한다.
+        </div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 3</div>
+        <div class="sentence-en">This trivialization / disarms / those failures / and prevents / them / from overwriting / their life stories.</div>
+        <div class="sentence-ko">이러한 축소는 / 무력화시킨다 / 그 실패들을 / 그리고 막는다 / 그것들이 / 덮어쓰는 것을 / 그들의 인생 이야기를.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> trivialization - 하찮게 여김(축소), disarm - 무장 해제시키다(무력화하다), overwrite - 덮어쓰다</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 실패를 하찮게 취급함으로써, 실패가 자신의 전체 자아상을 망치는 것을 막는다.<br>
+          <strong>역할:</strong> '실패 축소' 전략이 자아 보호에 어떻게 기능하는지 그 메커니즘을 설명한다.
+        </div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 4</div>
+        <div class="sentence-en">Imagine, / say, / that someone fails a calculus test.</div>
+        <div class="sentence-ko">상상해 보라 / 가령 / 누군가가 미적분 시험에 낙제했다고.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> calculus - 미적분학</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> (예시) 미적분 시험에서 낙제한 상황을 가정한다.<br>
+          <strong>역할:</strong> 실패 축소 전략의 이해를 돕기 위한 구체적인 가상 사례를 시작한다.
+        </div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 5</div>
+        <div class="sentence-en">A common defensive response / is / to conclude / that this test was just not that important / to them.</div>
+        <div class="sentence-ko">흔한 방어적 반응은 / 결론 내리는 것이다 / 이 시험이 단지 그들에게 그다지 중요하지 않았다고.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> defensive - 방어적인</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 낙제한 사람은 그 시험 자체가 원래 안 중요한 것이었다고 자기방어를 한다.<br>
+          <strong>역할:</strong> 실패에 직면했을 때 나타나는 전형적인 합리화 과정을 묘사한다.
+        </div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 6</div>
+        <div class="sentence-en">They / may say / to themselves, / “Who cares about calculus anyway. / I’m not going to become a mathematician.”</div>
+        <div class="sentence-ko">그들은 / 말할지도 모른다 / 속으로 / "어차피 미적분에 누가 신경 쓴담. / 난 수학자가 되지는 않을 거니까."</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 수학자가 될 것도 아닌데 수학 시험 따위 망쳐도 상관없다며 의미를 깎아내린다.<br>
+          <strong>역할:</strong> 5번 문장의 자기방어를 실제 독백의 형태로 구체화하여 보여준다.
+        </div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 7</div>
+        <div class="sentence-en">In contrast, / people / will typically show / the precise opposite pattern / for their successes / and will interpret / those events / as being of outsize importance.</div>
+        <div class="sentence-ko">대조적으로 / 사람들은 / 전형적으로 보여줄 것이다 / 정확히 반대의 패턴을 / 그들의 성공에 대해서는 / 그리고 해석할 것이다 / 그러한 사건들을 / 엄청나게 중요한 것으로.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> in contrast - 대조적으로, precise - 정확한, outsize - 대형의(엄청난)</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 반대로, 무언가에 성공했을 때는 그 성공의 중요성을 엄청나게 부풀린다.<br>
+          <strong>역할:</strong> 삽입된 문장으로, '실패 축소'와 정확히 대비되는 '성공 과장'이라는 두 번째 심리 전략으로 논점을 전환한다.
+        </div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 8</div>
+        <div class="sentence-en">So / if someone aces a calculus test, / they / may think / to themselves / about how crucial calculus is / for their future career success / and how it’s key / to getting into graduate school or getting a highly desired job / as an engineer or a financial analyst.</div>
+        <div class="sentence-ko">그래서 / 만약 누군가가 미적분 시험에서 만점을 받는다면 / 그들은 / 생각할지도 모른다 / 속으로 / 미적분이 얼마나 중대한지에 대해 / 그들의 미래 직업적 성공을 위해 / 그리고 그것이 얼마나 핵심인지에 대해 / 대학원에 진학하거나 매우 바라는 직장을 얻는 데 / 엔지니어 혹은 재무 분석가로서.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> ace - 만점을 받다, 완벽하게 해내다, crucial - 중대한</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 같은 수학 시험이라도 만점을 받으면, 그것이 인생 성공의 핵심 지표인 것처럼 의미를 극대화한다.<br>
+          <strong>역할:</strong> 4~6번 문장과 정확히 대칭되는 예시(성공 시의 합리화)를 보여주어 두 전략의 대비를 명확히 한다.
+        </div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 9</div>
+        <div class="sentence-en">By titrating / how importantly people view their successes and failures, / they / can shape / their emotional reactions / to these events / in a way / that enables them to tell a more convincing story / that I am good.</div>
+        <div class="sentence-ko">조정함으로써 / 사람들이 그들의 성공과 실패를 얼마나 중요하게 보느냐를 / 그들은 / 형성할 수 있다 / 그들의 감정적 반응을 / 이러한 사건들에 대한 / 방식으로 / 그들이 더 설득력 있는 이야기를 할 수 있게 해 주는 / '나는 훌륭하다'라는.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> titrate - 적정하다(조정하다), convincing - 설득력 있는</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 이처럼 사람들은 사건의 경중을 입맛대로 조정함으로써 '나는 훌륭한 사람'이라는 자아상을 지켜낸다.<br>
+          <strong>역할:</strong> 실패 축소와 성공 과장이라는 두 가지 방어 기제의 궁극적인 목적이 자존감 보호에 있음을 종합하며 글을 결론짓는다.
+        </div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">02</div><h2>어법 및 구문 포인트</h2></div>
+      <div class="card no-break">
+        <div class="point-block">
+          <div class="sentence-id">문장 3</div>
+          <div class="line-item"><strong>[This trivialization disarms those failures and prevents them from overwriting their life stories.]</strong></div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul>
+              <li>등위접속사 <code>and</code>를 기준으로 3인칭 단수 동사 <code>disarms</code>와 <code>prevents</code>가 병렬 연결되어 있다.</li>
+              <li><code>prevent A from ~ing</code> (A가 ~하는 것을 막다/예방하다) 구문이 쓰였다. 전치사 <code>from</code> 뒤에 동명사 <code>overwriting</code>이 왔다.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 8</div>
+          <div class="line-item"><strong>[... they may think to themselves about how crucial calculus is for their future career success and how it’s key to getting into graduate school...]</strong></div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul>
+              <li>전치사 <code>about</code>의 목적어로 두 개의 간접의문문(<code>how crucial calculus is</code>, <code>how it's key</code>)이 병렬 연결되었다. 의문사구(<code>how crucial</code>) 뒤에 주어+동사의 어순이 왔음에 주의한다.</li>
+              <li><code>key to ~ing</code> 구문에서 <code>to</code>는 전치사이므로 뒤에 동사원형이 아닌 동명사 <code>getting</code>이 두 번(<code>getting into</code>, <code>getting a</code>) 병렬로 쓰였다.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">03</div><h2>문장 단위 내용 흐름 정리</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>[주제 도입 (문장 1)] :</strong> 인간은 '나는 훌륭하다'라는 긍정적 자아상을 지키기 위한 심리적 전략을 씀.</div>
+        <div class="line-item"><strong>[전략 1 (실패의 축소) (문장 2~6)] :</strong> 실패했을 때는 그 일의 가치를 깎아내려 실패가 인생 전체를 덮어쓰지 못하게 방어함 (예: 수학 낙제 -> "수학 그깟 거 안 중요해").</div>
+        <div class="line-item"><strong>[전략 2 (성공의 과장) (문장 7~8)] :</strong> 반대로 성공했을 때는 그 사건에 엄청난 중요성을 부여함 (예: 수학 만점 -> "수학이야말로 내 성공의 핵심 지표지").</div>
+        <div class="line-item"><strong>[종합 결론 (문장 9)] :</strong> 성공과 실패에 대한 주관적 중요도를 이처럼 마음대로 조정(titrate)함으로써, 인간은 상처받지 않고 '나는 잘났다'는 감정적 내러티브를 완성함.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">04</div><h2>표현들의 연관성 정리</h2></div>
+      <div class="card no-break">
+        <h3>자아 보호 기제</h3>
+        <div class="chip-row">
+          <span class="chip">defending the belief I am good</span> <span class="arrow">=</span> <span class="chip">defensive response</span> <span class="arrow">=</span> <span class="chip">convincing story that I am good</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 20px;">외부의 사건으로부터 자신의 자존감과 긍정적 정체성을 지켜내려는 본능적인 '자아 보호 기제'를 뜻한다.</div>
+
+        <h3>실패의 축소 (방어 전략)</h3>
+        <div class="chip-row">
+          <span class="chip">trivialize their failures</span> <span class="arrow">=</span> <span class="chip">not that important</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 20px;">내게 불리한 사건의 의미를 깎아내리는 자기 합리화 과정이다.</div>
+
+        <h3>성공의 과장 (이중적 잣대)</h3>
+        <div class="chip-row">
+          <span class="chip">outsize importance</span> <span class="arrow">=</span> <span class="chip">how crucial</span> <span class="arrow">=</span> <span class="chip">key to</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 4px;">반대로 내게 유리한 사건의 가치는 부풀리는 이중적이고 편향적인 태도를 나타낸다.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">05</div><h2>소재와 주제문</h2></div>
+      <div class="card no-break" style="border-top-color: #f59e0b;">
+        <div class="line-item" style="margin-bottom: 12px;"><strong>핵심 소재:</strong> 긍정적 자아상을 보호하기 위한 자기위주편향 (성공 과장과 실패 축소)</div>
+        <div class="mini-divider"></div>
+        <div class="label" style="margin-top: 8px;">주제문 (문장 9)</div>
+        <div class="sentence-en" style="margin-bottom: 0;">By titrating how importantly people view their successes and failures, they can shape their emotional reactions to these events in a way that enables them to tell a more convincing story that I am good.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">06</div><h2>지문의 요약 및 패러프레이징</h2></div>
+      <div class="card no-break">
+        <div class="summary-pair">
+          <div class="label">요약 / Summary</div>
+          <div class="sentence-en">People use defense mechanisms to protect the belief that "I am good" by trivializing their failures as unimportant and exaggerating their successes as highly crucial, thereby maintaining a positive self-image.</div>
+          <div class="sentence-ko">사람들은 '나는 훌륭하다'는 믿음을 지키기 위해 방어 기제를 사용하는데, 실패한 일은 하찮은 것으로 축소하고 성공한 일은 매우 중요한 것으로 과장하여 긍정적인 자아상을 유지한다.</div>
+        </div>
+        <div class="divider"></div>
+        <div class="summary-pair">
+          <div class="label">패러프레이징 / Paraphrasing</div>
+          <div class="sentence-en">Our brain distorts value judgments of facts to defend ourselves from events that damage our self-esteem. By depreciating the meaning when the outcome is bad and inflating its value when the outcome is good, we constantly rewrite an emotional script that is advantageous to ourselves.</div>
+          <div class="sentence-ko">우리의 뇌는 자존감을 손상시키는 사건으로부터 자신을 방어하기 위해 사실에 대한 가치 판단을 왜곡한다. 결과가 나쁠 때는 그 의미를 폄하하고, 결과가 좋을 때는 그 가치를 부풀림으로써 스스로에게 유리한 감정적 각본을 끊임없이 재작성한다.</div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">07</div><h2>도움이 되는 배경지식</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>1. 자기고양 편향 (Self-serving Bias):</strong><br> 성공은 자신의 능력이나 노력 등 내부 요인으로 돌리고, 실패는 상황이나 운 등 외부 요인으로 돌려 자신을 유리하게 평가하는 인지적 편향이다. 본문에서는 이 편향이 '사건의 중요도'를 조작하는 방식으로 발현되는 것을 보여준다.</div>
+        <div class="divider"></div>
+        <div class="line-item"><strong>2. 인지부조화 이론 (Cognitive Dissonance):</strong><br> 자신의 믿음('나는 훌륭하다')과 현실의 결과('시험에 낙제했다')가 충돌할 때 느끼는 불편함을 해소하기 위해, 차라리 "그 시험은 중요하지 않다"고 현실에 대한 태도를 바꿔버리는 심리적 합리화 과정과 맞닿아 있다.</div>
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>

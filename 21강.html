@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>21강 지문분석 (1번, 3번) - Lio T</title>
+  <style>
+    /* 디자인 시스템 변수 설정 */
+    :root {
+      --bg-color: #f4f7fb;
+      --text-main: #0f172a;
+      --text-sub: #334155;
+      --text-muted: #64748b;
+      --primary: #4f46e5;
+      --primary-light: #e0e7ff;
+      --secondary: #3b82f6;
+      --border-light: #e2e8f0;
+      --card-bg: #ffffff;
+      --radius: 12px;
+    }
+
+    /* 페이지 기본 설정 (세로 모드) */
+    @page {
+      size: A4 portrait;
+      margin: 15mm; 
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg-color);
+      color: var(--text-main);
+      font-family: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+      letter-spacing: -0.02em; 
+    }
+
+    body {
+      padding: 10px; 
+      display: flex;
+      justify-content: center;
+    }
+
+    .doc {
+      width: 100%;
+      max-width: 210mm; 
+    }
+
+    /* =========================================
+       지문 간 구분선 (화면용 vs 인쇄용)
+       ========================================= */
+    .passage-separator {
+      height: 4px;
+      background-image: repeating-linear-gradient(to right, #cbd5e1 0, #cbd5e1 10px, transparent 10px, transparent 20px);
+      margin: 80px 0;
+      border: none;
+      position: relative;
+    }
+    .passage-separator::after {
+      content: '▼ 다음 지문 (인쇄 시 무조건 새 페이지에서 시작됩니다) ▼';
+      position: absolute;
+      top: -26px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--bg-color);
+      padding: 0 16px;
+      color: #94a3b8;
+      font-weight: 700;
+      font-size: 10pt;
+    }
+
+    /* 공통 레이아웃 제어 */
+    .no-break { page-break-inside: avoid; break-inside: avoid; }
+    
+    .header-container { margin-bottom: 30px; text-align: center; }
+    .hero-title {
+      display: inline-block; margin: 0 0 10px 0; padding: 8px 24px; font-size: 22pt; font-weight: 800;
+      color: #ffffff; background: linear-gradient(135deg, var(--primary), var(--secondary));
+      border-radius: 999px; box-shadow: 0 4px 14px rgba(79, 70, 229, 0.25);
+    }
+    .subtitle { font-size: 13pt; font-weight: 600; color: var(--text-muted); }
+
+    .section-title {
+      display: flex; align-items: center; gap: 12px; margin: 30px 0 16px 0;
+      border-bottom: 2px solid var(--border-light); padding-bottom: 4px;
+      page-break-after: avoid; break-after: avoid;
+    }
+    .page-no {
+      width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+      background: var(--primary); color: white; font-weight: 700; font-size: 12pt; border-radius: 8px;
+    }
+    h2 { margin: 0; font-size: 16pt; font-weight: 700; color: var(--text-main); }
+
+    .card {
+      background: var(--card-bg); border: 1px solid var(--border-light); border-top: 4px solid var(--primary);
+      border-radius: var(--radius); padding: 8px 16px; margin-bottom: 16px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    }
+    
+    .text-block-title { font-size: 12pt; font-weight: 700; color: var(--primary); margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+    .text-block-title::before { content: ''; display: block; width: 6px; height: 6px; border-radius: 50%; background: var(--primary); }
+    .eng-body { font-size: 12pt; line-height: 1.7; font-weight: 500; color: var(--text-main); margin-bottom: 20px; text-align: justify; }
+    .divider { height: 1px; background: var(--border-light); margin: 20px 0; }
+    .mini-divider { height: 1px; background: var(--border-light); margin: 8px 0; }
+    .kor-body { font-size: 11.5pt; line-height: 1.7; color: var(--text-sub); text-align: justify; word-break: keep-all; }
+
+    .sentence-card {
+      background: var(--card-bg); border: 1px solid var(--border-light); border-left: 4px solid var(--secondary);
+      border-radius: 8px; padding: 8px 16px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    }
+    .sentence-id { display: inline-block; margin-bottom: 8px; padding: 2px 8px; border-radius: 6px; background: var(--primary-light); color: var(--primary); font-size: 9pt; font-weight: 700; }
+    .sentence-en { font-size: 12.5pt; font-weight: 600; line-height: 1.6; color: var(--text-main); margin-bottom: 4px; }
+    .sentence-ko { font-size: 9pt; line-height: 1.6; color: var(--text-sub); margin-bottom: 4px; word-break: keep-all; }
+    .vocab-box { display: inline-block; padding: 4px 8px; border-radius: 6px; background: #f8fafc; border: 1px dashed #cbd5e1; font-size: 9pt; color: var(--text-muted); margin-bottom: 4px;}
+    .analysis-text { font-size: 9.5pt; color: var(--text-muted); line-height: 1.5; margin-top: 4px;}
+
+    .point-block { margin-bottom: 16px; }
+    .point-block:last-child { margin-bottom: 0; }
+    .line-item { font-size: 11.5pt; line-height: 1.7; margin: 0 0 8px 0; word-break: keep-all; }
+    .exam-note { margin-top: 8px; padding: 8px 12px; background: #fffbeb; border-left: 3px solid #f59e0b; border-radius: 0 6px 6px 0; font-size: 10.5pt; line-height: 1.6; color: #92400e; }
+    .exam-note ul { margin: 4px 0 0 0; padding-left: 20px; }
+    .exam-note li { margin-bottom: 4px; }
+    .exam-note li:last-child { margin-bottom: 0; }
+
+    .chip-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 8px 0 20px 0; }
+    .chip { padding: 4px 10px; border-radius: 999px; background: var(--primary-light); color: var(--primary); font-size: 10pt; font-weight: 600; }
+    .arrow { color: var(--text-muted); font-weight: 700; }
+    h3 { font-size: 12pt; margin: 0 0 8px 0; color: var(--text-main); }
+    .label { display: inline-block; font-size: 9.5pt; font-weight: 700; color: var(--secondary); background: #eff6ff; padding: 2px 6px; border-radius: 4px; margin-bottom: 6px; }
+    .summary-pair { margin-bottom: 20px; }
+    .summary-pair:last-child { margin-bottom: 0; }
+
+    /* =========================================
+       인쇄(Print) 전용 스타일 - 다중 지문 분할 처리
+       ========================================= */
+    @media print {
+      html, body { background: #ffffff !important; padding: 0; }
+      .doc { max-width: 100%; }
+
+      .passage-separator {
+        page-break-before: always !important;
+        break-before: page !important;
+        margin: 0 !important;
+        height: 0 !important;
+        border: none !important;
+        background: none !important;
+      }
+      .passage-separator::after { display: none !important; }
+
+      .page-break { page-break-before: always !important; break-before: page !important; }
+      .card, .sentence-card { box-shadow: none !important; border: 1px solid #cbd5e1 !important; page-break-inside: avoid !important; break-inside: avoid !important; }
+      .section-title { page-break-after: avoid !important; break-after: avoid !important; }
+
+      .hero-title { background: #0f172a !important; color: white !important; }
+      .page-no { background: #0f172a !important; }
+      .sentence-id, .chip, .label { border: 1px solid #cbd5e1 !important; background: #f8fafc !important; color: #0f172a !important; }
+      .exam-note { background: #f8fafc !important; border-left-color: #94a3b8 !important; color: #334155 !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="doc">
+
+    <!-- ========================================== -->
+    <!-- [지문 2] 21강 1번                          -->
+    <!-- ========================================== -->
+    
+    <div class="passage-container">
+      <div class="header-container">
+        <div class="hero-title">21강 1번 지문분석</div>
+        <div class="subtitle">Lio T 내신대비 지문분석서</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">00</div><h2>영어 본문 및 전체 해석</h2></div>
+      <div class="card no-break">
+        <div class="text-block-title">영어 본문</div>
+        <div class="eng-body">
+          Perhaps nothing has revolutionized the study of human-environment interactions more than the development of spatially explicit methods for collecting and analyzing data. Just a few decades ago, most natural and social scientists collected their data without precise spatial referents. References were made to watersheds, to communities, to villages, to cities, to proximity to rivers, and so on. In some cases (in anthropology mostly), there was even the custom of changing the name of the community and even its location, “to protect the informants.” While confidentiality remains an important concern when working with human subjects, the extreme to which this was done was largely unjustified. Everyone knew more or less where these studied communities were, and anyone interested could have found out. Be that as it may, there was very little interest, except in geography, to precisely locate a study area on a map with coordinates. Geography persisted, and finally convinced the rest of us, that place was fundamentally important to understand human-environment dynamics.
+        </div>
+        <div class="divider"></div>
+        <div class="text-block-title">전체 해석</div>
+        <div class="kor-body">
+          아마도 공간적으로 명확한 데이터 수집 및 분석 방법의 발전만큼 인간-환경 상호작용 연구에 혁신을 가져온 것은 없을 것이다. 불과 몇 십 년 전만 해도 대부분의 자연 과학자와 사회 과학자들은 정확한 공간적 지시 대상 없이 데이터를 수집했다. 강의 유역, 지역 사회, 마을, 도시, 강과의 근접성 등에 대한 언급이 이루어졌다. 어떤 경우(주로 인류학에서)에는 "정보 제공자를 보호하기 위해" 지역 사회의 이름과 심지어 그 위치까지 바꾸는 관습조차 있었다. 인간 대상을 연구할 때 기밀 유지가 여전히 중요한 문제이긴 하지만, 이것이 행해진 극단적인 정도는 대체로 정당화될 수 없었다. 연구된 이 지역 사회들이 대략 어디에 있는지 모두가 알고 있었고, 관심 있는 사람이라면 누구나 알아낼 수 있었기 때문이다. 어쨌든 간에, 지리학을 제외하고는 좌표를 사용하여 지도상에 연구 지역의 위치를 정확히 지정하려는 관심이 거의 없었다. 지리학은 고집스럽게 주장했고, 마침내 우리 나머지 사람들에게 장소가 인간-환경의 역학을 이해하는 데 근본적으로 중요하다는 것을 납득시켰다.
+        </div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">01</div><h2>직독직해 및 어휘 정리</h2></div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 1</div>
+        <div class="sentence-en">Perhaps nothing / has revolutionized / the study of human-environment interactions / more than the development / of spatially explicit methods / for collecting and analyzing data.</div>
+        <div class="sentence-ko">아마도 어떤 것도 / 혁신을 가져오지 못했을 것이다 / 인간-환경 상호작용 연구에 / 발전보다 / 공간적으로 명확한 방법의 / 데이터를 수집하고 분석하기 위한.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> revolutionize - 혁신을 가져오다, explicit - 명백한(명확한)</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 공간적으로 명확한 데이터 수집/분석법이 인간-환경 상호작용 연구를 혁신했다.<br>
+          <strong>역할:</strong> 글의 주제를 제시하며, 공간 데이터 분석 방법론의 중요성을 강조한다. (부정 주어 + 비교급을 사용한 최상급 의미 표현)
+        </div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 2</div>
+        <div class="sentence-en">Just a few decades ago, / most natural and social scientists / collected / their data / without precise spatial referents.</div>
+        <div class="sentence-ko">불과 몇 십 년 전만 해도 / 대부분의 자연 및 사회 과학자들은 / 수집했다 / 그들의 데이터를 / 정확한 공간적 지시 대상 없이.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> precise - 정확한, referent - 지시 대상</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 과거 과학자들은 정확한 공간 정보 없이 데이터를 수집했다.<br>
+          <strong>역할:</strong> 앞 문장에서 언급한 '혁신' 이전의 과거 연구 관행을 소개하며 대조를 이끌어낸다.
+        </div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 3</div>
+        <div class="sentence-en">References / were made / to watersheds, to communities, to villages, to cities, to proximity to rivers, and so on.</div>
+        <div class="sentence-ko">언급이 이루어졌다 / 강의 유역, 지역 사회, 마을, 도시, 강과의 근접성 등에.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> reference - 언급, watershed - 강 유역(분수령), proximity - 근접성</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 과거에는 대략적이고 모호한 공간 정보(마을, 강 유역 등)만 기록되었다.<br>
+          <strong>역할:</strong> 앞 문장의 '정확한 공간적 지시 대상이 없는' 상태의 구체적인 양상을 나열한다.
+        </div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 4</div>
+        <div class="sentence-en">In some cases / (in anthropology mostly), / there / was / even the custom / of changing the name of the community and even its location, / “to protect the informants.”</div>
+        <div class="sentence-ko">어떤 경우 / (주로 인류학에서) / ~조차 있었다 / 관습(조차 있었다) / 지역 사회의 이름과 심지어 그 위치까지 바꾸는 / "정보 제공자를 보호하기 위해".</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> anthropology - 인류학, custom - 관습, informant - 정보 제공자</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 과거에는 정보 제공자 보호를 명목으로 연구 장소의 위치마저 임의로 바꾸는 관행이 있었다.<br>
+          <strong>역할:</strong> 정확한 공간 데이터가 누락되었던 과거의 극단적인 사례를 보여준다.
+        </div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 5</div>
+        <div class="sentence-en">While confidentiality remains an important concern / when working with human subjects, / the extreme / to which this was done / was / largely unjustified.</div>
+        <div class="sentence-ko">기밀 유지가 중요한 문제로 남아있긴 하지만 / 인간 대상을 연구할 때 / 극단적인 정도는 / 이것이 행해진 / 대체로 정당화될 수 없었다.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> confidentiality - 기밀 유지, subject - (연구) 대상자, extreme - 극단, unjustified - 정당화되지 않은</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 기밀 유지는 중요하지만, 위치 정보를 조작할 정도의 극단적 조치는 정당화될 수 없었다.<br>
+          <strong>역할:</strong> 과거 인류학의 위치 정보 조작 관행에 대한 필자의 비판적 시각을 제시한다.
+        </div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 6</div>
+        <div class="sentence-en">Everyone / knew / more or less where these studied communities were, / and anyone interested / could have found out.</div>
+        <div class="sentence-ko">모두가 / 알았다 / 대략 이 연구된 지역 사회들이 어디에 있는지 / 그리고 관심 있는 사람이라면 누구나 / 알아낼 수 있었을 것이다.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> more or less - 대략(어느 정도)</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 사실 사람들은 연구 장소가 어디인지 대충 알고 있었기 때문에 조작의 실효성이 없었다.<br>
+          <strong>역할:</strong> 앞 문장에서 비판한 내용(정당화될 수 없었다)에 대한 논리적 근거를 덧붙인다.
+        </div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 7</div>
+        <div class="sentence-en">Be that as it may, / there / was / very little interest, / except in geography, / to precisely locate a study area / on a map with coordinates.</div>
+        <div class="sentence-ko">어쨌든 간에 / 관심이 거의 없었다 / 지리학을 제외하고는 / 연구 지역을 정확히 위치시키는 데 / 좌표가 있는 지도 위에.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> be that as it may - 어쨌든 간에, coordinate - 좌표</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 과거에는 지리학을 제외한 학문들에서 좌표로 위치를 명시하는 것에 무관심했다.<br>
+          <strong>역할:</strong> 다른 학문 분야의 무관심과 지리학의 특이성을 대조하여 지리학의 공로를 부각할 준비를 한다.
+        </div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 8</div>
+        <div class="sentence-en">Geography / persisted, / and finally convinced / the rest of us, / that place was fundamentally important / to understand human-environment dynamics.</div>
+        <div class="sentence-ko">지리학은 / 고집스럽게 주장했다 / 그리고 마침내 우리 나머지 사람들에게 납득시켰다 / 장소가 근본적으로 중요하다는 것을 / 인간-환경의 역학을 이해하는 데.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> persist - 고집하다(주장하다), convince - 납득시키다, fundamentally - 근본적으로, dynamics - 역학</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 지리학의 노력으로 장소(공간 데이터)가 인간-환경 연구에 필수적이라는 사실이 널리 인정받게 되었다.<br>
+          <strong>역할:</strong> 글의 결론으로서, 첫 문장에서 제기된 '혁신'을 이끈 주체가 지리학이었음을 밝히고 공간 정보의 근본적 중요성을 다시금 강조한다.
+        </div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">02</div><h2>어법 및 구문 포인트</h2></div>
+      <div class="card no-break">
+        <div class="point-block">
+          <div class="sentence-id">문장 1</div>
+          <div class="line-item"><strong>[Perhaps nothing has revolutionized the study of human-environment interactions more than the development of spatially explicit methods for collecting and analyzing data.]</strong></div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul>
+              <li>부정 대명사 <code>nothing</code> 주어와 비교급 <code>more than</code>을 결합하여 최상급의 의미("~보다 더 혁신을 가져온 것은 없다", 즉 "~가 가장 큰 혁신을 가져왔다")를 나타낸다.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 5</div>
+          <div class="line-item"><strong>[the extreme to which this was done was largely unjustified.]</strong></div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul>
+              <li>전치사+관계대명사 <code>to which</code>가 선행사 <code>the extreme</code>을 수식한다. 뒤에는 완전한 절(<code>this was done</code>)이 온다. <code>which</code> 단독으로 쓰일 수 없음에 유의해야 한다.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 8</div>
+          <div class="line-item"><strong>[Geography persisted, and finally convinced the rest of us, that place was fundamentally important to understand human-environment dynamics.]</strong></div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul>
+              <li><code>convinced</code> 동사는 간접목적어(<code>the rest of us</code>)와 직접목적어인 명사절(<code>that place was ...</code>)을 취했다. 명사절을 이끄는 접속사 <code>that</code>이 바르게 쓰였다.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">03</div><h2>문장 단위 내용 흐름 정리</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>[도입 (문장 1)] :</strong> 공간적으로 명확한 데이터 수집법이 인간-환경 연구를 혁신했다는 주제 선언.</div>
+        <div class="line-item"><strong>[과거의 문제점 제기 (문장 2~4)] :</strong> 과거 과학자들은 공간 정보를 모호하게 기록하거나(강 근처 등) 심지어 의도적으로 조작(위치 변경)함.</div>
+        <div class="line-item"><strong>[비판 (문장 5~6)] :</strong> 익명성 보장이라는 명분에도 불구하고, 위치 조작은 실효성이 없고 정당화될 수 없었음.</div>
+        <div class="line-item"><strong>[결론 (문장 7~8)] :</strong> 타 학문들의 무관심 속에서도 지리학은 정확한 좌표 기반의 장소 정보가 인간-환경 연구에 필수적임을 끝까지 주장하여 모두를 납득시킴.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">04</div><h2>표현들의 연관성 정리</h2></div>
+      <div class="card no-break">
+        <h3>명확한 공간 데이터 (지리학적 방식)</h3>
+        <div class="chip-row">
+          <span class="chip">spatially explicit methods</span> <span class="arrow">=</span> <span class="chip">precise spatial referents</span> <span class="arrow">=</span> <span class="chip">on a map with coordinates</span> <span class="arrow">=</span> <span class="chip">place</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 20px;">명확한 공간 데이터와 위치 정보를 나타내는 일련의 표현들로, 지리학적 연구 방법의 핵심을 뜻한다.</div>
+
+        <h3>모호하고 조작된 공간 정보 (과거 관행)</h3>
+        <div class="chip-row">
+          <span class="chip">watersheds, proximity to rivers</span> <span class="arrow">=</span> <span class="chip">changing its location</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 4px;">명확한 위치 기록을 배제하고 모호하거나 조작된 공간 정보를 사용하던 과거의 부정적 관행을 나타내는 예시들이다.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">05</div><h2>소재와 주제문</h2></div>
+      <div class="card no-break" style="border-top-color: #f59e0b;">
+        <div class="line-item" style="margin-bottom: 12px;"><strong>핵심 소재:</strong> 인간-환경 상호작용 연구에서 정확한 공간 정보(장소) 데이터의 중요성</div>
+        <div class="mini-divider"></div>
+        <div class="label" style="margin-top: 8px;">주제문 (문장 8)</div>
+        <div class="sentence-en" style="margin-bottom: 0;">Geography persisted, and finally convinced the rest of us, that place was fundamentally important to understand human-environment dynamics.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">06</div><h2>지문의 요약 및 패러프레이징</h2></div>
+      <div class="card no-break">
+        <div class="summary-pair">
+          <div class="label">요약 / Summary</div>
+          <div class="sentence-en">In the past, scientists collected data without precise spatial referents, but geography's persistent efforts proved that pinpointing location is fundamentally important to understanding human-environment interactions.</div>
+          <div class="sentence-ko">과거 과학자들은 정확한 공간 정보 없이 데이터를 수집했지만, 지리학의 지속적인 노력으로 장소를 정확히 파악하는 것이 인간-환경 상호작용 연구에 근본적으로 중요하다는 것이 입증되었다.</div>
+        </div>
+        <div class="divider"></div>
+        <div class="summary-pair">
+          <div class="label">패러프레이징 / Paraphrasing</div>
+          <div class="sentence-en">For a long time, researchers neglected to record geographic coordinates; eventually, through geography, it was established that explicit location data is essential for elucidating the dynamics between humanity and the environment.</div>
+          <div class="sentence-ko">오랜 기간 동안 연구자들은 지리적 좌표를 기록하는 것을 무시했으나, 결국 지리학을 통해 명확한 위치 데이터가 인류와 환경의 역학 관계를 규명하는 데 필수적이라는 사실이 확립되었다.</div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">07</div><h2>도움이 되는 배경지식</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>1. 지리적 참조 (Spatial Referent):</strong><br> 특정 데이터가 지구 상의 어느 위치에 해당하는지를 좌표(위도와 경도) 등으로 정확히 표시하는 것을 말한다.</div>
+        <div class="divider"></div>
+        <div class="line-item"><strong>2. 공간 정보 기술의 발전:</strong><br> GPS(위성항치시스템)와 GIS(지리정보시스템)의 발달로 인해 현대 학문은 모호한 위치 설명 대신 정확한 좌표 기반의 메타데이터를 필수적으로 활용하게 되었다.</div>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- [지문 4] 21강 3번                          -->
+    <!-- ========================================== -->
+    <hr class="passage-separator" />
+    
+    <div class="passage-container">
+      <div class="header-container">
+        <div class="hero-title">21강 3번 지문분석</div>
+        <div class="subtitle">Lio T 내신대비 지문분석서</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">00</div><h2>영어 본문 및 전체 해석</h2></div>
+      <div class="card no-break">
+        <div class="text-block-title">영어 본문</div>
+        <div class="eng-body">
+          Hunters in the Ache tribe, living in the Paraguayan jungle, have a lot of ups and downs in their success at the hunt. Some days they bring home much more food than they could possibly eat; other days they come home empty-handed. If a man caught a wild pig and hoarded it for himself and his family, much of it would go to waste (there are no deep freeze refrigerators in the Paraguayan jungle). During unlucky periods, individual hunters and their families would starve. Instead of living by a philosophy of “rugged individualism,” however, hunters who have a lucky day share their meat with other families. And they don’t just share a little; they share a lot — fully 90%. In exchange for this generosity, their neighbors share with them on days when the luck runs the other way. By exchanging resources, particularly those that are unpredictable and uncertain (like meat from the hunt, as opposed to vegetable crops), the group provides a mutual insurance policy against starvation.
+        </div>
+        <div class="divider"></div>
+        <div class="text-block-title">전체 해석</div>
+        <div class="kor-body">
+          파라과이 정글에 사는 아체(Ache) 부족의 사냥꾼들은 사냥의 성공에 있어 많은 기복을 겪는다. 어떤 날은 그들이 먹을 수 있는 것보다 훨씬 더 많은 식량을 집으로 가져오고, 다른 날은 빈손으로 돌아온다. 만약 어떤 사람이 야생 돼지를 잡아 자신과 가족을 위해 몰래 비축한다면, 그것의 상당 부분은 버려지게 될 것이다 (파라과이 정글에는 냉동고가 없기 때문이다). 운이 나쁜 기간 동안에는, 개인 사냥꾼들과 그들의 가족들은 굶주리게 될 것이다. 그러나 "단호한 개인주의"라는 철학으로 살아가는 대신, 운이 좋은 날을 보낸 사냥꾼들은 다른 가족들과 고기를 나눈다. 그리고 그들은 그저 조금 나누는 것이 아니라 많이 나눈다 — 무려 90%를 말이다. 이러한 관대함에 대한 대가로, 이웃들은 운이 반대로 흐르는 날에 그들과 함께 나눈다. 예측 불가능하고 불확실한 자원(채소 작물과 달리 사냥에서 얻은 고기와 같은)을 교환함으로써, 이 집단은 기아에 대비한 상호 보험 정책을 마련하는 것이다.
+        </div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">01</div><h2>직독직해 및 어휘 정리</h2></div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 1</div>
+        <div class="sentence-en">Hunters / in the Ache tribe, / living in the Paraguayan jungle, / have / a lot of ups and downs / in their success / at the hunt.</div>
+        <div class="sentence-ko">사냥꾼들은 / 아체 부족의 / 파라과이 정글에 사는 / 갖는다 / 많은 기복을 / 그들의 성공에 있어 / 사냥에서의.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> tribe - 부족, ups and downs - 기복</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 정글에 사는 아체 부족의 사냥 성공률은 변동성이 크다.<br>
+          <strong>역할:</strong> 사냥의 불확실성이라는 글의 핵심 상황적 배경을 제시한다.
+        </div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 2</div>
+        <div class="sentence-en">Some days / they / bring / home / much more food / than they could possibly eat; / other days / they / come / home / empty-handed.</div>
+        <div class="sentence-ko">어떤 날에는 / 그들은 / 가져온다 / 집으로 / 훨씬 더 많은 식량을 / 그들이 먹을 수 있는 것보다 / 다른 날에는 / 그들은 / 온다 / 집으로 / 빈손으로.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> empty-handed - 빈손으로</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 사냥꾼들은 식량이 남을 정도로 많이 잡거나 아예 못 잡는 극단적인 상황을 겪는다.<br>
+          <strong>역할:</strong> 앞 문장의 '기복(ups and downs)'이 구체적으로 어떤 의미인지를 설명한다.
+        </div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 3</div>
+        <div class="sentence-en">If a man caught a wild pig / and hoarded it / for himself and his family, / much of it / would go / to waste / (there are no deep freeze refrigerators in the Paraguayan jungle).</div>
+        <div class="sentence-ko">만약 어떤 사람이 야생 돼지를 잡아 / 그것을 몰래 비축한다면 / 자신과 가족을 위해 / 그것의 상당 부분은 / 갈 것이다 / 낭비로(버려질 것이다) / (파라과이 정글에는 냉동고가 없다).</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> hoard - 비축하다, go to waste - 낭비되다, 버려지다</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 많이 잡은 고기를 보관할 수 없으므로 개인주의적으로 독점하면 고기는 낭비된다.<br>
+          <strong>역할:</strong> 왜 사냥꾼들이 고기를 독점하지 않아야 하는지에 대한 현실적이고 물리적인 이유를 가정법을 통해 제시한다.
+        </div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 4</div>
+        <div class="sentence-en">During unlucky periods, / individual hunters and their families / would starve.</div>
+        <div class="sentence-ko">운이 나쁜 기간 동안에는 / 개인 사냥꾼들과 그들의 가족들은 / 굶주릴 것이다.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> starve - 굶주리다</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 혼자서만 고기를 소비하려 한다면 사냥에 실패했을 때 굶어 죽게 된다.<br>
+          <strong>역할:</strong> 사냥 실패 시 맞이할 수 있는 치명적 결과(굶주림)를 제시하여 협력의 필요성을 암시한다.
+        </div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 5</div>
+        <div class="sentence-en">Instead of living / by a philosophy of “rugged individualism,” / however, / hunters / who have a lucky day / share / their meat / with other families.</div>
+        <div class="sentence-ko">살아가는 대신 / "단호한 개인주의" 철학에 따라 / 그러나 / 사냥꾼들은 / 운이 좋은 날을 보낸 / 나눈다 / 그들의 고기를 / 다른 가족들과.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> rugged individualism - 철저한(단호한) 개인주의</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 이러한 이유로 사냥꾼들은 개인주의 대신 사냥한 고기를 이웃과 공유한다.<br>
+          <strong>역할:</strong> 주어진 문장의 삽입 위치로, 이기주의에 대한 대안으로서 부족 내의 강력한 협동 및 나눔 문화를 소개한다.
+        </div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 6</div>
+        <div class="sentence-en">And they / don’t just share / a little; / they / share / a lot / — fully 90%.</div>
+        <div class="sentence-ko">그리고 그들은 / 그저 조금 나누는 것이 아니다 / 그들은 / 많이 나눈다 / 무려 90%를.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> fully - 충분히, 무려</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 그들은 획득한 고기의 90%라는 막대한 양을 타인과 공유한다.<br>
+          <strong>역할:</strong> 앞 문장에서 언급한 나눔의 규모가 절대적이며 이례적으로 크다는 것을 강조한다.
+        </div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 7</div>
+        <div class="sentence-en">In exchange for this generosity, / their neighbors / share / with them / on days when the luck runs the other way.</div>
+        <div class="sentence-ko">이 관대함에 대한 대가로 / 그들의 이웃들은 / 나눈다 / 그들과 / 운이 반대로 흐르는 날에.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> in exchange for - ~의 대가로, generosity - 관대함, run the other way - 반대로 흐르다</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 풍족할 때 베푼 관대함 덕분에 자신이 사냥에 실패한 날에는 이웃으로부터 고기를 받게 된다.<br>
+          <strong>역할:</strong> 나눔이 일방적 희생이 아니라 상호 호혜적인 교환임을 설명한다.
+        </div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 8</div>
+        <div class="sentence-en">By exchanging resources, / particularly those / that are unpredictable and uncertain / (like meat from the hunt, as opposed to vegetable crops), / the group / provides / a mutual insurance policy / against starvation.</div>
+        <div class="sentence-ko">자원을 교환함으로써 / 특히 예측 불가능하고 불확실한 자원들을 / (사냥에서 얻은 고기처럼, 채소 작물과 달리) / 그 집단은 / 제공한다 / 상호 보험 정책을 / 기아에 대비한.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> unpredictable - 예측할 수 없는, as opposed to - ~와 대조적으로, mutual insurance policy - 상호 보험 정책</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 불확실성이 큰 사냥 고기를 나누는 것은 부족 전체의 굶주림을 막는 상호 보험 시스템이다.<br>
+          <strong>역할:</strong> 아체 부족의 식량 공유 관습의 생존적, 진화적 의의(상호 보험)를 종합하며 글을 결론짓는다.
+        </div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">02</div><h2>어법 및 구문 포인트</h2></div>
+      <div class="card no-break">
+        <div class="point-block">
+          <div class="sentence-id">문장 3</div>
+          <div class="line-item"><strong>[If a man caught a wild pig and hoarded it for himself and his family, much of it would go to waste]</strong></div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul>
+              <li>가정법 과거 문장이다. 현재 또는 미래의 상황에 대한 반대 가정을 나타내며, <code>If + 주어 + 과거동사(caught, hoarded), 주어 + 조동사 과거형(would) + 동사원형(go)</code> 형태를 취하고 있다.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 8</div>
+          <div class="line-item"><strong>[By exchanging resources, particularly those that are unpredictable and uncertain]</strong></div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul>
+              <li><code>those</code>는 앞에 나온 명사 <code>resources</code>를 대신하는 지시 대명사이다. 복수형이므로 <code>that</code>이 아닌 <code>those</code>가 쓰였으며, 뒤에 이어지는 주격 관계대명사절의 동사도 복수형인 <code>are</code>가 쓰였다.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">03</div><h2>문장 단위 내용 흐름 정리</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>[문제 상황 (문장 1~4)] :</strong> 아체 부족의 사냥은 성공 기복이 심하며, 보관 기술 부재로 인해 식량을 독점하려 하면 남는 고기는 썩고 부족할 때는 굶주리게 됨.</div>
+        <div class="line-item"><strong>[해결책 (문장 5~6)] :</strong> 이러한 문제를 극복하기 위해 개인주의를 버리고, 사냥에 성공한 사냥꾼은 고기의 대부분(90%)을 이웃과 철저히 공유함.</div>
+        <div class="line-item"><strong>[결과 및 의의 (문장 7~8)] :</strong> 이러한 이타적 나눔은 결국 상호 호혜를 낳아, 불확실성이 높은 환경에서 기아를 막기 위한 훌륭한 생존 시스템(상호 보험)으로 기능함.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">04</div><h2>표현들의 연관성 정리</h2></div>
+      <div class="card no-break">
+        <h3>불확실성과 환경적 위험</h3>
+        <div class="chip-row">
+          <span class="chip">ups and downs</span> <span class="arrow">=</span> <span class="chip">unpredictable and uncertain</span> <span class="arrow">=</span> <span class="chip">luck runs the other way</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 20px;">수렵 채집 사회에서 사냥 성공 여부의 '불확실성'과 환경적 위험을 나타내는 표현들이다.</div>
+
+        <h3>이기주의와 독점 (부정적 결과)</h3>
+        <div class="chip-row">
+          <span class="chip">rugged individualism</span> <span class="arrow">=</span> <span class="chip">hoard it for himself</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 20px;">식량을 나누지 않고 이기적으로 독점하는 개인주의적 성향. (글에서 부정적 결과-낭비와 기아-를 초래하는 방식)</div>
+
+        <h3>협력과 생존 전략 (긍정적 대안)</h3>
+        <div class="chip-row">
+          <span class="chip">share</span> <span class="arrow">=</span> <span class="chip">generosity</span> <span class="arrow">=</span> <span class="chip">exchanging resources</span> <span class="arrow">=</span> <span class="chip">mutual insurance policy</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 4px;">협력, 관대함, 상호 호혜성을 상징하는 단어들로, 아체 부족이 기아를 극복하기 위해 채택한 생존 전략이다.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">05</div><h2>소재와 주제문</h2></div>
+      <div class="card no-break" style="border-top-color: #f59e0b;">
+        <div class="line-item" style="margin-bottom: 12px;"><strong>핵심 소재:</strong> 수렵 사회(아체 부족)에서 식량 공유가 지니는 상호 보험적 의미</div>
+        <div class="mini-divider"></div>
+        <div class="label" style="margin-top: 8px;">주제문 (문장 8)</div>
+        <div class="sentence-en" style="margin-bottom: 0;">By exchanging resources, particularly those that are unpredictable and uncertain (like meat from the hunt, as opposed to vegetable crops), the group provides a mutual insurance policy against starvation.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">06</div><h2>지문의 요약 및 패러프레이징</h2></div>
+      <div class="card no-break">
+        <div class="summary-pair">
+          <div class="label">요약 / Summary</div>
+          <div class="sentence-en">Because of the unpredictability of hunting success and the lack of food storage, Ache tribe hunters do not hoard meat personally but share a large portion with their neighbors, acting as a mutual insurance policy against starvation.</div>
+          <div class="sentence-ko">아체 부족의 사냥꾼들은 사냥 성공의 불확실성과 식량 보관의 한계 때문에 고기를 개인적으로 비축하지 않고 이웃과 대거 공유하며, 이는 굶주림에 대비한 상호 보험의 역할을 한다.</div>
+        </div>
+        <div class="divider"></div>
+        <div class="summary-pair">
+          <div class="label">패러프레이징 / Paraphrasing</div>
+          <div class="sentence-en">To mitigate the risk of starvation caused by the volatile nature of food acquisition, hunter-gatherers abandon egoism and rely on a reciprocal sharing system of exchanging resources.</div>
+          <div class="sentence-ko">수렵 채집인들은 식량 획득의 기복으로 인한 굶주림 위험을 완화하기 위해 이기주의를 버리고 자원을 교환하는 상호 호혜적 나눔 시스템에 의존한다.</div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">07</div><h2>도움이 되는 배경지식</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>상호 이타주의 (Reciprocal Altruism):</strong><br> 진화생물학에서 당장은 자신에게 손해가 되는 것처럼 보이는 이타적 행동이, 장기적으로는 서로 도움을 주고받아 양쪽 모두의 생존 확률을 높이는 현상이다. 아체 부족의 고기 공유가 대표적인 사례다.</div>
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>

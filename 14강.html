@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>14강 전체 지문분석 - Lio T</title>
+  <style>
+    /* 디자인 시스템 변수 설정 */
+    :root {
+      --bg-color: #f4f7fb;
+      --text-main: #0f172a;
+      --text-sub: #334155;
+      --text-muted: #64748b;
+      --primary: #4f46e5;
+      --primary-light: #e0e7ff;
+      --secondary: #3b82f6;
+      --border-light: #e2e8f0;
+      --card-bg: #ffffff;
+      --radius: 12px;
+    }
+
+    /* 페이지 기본 설정 (세로 모드) */
+    @page {
+      size: A4 portrait;
+      margin: 15mm; 
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg-color);
+      color: var(--text-main);
+      font-family: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+      letter-spacing: -0.02em; 
+    }
+
+    body {
+      padding: 10px; 
+      display: flex;
+      justify-content: center;
+    }
+
+    .doc {
+      width: 100%;
+      max-width: 210mm; 
+    }
+
+    /* =========================================
+       지문 간 구분선 (화면용 vs 인쇄용)
+       ========================================= */
+    .passage-separator {
+      height: 4px;
+      background-image: repeating-linear-gradient(to right, #cbd5e1 0, #cbd5e1 10px, transparent 10px, transparent 20px);
+      margin: 80px 0;
+      border: none;
+      position: relative;
+    }
+    .passage-separator::after {
+      content: '▼ 다음 지문 (인쇄 시 무조건 새 페이지에서 시작됩니다) ▼';
+      position: absolute;
+      top: -26px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--bg-color);
+      padding: 0 16px;
+      color: #94a3b8;
+      font-weight: 700;
+      font-size: 10pt;
+    }
+
+    /* 공통 레이아웃 제어 */
+    .no-break { page-break-inside: avoid; break-inside: avoid; }
+    
+    .header-container { margin-bottom: 30px; text-align: center; }
+    .hero-title {
+      display: inline-block; margin: 0 0 10px 0; padding: 8px 24px; font-size: 22pt; font-weight: 800;
+      color: #ffffff; background: linear-gradient(135deg, var(--primary), var(--secondary));
+      border-radius: 999px; box-shadow: 0 4px 14px rgba(79, 70, 229, 0.25);
+    }
+    .subtitle { font-size: 13pt; font-weight: 600; color: var(--text-muted); }
+
+    .section-title {
+      display: flex; align-items: center; gap: 12px; margin: 30px 0 16px 0;
+      border-bottom: 2px solid var(--border-light); padding-bottom: 4px;
+      page-break-after: avoid; break-after: avoid;
+    }
+    .page-no {
+      width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+      background: var(--primary); color: white; font-weight: 700; font-size: 12pt; border-radius: 8px;
+    }
+    h2 { margin: 0; font-size: 16pt; font-weight: 700; color: var(--text-main); }
+
+    .card {
+      background: var(--card-bg); border: 1px solid var(--border-light); border-top: 4px solid var(--primary);
+      border-radius: var(--radius); padding: 8px 16px; margin-bottom: 16px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    }
+    
+    .text-block-title { font-size: 12pt; font-weight: 700; color: var(--primary); margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+    .text-block-title::before { content: ''; display: block; width: 6px; height: 6px; border-radius: 50%; background: var(--primary); }
+    .eng-body { font-size: 12pt; line-height: 1.7; font-weight: 500; color: var(--text-main); margin-bottom: 20px; text-align: justify; }
+    .divider { height: 1px; background: var(--border-light); margin: 20px 0; }
+    .mini-divider { height: 1px; background: var(--border-light); margin: 8px 0; }
+    .kor-body { font-size: 11.5pt; line-height: 1.7; color: var(--text-sub); text-align: justify; word-break: keep-all; }
+
+    .sentence-card {
+      background: var(--card-bg); border: 1px solid var(--border-light); border-left: 4px solid var(--secondary);
+      border-radius: 8px; padding: 8px 16px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    }
+    .sentence-id { display: inline-block; margin-bottom: 8px; padding: 2px 8px; border-radius: 6px; background: var(--primary-light); color: var(--primary); font-size: 9pt; font-weight: 700; }
+    .sentence-en { font-size: 12.5pt; font-weight: 600; line-height: 1.6; color: var(--text-main); margin-bottom: 4px; }
+    .sentence-ko { font-size: 9pt; line-height: 1.6; color: var(--text-sub); margin-bottom: 4px; word-break: keep-all; }
+    .vocab-box { display: inline-block; padding: 4px 8px; border-radius: 6px; background: #f8fafc; border: 1px dashed #cbd5e1; font-size: 9pt; color: var(--text-muted); }
+
+    .point-block { margin-bottom: 16px; }
+    .point-block:last-child { margin-bottom: 0; }
+    .line-item { font-size: 11.5pt; line-height: 1.7; margin: 0 0 8px 0; word-break: keep-all; }
+    .exam-note { margin-top: 8px; padding: 8px 12px; background: #fffbeb; border-left: 3px solid #f59e0b; border-radius: 0 6px 6px 0; font-size: 10.5pt; line-height: 1.6; color: #92400e; }
+    .exam-note ul { margin: 4px 0 0 0; padding-left: 20px; }
+    .exam-note li { margin-bottom: 4px; }
+    .exam-note li:last-child { margin-bottom: 0; }
+
+    .chip-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 8px 0 20px 0; }
+    .chip { padding: 4px 10px; border-radius: 999px; background: var(--primary-light); color: var(--primary); font-size: 10pt; font-weight: 600; }
+    .arrow { color: var(--text-muted); font-weight: 700; }
+    h3 { font-size: 12pt; margin: 0 0 8px 0; color: var(--text-main); }
+    .label { display: inline-block; font-size: 9.5pt; font-weight: 700; color: var(--secondary); background: #eff6ff; padding: 2px 6px; border-radius: 4px; margin-bottom: 6px; }
+    .summary-pair { margin-bottom: 20px; }
+    .summary-pair:last-child { margin-bottom: 0; }
+
+    /* =========================================
+       인쇄(Print) 전용 스타일 - 다중 지문 분할 처리
+       ========================================= */
+    @media print {
+      html, body { background: #ffffff !important; padding: 0; }
+      .doc { max-width: 100%; }
+
+      /* 지문 구분선을 강제 페이지 넘김으로 변환 */
+      .passage-separator {
+        page-break-before: always !important;
+        break-before: page !important;
+        margin: 0 !important;
+        height: 0 !important;
+        border: none !important;
+        background: none !important;
+      }
+      .passage-separator::after { display: none !important; }
+
+      .page-break { page-break-before: always !important; break-before: page !important; }
+      .card, .sentence-card { box-shadow: none !important; border: 1px solid #cbd5e1 !important; page-break-inside: avoid !important; break-inside: avoid !important; }
+      .section-title { page-break-after: avoid !important; break-after: avoid !important; }
+
+      .hero-title { background: #0f172a !important; color: white !important; }
+      .page-no { background: #0f172a !important; }
+      .sentence-id, .chip, .label { border: 1px solid #cbd5e1 !important; background: #f8fafc !important; color: #0f172a !important; }
+      .exam-note { background: #f8fafc !important; border-left-color: #94a3b8 !important; color: #334155 !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="doc">
+
+    <!-- ========================================== -->
+    <!-- [지문 2] 14강 1번                          -->
+    <!-- ========================================== -->
+    
+    <div class="passage-container">
+      <div class="header-container">
+        <div class="hero-title">14강 1번 지문분석</div>
+        <div class="subtitle">Lio T 내신대비 지문분석서</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">00</div><h2>영어 본문 및 전체 해석</h2></div>
+      <div class="card no-break">
+        <div class="text-block-title">영어 본문</div>
+        <div class="eng-body">
+          Sharing meanings and experiences is not a simple, automatic process: whenever two or more people observe or participate in the same ongoing event they experience it from different perspectives, with different histories, with different background knowledge. These differences are most glaring when the individuals involved include an infant or very young child and an adult, although an adult arranging an event for an infant may find it difficult to keep these differences in mind. When giving a bath, for example, a parent whose experience with water play has been fun, whose knowledge about the source of the water and its disposition provides confidence, and whose body control ensures that the baby is safely held and not in danger, expects the infant to enjoy splashing water. Yet the baby may make it clear (perhaps by terrified crying) that her perspective is quite different from that of the adult. The two share an experience, but not a meaning.
+        </div>
+        <div class="divider"></div>
+        <div class="text-block-title">전체 해석</div>
+        <div class="kor-body">
+          의미와 경험을 공유하는 것은 단순하고 자동적인 과정이 아니다. 둘 이상의 사람들이 진행 중인 동일한 사건을 관찰하거나 참여할 때마다 그들은 다른 역사와 다른 배경지식을 가지고 다른 관점에서 그것을 경험한다. 이러한 차이는 비록 유아를 위해 행사를 마련하는 어른이 이 차이를 염두에 두는 것이 어렵다는 것을 알 수도 있지만, 관련된 사람들에 유아나 아주 어린아이와 어른이 포함될 때 가장 두드러진다. 예를 들어, 목욕을 시킬 때, 물놀이에 대한 경험이 즐거웠고, 물의 출처와 그 성질에 대한 지식이 자신감을 제공하며, 자신의 신체 통제력이 아기가 안전하게 안겨 있고 위험하지 않음을 보장하는 부모는 유아가 물장구치는 것을 즐길 것이라고 기대한다. 그러나 아기는 (아마도 겁에 질린 울음을 통해) 자신의 관점이 어른의 관점과 꽤 다르다는 것을 분명히 할 수도 있다. 그 둘은 경험을 공유하지만, 의미를 공유하는 것은 아니다.
+        </div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">01</div><h2>직독직해 및 어휘 정리</h2></div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 1</div>
+        <div class="sentence-en">Sharing meanings and experiences / is not a simple, automatic process: / whenever / two or more people / observe or participate / in the same ongoing event / they / experience it / from different perspectives, / with different histories, / with different background knowledge.</div>
+        <div class="sentence-ko">의미와 경험을 공유하는 것은 / 단순하고 자동적인 과정이 아니다: / ~할 때마다 / 둘 이상의 사람들이 / 관찰하거나 참여할 (때마다) / 동일한 진행 중인 사건에 / 그들은 / 그것을 경험한다 / 다른 관점에서, / 다른 역사를 가지고, / 다른 배경지식을 가지고.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> automatic - 자동적인, ongoing - 진행 중인, perspective - 관점, 시각</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 2</div>
+        <div class="sentence-en">These differences / are most glaring / when / the individuals involved / include / an infant or very young child / and an adult, / although / an adult / arranging an event / for an infant / may find it difficult / to keep these differences in mind.</div>
+        <div class="sentence-ko">이러한 차이들은 / 가장 두드러진다 / ~할 때 / 관련된 사람들이 / 포함할 (때) / 유아나 아주 어린아이 / 그리고 어른을, / 비록 ~일지라도 / 어른이 / 행사를 마련하는 / 유아를 위해 / 그것이 어렵다는 것을 알 (수도 있을지라도) / 이러한 차이들을 염두에 두는 것이.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> glaring - 두드러진, 확연한, involved - 관련된, infant - 유아, arrange - 마련하다, 준비하다, keep ~ in mind - ~을 명심하다, 염두에 두다</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 3</div>
+        <div class="sentence-en">When giving a bath, / for example, / a parent / whose experience with water play / has been fun, / whose knowledge / about the source of the water and its disposition / provides confidence, / and whose body control / ensures / that the baby is safely held / and not in danger, / expects / the infant / to enjoy splashing water.</div>
+        <div class="sentence-ko">목욕을 시킬 때, / 예를 들어, / 부모는 / 물놀이에 대한 경험이 / 즐거웠던, / 지식이 / 물의 출처와 성질에 대한 / 자신감을 제공하는, / 그리고 신체 통제력이 / 보장하는 (부모는) / 아기가 안전하게 안겨 있고 / 위험하지 않다는 것을, / 기대한다 / 유아가 / 물장구치는 것을 즐길 것이라고.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> give a bath - 목욕시키다, disposition - 성질, 기질, confidence - 자신감, ensure - 보장하다, splash - 첨벙거리다, 물장구치다</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 4</div>
+        <div class="sentence-en">Yet / the baby / may make it clear / (perhaps by terrified crying) / that her perspective / is quite different / from that of the adult.</div>
+        <div class="sentence-ko">그러나 / 아기는 / 분명히 할 수도 있다 / (아마도 겁에 질린 울음으로) / 그녀의 관점이 / 꽤 다르다는 것을 / 어른의 그것(관점)과는.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> terrified - 겁에 질린</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 5</div>
+        <div class="sentence-en">The two / share an experience, / but not a meaning.</div>
+        <div class="sentence-ko">그 둘은 / 경험을 공유한다, / 하지만 의미를 (공유하는 것은) 아니다.</div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">02</div><h2>어법 및 구문 포인트</h2></div>
+      <div class="card no-break">
+        <div class="point-block">
+          <div class="sentence-id">문장 2</div>
+          <div class="line-item"><strong>[may find it difficult to keep these differences in mind]</strong> 가목적어 `it`과 진목적어 `to keep`을 사용한 5형식 구문이다. `difficult`는 목적격 보어다.</div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul><li>`difficult` 자리에 부사 `difficultly`를 쓰면 틀린다.</li></ul>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 3</div>
+          <div class="line-item"><strong>[a parent whose experience ... whose knowledge ... and whose body control ... expects]</strong> 문장의 핵심 주어는 `a parent`이고, 본동사는 `expects`이다. 소유격 관계대명사 `whose`가 이끄는 세 개의 관계절이 병렬로 연결되어 선행사 `a parent`를 길게 수식하고 있다.</div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul><li>주어와 동사(`expects`) 사이의 거리가 매우 멀기 때문에 수 일치 문제가 출제되기 좋다. `expect`나 `expecting`을 쓰면 오답이다. `whose` 뒤에는 완전한 명사구가 온다는 점도 확인해야 한다.</li></ul>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 4</div>
+          <div class="line-item"><strong>[make it clear ... that her perspective is ...]</strong> `make + 가목적어(it) + 목적격 보어(clear) + 진목적어(that절)` 형태의 5형식 구문이다. `that of the adult`에서 `that`은 앞의 명사 `perspective`의 반복을 피하기 위해 쓰인 대명사다.</div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul><li>대명사 `that` 자리에 `those`를 쓰면 안 된다(`perspective`가 단수이므로).</li></ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">03</div><h2>문장 단위 내용 흐름 정리</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>[(1) 주제 제시] :</strong> 같은 사건을 겪는다고 해서 사람들이 그 '의미'까지 똑같이 공유하는 것은 아니다. 각자의 배경과 관점이 다르기 때문이다.</div>
+        <div class="line-item"><strong>[(2) 상황의 구체화] :</strong> 이 관점의 차이는 지식과 경험의 격차가 매우 큰 '어른과 아이' 사이에서 가장 극명하게 나타난다.</div>
+        <div class="line-item"><strong>[(3) 어른의 관점 (예시)] :</strong> 부모는 물을 통제할 능력이 있고 물놀이의 즐거움을 알기 때문에, 목욕을 시킬 때 아기도 당연히 즐거워할 것이라고 기대한다.</div>
+        <div class="line-item"><strong>[(4) 아기의 관점 (예시)] :</strong> 하지만 경험이 없는 아기에게 물은 공포의 대상일 수 있으며, 아기는 울음을 통해 부모와 자신의 관점이 다름을 명백히 보여준다.</div>
+        <div class="line-item"><strong>[(5) 결론] :</strong> 이처럼 부모와 아기는 목욕이라는 '경험(사건)'은 공유하고 있지만, 그 경험이 주는 '의미'는 전혀 다르게 받아들인다.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">04</div><h2>표현들의 연관성 정리</h2></div>
+      <div class="card no-break">
+        <h3>객관적 사실의 공유</h3>
+        <div class="chip-row">
+          <span class="chip">Experience</span> <span class="arrow">=</span> <span class="chip">the same ongoing event</span> <span class="arrow">=</span> <span class="chip">giving a bath</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 20px;">두 사람이 물리적으로 동일한 시공간에서 겪고 있는 객관적인 사건 자체를 뜻한다.</div>
+
+        <h3>주관적 해석의 차이</h3>
+        <div class="chip-row">
+          <span class="chip">Meaning</span> <span class="arrow">=</span> <span class="chip">perspectives</span> <span class="arrow">=</span> <span class="chip">histories</span> <span class="arrow">=</span> <span class="chip">background knowledge</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 4px;">각자의 내면에서 사건을 해석하고 받아들이는 주관적인 평가를 의미한다. 어른에게 물은 '재미(fun)'라는 의미지만, 아기에게는 '공포(terrified)'라는 의미다.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">05</div><h2>소재와 주제문</h2></div>
+      <div class="card no-break" style="border-top-color: #f59e0b;">
+        <div class="line-item" style="margin-bottom: 12px;"><strong>핵심 소재:</strong> 동일한 경험 속에서 나타나는 의미 해석(관점)의 차이</div>
+        <div class="mini-divider"></div>
+        <div class="label" style="margin-top: 8px;">주제문 (문장 1)</div>
+        <div class="sentence-en" style="margin-bottom: 8px;">Sharing meanings and experiences is not a simple, automatic process: whenever two or more people observe or participate in the same ongoing event they experience it from different perspectives, with different histories, with different background knowledge.</div>
+        <div class="label" style="margin-top: 8px;">주제문 (문장 5)</div>
+        <div class="sentence-en" style="margin-bottom: 0;">The two share an experience, but not a meaning.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">06</div><h2>지문의 요약 및 패러프레이징</h2></div>
+      <div class="card no-break">
+        <div class="summary-pair">
+          <div class="label">요약 / Summary</div>
+          <div class="sentence-en">Because people interpret events through their own unique backgrounds and perspectives, sharing a physical experience, like an adult bathing a baby, does not necessarily mean they share the same emotional meaning.</div>
+          <div class="sentence-ko">사람들은 자신만의 고유한 배경과 관점을 통해 사건을 해석하기 때문에, 어른이 아기를 목욕시키는 것과 같은 물리적 경험을 공유한다고 해서 반드시 동일한 감정적 의미를 공유하는 것은 아니다.</div>
+        </div>
+        <div class="divider"></div>
+        <div class="summary-pair">
+          <div class="label">패러프레이징 / Paraphrasing</div>
+          <div class="sentence-en">Engaging in the same activity does not guarantee a shared understanding; a parent's joy and a baby's terror during a bath illustrate how vastly different internal meanings can arise from a single shared event.</div>
+          <div class="sentence-ko">같은 활동에 참여하는 것이 공유된 이해를 보장하지는 않는다. 목욕 중 부모의 기쁨과 아기의 공포는 하나의 공유된 사건에서 어떻게 엄청나게 다른 내적 의미가 발생할 수 있는지를 보여준다.</div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">07</div><h2>도움이 되는 배경지식</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>1. 관점 수용(Perspective-taking):</strong><br> 타인의 입장에서 상황을 바라보는 인지적 능력이다. 본문에서 부모는 자신의 경험(물은 안전하고 재밌다)에 매몰되어 아기의 입장(물은 낯설고 무섭다)을 쉽게 잊어버리는 경향이 있다고 설명한다.</div>
+        <div class="divider"></div>
+        <div class="line-item"><strong>2. 구성주의(Constructivism):</strong><br> 객관적인 현실(경험)이 존재하더라도, 인간은 자신의 과거 지식과 사회적 배경을 바탕으로 그 현실의 의미를 스스로 구성(해석)한다는 심리학 및 교육학 이론이다.</div>
+      </div>
+    </div>
+
+
+    <!-- ========================================== -->
+    <!-- [지문 4] 14강 3번                          -->
+    <!-- ========================================== -->
+    <hr class="passage-separator" />
+    
+    <div class="passage-container">
+      <div class="header-container">
+        <div class="hero-title">14강 3번 지문분석</div>
+        <div class="subtitle">Lio T 내신대비 지문분석서</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">00</div><h2>영어 본문 및 전체 해석</h2></div>
+      <div class="card no-break">
+        <div class="text-block-title">영어 본문</div>
+        <div class="eng-body">
+          The idea of music direction, in the sense of someone shaping and leading a musical performance, goes back to the beginnings of music. Even the gamelans of ancient Indonesia had leaders who would signal to the group changes of meter and tempo, beginnings and endings, and transitions from piece to piece. Yet listening audiences are rarely aware of any musical leadership and for good aesthetic reason. They need not be aware to fulfill their experience; indeed, the unnecessarily conspicuous presence of a musical leader will detract from it. An audience is better off, for the most part, taking in the whole of a stage work rather than being party to the techniques that go into realizing it. This is not to say that when an orchestra plays alone the audience members' eyes are not fixed on the conductor for the majority of the time; they probably are. When music is accompanying something happening on stage, however, all eyes turn to the stage, and so do everyone's ears, too (including the music director's).
+        </div>
+        <div class="divider"></div>
+        <div class="text-block-title">전체 해석</div>
+        <div class="kor-body">
+          누군가가 음악 공연을 형성하고 이끈다는 의미에서 음악 감독의 개념은 음악의 기원으로 거슬러 올라간다. 심지어 고대 인도네시아의 가믈란(전통 악단)에도 무리에게 박자와 템포의 변화, 시작과 끝, 그리고 곡에서 곡으로의 전환을 신호로 알리는 리더들이 있었다. 그러나 듣는 청중은 어떠한 음악적 리더십도 거의 인식하지 못하는데, 이는 타당한 미학적 이유 때문이다. 그들은 자신들의 경험을 충족하기 위해 인식할 필요가 없다. 참으로, 음악 리더의 불필요하게 눈에 띄는 존재감은 그것(경험)을 손상시킬 것이다. 관객은 대개 무대 작품을 실현하는 데 들어가는 기술에 관여하기보다는 무대 작품 전체를 받아들이는 편이 더 낫다. 이것이 오케스트라가 단독으로 연주할 때 관객들의 눈이 대부분의 시간 동안 지휘자에게 고정되지 않는다는 것을 말하는 것은 아니다. 아마도 고정되어 있을 것이다. 그러나 음악이 무대에서 일어나는 어떤 일에 수반될 때(반주할 때), 모든 눈은 무대로 향하고, 모든 사람의 귀 또한 마찬가지이다 (음악 감독의 귀를 포함하여).
+        </div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">01</div><h2>직독직해 및 어휘 정리</h2></div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 1</div>
+        <div class="sentence-en">The idea of music direction, / in the sense / of someone shaping and leading / a musical performance, / goes back / to the beginnings of music.</div>
+        <div class="sentence-ko">음악 감독의 개념은, / 의미에서 / 누군가가 형성하고 이끈다는 / 음악 공연을, / 거슬러 올라간다 / 음악의 기원으로.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> direction - 지휘, 감독, shape - 형성하다, go back to - ~로 거슬러 올라가다</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 2</div>
+        <div class="sentence-en">Even the gamelans / of ancient Indonesia / had leaders / who / would signal / to the group / changes of meter and tempo, / beginnings and endings, / and transitions / from piece to piece.</div>
+        <div class="sentence-ko">심지어 가믈란(악단)조차도 / 고대 인도네시아의 / 리더들을 가졌다 / (~하는) / 신호를 보내곤 했던 / 무리에게 / 박자와 템포의 변화, / 시작과 끝, / 그리고 전환(을) / 곡에서 곡으로의.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> meter - 박자, tempo - 속도, 템포, transition - 전환, 변화, piece - 곡, 작품</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 3</div>
+        <div class="sentence-en">Yet / listening audiences / are rarely aware / of any musical leadership / and / for good aesthetic reason.</div>
+        <div class="sentence-ko">그러나 / 듣는 청중은 / 거의 인식하지 못한다 / 어떠한 음악적 리더십도 / 그리고 / 타당한 미학적 이유 때문에 (그렇다).</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> rarely - 거의 ~않다, be aware of - ~을 인식하다, 알아채다, aesthetic - 미학적인, 미적인</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 4</div>
+        <div class="sentence-en">They / need not be aware / to fulfill / their experience; / indeed, / the unnecessarily conspicuous presence / of a musical leader / will detract / from it.</div>
+        <div class="sentence-ko">그들은 / 인식할 필요가 없다 / 충족하기 위해 / 그들의 경험을; / 참으로, / 불필요하게 눈에 띄는 존재감은 / 음악 리더의 / 손상시킬 것이다 / 그것(경험)을.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> fulfill - 충족하다, 실현하다, conspicuous - 눈에 띄는, 뚜렷한, presence - 존재(감), detract from - ~을 손상시키다, 떨어뜨리다</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 5</div>
+        <div class="sentence-en">An audience / is better off, / for the most part, / taking in / the whole of a stage work / rather than / being party to the techniques / that / go into / realizing it.</div>
+        <div class="sentence-ko">관객은 / 더 낫다, / 대개(대부분의 경우), / 받아들이는 편이 / 무대 작품 전체를 / ~하기보다는 / 기술에 관여하기(보다는) / (~하는) / 들어가는 / 그것을 실현하는 데.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> be better off ~ing - ~하는 편이 더 낫다, for the most part - 대개, 대부분, take in - 받아들이다, 흡수하다, be party to - ~에 관여하다, 한통속이 되다, realize - 실현하다</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 6</div>
+        <div class="sentence-en">This / is not to say / that / when an orchestra plays alone / the audience members' eyes / are not fixed / on the conductor / for the majority of the time; / they / probably are.</div>
+        <div class="sentence-ko">이것이 / 말하는 것은 아니다 / ~라고 / 오케스트라가 단독으로 연주할 때 / 관객들의 눈이 / 고정되어 있지 않다고 / 지휘자에게 / 대부분의 시간 동안; / 그들은 / 아마 그럴 것이다(고정되어 있을 것이다).</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> fixed on - ~에 고정된, conductor - 지휘자, majority - 대다수, 대부분</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 7</div>
+        <div class="sentence-en">When music / is accompanying / something happening / on stage, / however, / all eyes / turn to the stage, / and / so do everyone's ears, too / (including the music director's).</div>
+        <div class="sentence-ko">음악이 / 수반될(반주할) 때 / 일어나는 어떤 일에 / 무대 위에서, / 그러나, / 모든 눈은 / 무대로 향한다, / 그리고 / 모든 사람의 귀 또한 마찬가지이다 / (음악 감독의 것을 포함하여).</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> accompany - 수반하다, 동반하다, 반주하다, so + 동사 + 주어 - 주어 역시 그렇다</div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">02</div><h2>어법 및 구문 포인트</h2></div>
+      <div class="card no-break">
+        <div class="point-block">
+          <div class="sentence-id">문장 4</div>
+          <div class="line-item"><strong>[need not be aware]</strong> 조동사로 쓰인 `need`의 부정형이다. `need not + 동사원형`은 '~할 필요가 없다'는 뜻으로 `don't have to be`와 같다.</div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 5</div>
+          <div class="line-item"><strong>[is better off ... taking in ... rather than being party to ...]</strong> `be better off ~ing` 구문으로 '~하는 편이 낫다'라는 의미다. 전치사적 의미의 `rather than`을 사이에 두고 동명사 `taking`과 `being`이 병렬 구조를 이루고 있다. `that go into realizing it`에서 `that`은 주격 관계대명사다.</div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 6</div>
+          <div class="line-item"><strong>[they probably are]</strong> 대동사 구문으로 앞 문장의 `are fixed on the conductor`를 생략하고 `are`까지만 썼다.</div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul><li>`are` 자리에 `do`를 쓰면 안 된다.</li></ul>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 7</div>
+          <div class="line-item"><strong>[so do everyone's ears, too]</strong> `so + 조동사/be동사/do동사 + 주어` 구문으로 '주어 또한 그렇다(마찬가지다)'라는 뜻이다. 앞 문장의 일반동사 `turn`을 받기 때문에 대동사 `do`가 쓰였다.</div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul><li>이 자리에 `are`를 쓰면 어법상 틀리게 된다.</li></ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">03</div><h2>문장 단위 내용 흐름 정리</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>[(1)-(2) 음악 감독의 역사] :</strong> 고대 시대부터 음악 연주에는 템포와 흐름을 조율하는 리더(지휘자)가 존재해 왔다.</div>
+        <div class="line-item"><strong>[(3)-(5) 미학적 원리 (청중의 무지)] :</strong> 하지만 청중은 리더의 존재를 잘 인식하지 못하며, 그래야만 한다. 지휘자가 너무 튀면 관객이 작품 전체를 온전히 감상하는 것을 방해하기 때문이다. 관객은 음악을 만드는 기술적 과정에 개입하기보다 완성된 결과물(전체)을 즐기는 편이 낫다.</div>
+        <div class="line-item"><strong>[(6) 예외적 상황] :</strong> 물론 오케스트라 단독 교향곡 공연처럼 지휘자가 무대의 주인공일 때는 청중이 지휘자를 본다.</div>
+        <div class="line-item"><strong>[(7) 결론] :</strong> 하지만 오페라나 뮤지컬처럼 음악이 무대(연기 등)를 보조하는 역할일 때는 지휘자의 존재는 뒤로 숨고 모두의 이목이 오직 무대 위로만 집중되어야 한다.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">04</div><h2>표현들의 연관성 정리</h2></div>
+      <div class="card no-break">
+        <h3>음악의 조율자</h3>
+        <div class="chip-row">
+          <span class="chip">Music direction / musical leadership / conductor</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 20px;">연주자들을 통제하고 지휘하는 리더의 역할을 가리킨다.</div>
+
+        <h3>지휘자의 존재감 대조</h3>
+        <div class="chip-row">
+          <span class="chip">Unnecessarily conspicuous presence</span> <span class="arrow">↔</span> <span class="chip">Rare aware</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 20px;">지휘자가 자신을 너무 겉으로 드러내어 작품 감상을 방해하는 것과, 관객이 그 존재를 눈치채지 못하고 자연스럽게 빠져드는 상황을 대조한다.</div>
+
+        <h3>감상의 초점</h3>
+        <div class="chip-row">
+          <span class="chip">Techniques that go into realizing it</span> <span class="arrow">↔</span> <span class="chip">The whole of a stage work</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 4px;">지휘의 기술적인 기법(부분)과 완성된 예술 작품(전체)의 대조로, 관객이 집중해야 할 대상은 후자임을 강조한다.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">05</div><h2>소재와 주제문</h2></div>
+      <div class="card no-break" style="border-top-color: #f59e0b;">
+        <div class="line-item" style="margin-bottom: 12px;"><strong>핵심 소재:</strong> 음악 감독(지휘자)의 존재감과 관객의 미적 감상</div>
+        <div class="mini-divider"></div>
+        <div class="label" style="margin-top: 8px;">주제문 (문장 4)</div>
+        <div class="sentence-en" style="margin-bottom: 8px;">They need not be aware to fulfill their experience; indeed, the unnecessarily conspicuous presence of a musical leader will detract from it.</div>
+        <div class="label" style="margin-top: 8px;">주제문 (문장 5)</div>
+        <div class="sentence-en" style="margin-bottom: 0;">An audience is better off, for the most part, taking in the whole of a stage work rather than being party to the techniques that go into realizing it.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">06</div><h2>지문의 요약 및 패러프레이징</h2></div>
+      <div class="card no-break">
+        <div class="summary-pair">
+          <div class="label">요약 / Summary</div>
+          <div class="sentence-en">Although musical leaders play a vital role in shaping a performance, their presence should not be conspicuous, as audiences enjoy the aesthetic experience best when they focus on the complete artwork rather than the directing techniques.</div>
+          <div class="sentence-ko">음악 리더가 공연을 형성하는 데 중요한 역할을 하지만, 관객은 지휘 기술보다는 완성된 예술 작품에 집중할 때 미적 경험을 가장 잘 즐기기 때문에 그들의 존재가 눈에 띄어서는 안 된다.</div>
+        </div>
+        <div class="divider"></div>
+        <div class="summary-pair">
+          <div class="label">패러프레이징 / Paraphrasing</div>
+          <div class="sentence-en">For an audience to fully immerse themselves in the aesthetic beauty of a stage production, the mechanisms of musical direction should remain largely invisible, preventing the conductor from distracting from the overarching artistic experience.</div>
+          <div class="sentence-ko">관객이 무대 작품의 미적 아름다움에 완전히 몰입하기 위해서는 음악 감독의 메커니즘이 대체로 보이지 않는 상태로 유지되어야 하며, 지휘자가 전반적인 예술적 경험을 산만하게 하는 것을 막아야 한다.</div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">07</div><h2>도움이 되는 배경지식</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>1. 극장의 보이지 않는 손:</strong><br> 오페라나 뮤지컬 극장에서 오케스트라가 연주하는 구역인 오케스트라 피트(Orchestra Pit)는 무대 바로 앞 아래쪽에 움푹 파여 있어 객석에서 지휘자와 연주자들이 잘 보이지 않도록 설계되어 있다. 이는 본문이 주장하듯 관객의 눈이 '지휘자'가 아닌 '무대 위(배우의 연기)'로 향하게 하기 위한 미학적 장치다.</div>
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>

@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>22강 지문분석 (1번, 3번) - Lio T</title>
+  <style>
+    /* 디자인 시스템 변수 설정 */
+    :root {
+      --bg-color: #f4f7fb;
+      --text-main: #0f172a;
+      --text-sub: #334155;
+      --text-muted: #64748b;
+      --primary: #4f46e5;
+      --primary-light: #e0e7ff;
+      --secondary: #3b82f6;
+      --border-light: #e2e8f0;
+      --card-bg: #ffffff;
+      --radius: 12px;
+    }
+
+    /* 페이지 기본 설정 (세로 모드) */
+    @page {
+      size: A4 portrait;
+      margin: 15mm; 
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg-color);
+      color: var(--text-main);
+      font-family: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+      letter-spacing: -0.02em; 
+    }
+
+    body {
+      padding: 10px; 
+      display: flex;
+      justify-content: center;
+    }
+
+    .doc {
+      width: 100%;
+      max-width: 210mm; 
+    }
+
+    /* =========================================
+       지문 간 구분선 (화면용 vs 인쇄용)
+       ========================================= */
+    .passage-separator {
+      height: 4px;
+      background-image: repeating-linear-gradient(to right, #cbd5e1 0, #cbd5e1 10px, transparent 10px, transparent 20px);
+      margin: 80px 0;
+      border: none;
+      position: relative;
+    }
+    .passage-separator::after {
+      content: '▼ 다음 지문 (인쇄 시 무조건 새 페이지에서 시작됩니다) ▼';
+      position: absolute;
+      top: -26px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--bg-color);
+      padding: 0 16px;
+      color: #94a3b8;
+      font-weight: 700;
+      font-size: 10pt;
+    }
+
+    /* 공통 레이아웃 제어 */
+    .no-break { page-break-inside: avoid; break-inside: avoid; }
+    
+    .header-container { margin-bottom: 30px; text-align: center; }
+    .hero-title {
+      display: inline-block; margin: 0 0 10px 0; padding: 8px 24px; font-size: 22pt; font-weight: 800;
+      color: #ffffff; background: linear-gradient(135deg, var(--primary), var(--secondary));
+      border-radius: 999px; box-shadow: 0 4px 14px rgba(79, 70, 229, 0.25);
+    }
+    .subtitle { font-size: 13pt; font-weight: 600; color: var(--text-muted); }
+
+    .section-title {
+      display: flex; align-items: center; gap: 12px; margin: 30px 0 16px 0;
+      border-bottom: 2px solid var(--border-light); padding-bottom: 4px;
+      page-break-after: avoid; break-after: avoid;
+    }
+    .page-no {
+      width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+      background: var(--primary); color: white; font-weight: 700; font-size: 12pt; border-radius: 8px;
+    }
+    h2 { margin: 0; font-size: 16pt; font-weight: 700; color: var(--text-main); }
+
+    .card {
+      background: var(--card-bg); border: 1px solid var(--border-light); border-top: 4px solid var(--primary);
+      border-radius: var(--radius); padding: 8px 16px; margin-bottom: 16px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    }
+    
+    .text-block-title { font-size: 12pt; font-weight: 700; color: var(--primary); margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+    .text-block-title::before { content: ''; display: block; width: 6px; height: 6px; border-radius: 50%; background: var(--primary); }
+    .eng-body { font-size: 12pt; line-height: 1.7; font-weight: 500; color: var(--text-main); margin-bottom: 20px; text-align: justify; }
+    .divider { height: 1px; background: var(--border-light); margin: 20px 0; }
+    .mini-divider { height: 1px; background: var(--border-light); margin: 8px 0; }
+    .kor-body { font-size: 11.5pt; line-height: 1.7; color: var(--text-sub); text-align: justify; word-break: keep-all; }
+
+    .sentence-card {
+      background: var(--card-bg); border: 1px solid var(--border-light); border-left: 4px solid var(--secondary);
+      border-radius: 8px; padding: 8px 16px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    }
+    .sentence-id { display: inline-block; margin-bottom: 8px; padding: 2px 8px; border-radius: 6px; background: var(--primary-light); color: var(--primary); font-size: 9pt; font-weight: 700; }
+    .sentence-en { font-size: 12.5pt; font-weight: 600; line-height: 1.6; color: var(--text-main); margin-bottom: 4px; }
+    .sentence-ko { font-size: 9pt; line-height: 1.6; color: var(--text-sub); margin-bottom: 4px; word-break: keep-all; }
+    .vocab-box { display: inline-block; padding: 4px 8px; border-radius: 6px; background: #f8fafc; border: 1px dashed #cbd5e1; font-size: 9pt; color: var(--text-muted); margin-bottom: 4px;}
+    .analysis-text { font-size: 9.5pt; color: var(--text-muted); line-height: 1.5; margin-top: 4px;}
+
+    .point-block { margin-bottom: 16px; }
+    .point-block:last-child { margin-bottom: 0; }
+    .line-item { font-size: 11.5pt; line-height: 1.7; margin: 0 0 8px 0; word-break: keep-all; }
+    .exam-note { margin-top: 8px; padding: 8px 12px; background: #fffbeb; border-left: 3px solid #f59e0b; border-radius: 0 6px 6px 0; font-size: 10.5pt; line-height: 1.6; color: #92400e; }
+    .exam-note ul { margin: 4px 0 0 0; padding-left: 20px; }
+    .exam-note li { margin-bottom: 4px; }
+    .exam-note li:last-child { margin-bottom: 0; }
+
+    .chip-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 8px 0 20px 0; }
+    .chip { padding: 4px 10px; border-radius: 999px; background: var(--primary-light); color: var(--primary); font-size: 10pt; font-weight: 600; }
+    .arrow { color: var(--text-muted); font-weight: 700; }
+    h3 { font-size: 12pt; margin: 0 0 8px 0; color: var(--text-main); }
+    .label { display: inline-block; font-size: 9.5pt; font-weight: 700; color: var(--secondary); background: #eff6ff; padding: 2px 6px; border-radius: 4px; margin-bottom: 6px; }
+    .summary-pair { margin-bottom: 20px; }
+    .summary-pair:last-child { margin-bottom: 0; }
+
+    .img-box { text-align: center; padding: 20px; margin: 10px 0; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px; color: var(--text-muted); font-size: 11pt;}
+
+    /* =========================================
+       인쇄(Print) 전용 스타일 - 다중 지문 분할 처리
+       ========================================= */
+    @media print {
+      html, body { background: #ffffff !important; padding: 0; }
+      .doc { max-width: 100%; }
+
+      .passage-separator {
+        page-break-before: always !important;
+        break-before: page !important;
+        margin: 0 !important;
+        height: 0 !important;
+        border: none !important;
+        background: none !important;
+      }
+      .passage-separator::after { display: none !important; }
+
+      .page-break { page-break-before: always !important; break-before: page !important; }
+      .card, .sentence-card { box-shadow: none !important; border: 1px solid #cbd5e1 !important; page-break-inside: avoid !important; break-inside: avoid !important; }
+      .section-title { page-break-after: avoid !important; break-after: avoid !important; }
+
+      .hero-title { background: #0f172a !important; color: white !important; }
+      .page-no { background: #0f172a !important; }
+      .sentence-id, .chip, .label { border: 1px solid #cbd5e1 !important; background: #f8fafc !important; color: #0f172a !important; }
+      .exam-note { background: #f8fafc !important; border-left-color: #94a3b8 !important; color: #334155 !important; }
+      .img-box { background: #ffffff !important; border-color: #94a3b8 !important; color: #334155 !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="doc">
+
+    <!-- ========================================== -->
+    <!-- [지문 2] 22강 1번                          -->
+    <!-- ========================================== -->
+    <div class="passage-container">
+      <div class="header-container">
+        <div class="hero-title">22강 1번 지문분석</div>
+        <div class="subtitle">Lio T 내신대비 지문분석서</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">00</div><h2>영어 본문 및 전체 해석</h2></div>
+      <div class="card no-break">
+        <div class="text-block-title">영어 본문</div>
+        <div class="eng-body">
+          Connectivity, the capacity of a landscape to support movement by any given species across the landscape, is of increasing concern for conservation biologists. As the connectivity of a landscape increases from the human perspective (generally through increases in road networks), connectivity decreases for many other species. Although we may see many species of animals moving across human landscapes (e.g. deer, wolves, and turtles crossing roads or wandering through our backyards), landscapes substantially altered for human use act as barriers to movement of both animal and plant species. In some cases, these barriers are incomplete — many turtles die on roads, but some make it across. In other cases, passage is essentially impossible — cities along landscape corridors such as river valleys can effectively eliminate genetic exchange between previously connected plant and animal populations; dams can permanently halt spawning of fish by blocking travel to their breeding grounds. Thus, lack of connectivity can decrease the conservation value of remaining habitat below what its mapped area might suggest, increasing the impact of fragmentation.
+        </div>
+        <div class="divider"></div>
+        <div class="text-block-title">전체 해석</div>
+        <div class="kor-body">
+          특정 종이 경관을 가로질러 이동하는 것을 지원하는 경관의 능력인 연결성은 보존 생물학자들에게 점점 더 큰 관심사가 되고 있다. 인간의 관점에서 경관의 연결성이 증가할수록 (일반적으로 도로망의 증가를 통해), 많은 다른 종들에게는 연결성이 감소한다. 인간의 경관을 가로질러 이동하는 많은 종의 동물들(예를 들어, 도로를 건너거나 뒷마당을 돌아다니는 사슴, 늑대, 거북이 등)을 볼 수 있을지는 모르지만, 인간의 사용을 위해 실질적으로 변경된 경관은 동물과 식물 종 모두의 이동을 막는 장벽 역할을 한다. 어떤 경우에는 이러한 장벽이 불완전하여 많은 거북이가 도로에서 죽지만 일부는 건너가기도 한다. 다른 경우에는 통행이 본질적으로 불가능하다. 강 계곡과 같은 경관 회랑 지대를 따라 있는 도시들은 이전에 연결되어 있던 동식물 개체군 간의 유전자 교환을 사실상 없애버릴 수 있으며, 댐은 번식지로 가는 이동을 차단함으로써 물고기의 산란을 영구적으로 중단시킬 수 있다. 따라서 연결성의 부족은 남아있는 서식지의 보존 가치를 지도상의 면적이 시사하는 것 이하로 감소시켜, 파편화의 영향을 증가시킬 수 있다.
+        </div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">01</div><h2>직독직해 및 어휘 정리</h2></div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 1</div>
+        <div class="sentence-en">Connectivity, / the capacity of a landscape / to support movement / by any given species / across the landscape, / is / of increasing concern / for conservation biologists.</div>
+        <div class="sentence-ko">연결성은 / 경관의 능력인 / 이동을 지원하는 / 어떤 특정 종에 의한 / 경관을 가로지르는 / 커지는 관심사이다 / 보존 생물학자들에게.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> connectivity - 연결성, capacity - 능력, landscape - 경관, conservation biologist - 보존 생물학자</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 동식물의 이동을 돕는 경관의 '연결성'이 생물학자들의 주요 관심사다.<br>
+          <strong>역할:</strong> 글의 핵심 개념인 '연결성(connectivity)'을 정의하고 도입한다.
+        </div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 2</div>
+        <div class="sentence-en">As the connectivity of a landscape increases / from the human perspective / (generally through increases in road networks), / connectivity / decreases / for many other species.</div>
+        <div class="sentence-ko">경관의 연결성이 증가할수록 / 인간의 관점에서 / (일반적으로 도로망의 증가를 통해) / 연결성은 / 감소한다 / 많은 다른 종들에게는.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> perspective - 관점</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 인간을 위한 연결성(도로망) 증가가 오히려 야생동물의 연결성은 감소시킨다.<br>
+          <strong>역할:</strong> 인간의 개발과 자연 생태계 간의 상충되는 이해관계를 명확히 제시한다.
+        </div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 3</div>
+        <div class="sentence-en">Although we may see / many species of animals moving / across human landscapes / (e.g. deer, wolves, and turtles crossing roads or wandering through our backyards), / landscapes / substantially altered / for human use / act / as barriers / to movement of both animal and plant species.</div>
+        <div class="sentence-ko">비록 우리가 볼지라도 / 많은 종의 동물들이 이동하는 것을 / 인간의 경관을 가로질러 / (예를 들어, 도로를 건너거나 뒷마당을 배회하는 사슴, 늑대, 거북이 등) / 경관은 / 실질적으로 변경된 / 인간의 사용을 위해 / 역할 한다 / 장벽으로서 / 동식물 종 모두의 이동에.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> wander - 배회하다, substantially - 실질적으로, alter - 변경하다, barrier - 장벽</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 동물들이 인간 거주지를 지나다니는 것처럼 보이지만, 인위적으로 변경된 환경은 사실상 그들의 이동을 막는 장벽이다.<br>
+          <strong>역할:</strong> 인간의 환경 개발이 생태계에 장벽으로 작용한다는 글의 핵심 논지를 주장한다.
+        </div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 4</div>
+        <div class="sentence-en">In some cases, / these barriers / are / incomplete / — many turtles die on roads, but some make it across.</div>
+        <div class="sentence-ko">어떤 경우에는 / 이러한 장벽이 / 불완전하다 / (즉) 많은 거북이가 도로에서 죽지만 일부는 건너간다.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> incomplete - 불완전한</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 일부 장벽은 불완전해서 동물이 위험을 무릅쓰고 통과하기도 한다.<br>
+          <strong>역할:</strong> 환경 장벽이 미치는 영향의 첫 번째 양상(불완전한 차단과 희생)을 예시로 든다.
+        </div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 5</div>
+        <div class="sentence-en">In other cases, / passage / is / essentially impossible / — cities along landscape corridors such as river valleys / can effectively eliminate / genetic exchange / between previously connected plant and animal populations;</div>
+        <div class="sentence-ko">다른 경우에는 / 통행이 / 본질적으로 불가능하다 / 강 계곡과 같은 경관 회랑을 따라 있는 도시들은 / 사실상 없앨 수 있다 / 유전자 교환을 / 이전에 연결되었던 동식물 개체군 간의;</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> passage - 통행, corridor - 회랑 지대, effectively - 사실상(효과적으로), eliminate - 제거하다</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 통행이 아예 불가능해지는 경우, 서식지가 단절되어 동식물 간의 유전자 교환이 끊긴다.<br>
+          <strong>역할:</strong> 환경 장벽이 미치는 영향의 두 번째 양상(완전한 차단과 생태계 고립)을 설명한다.
+        </div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 6</div>
+        <div class="sentence-en">dams / can permanently halt / spawning of fish / by blocking travel / to their breeding grounds.</div>
+        <div class="sentence-ko">댐은 / 영구적으로 중단시킬 수 있다 / 물고기의 산란을 / 이동을 차단함으로써 / 번식지로 가는.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> halt - 중단시키다, spawning - 산란, breeding ground - 번식지</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 댐과 같은 인공구조물은 물고기의 이동을 막아 번식 자체를 불가능하게 만든다.<br>
+          <strong>역할:</strong> 통행이 불가능해진 사례에 대한 추가적인 구체적 예시(댐)를 제시한다.
+        </div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 7</div>
+        <div class="sentence-en">Thus, / lack of connectivity / can decrease / the conservation value / of remaining habitat / below what its mapped area might suggest, / increasing the impact of fragmentation.</div>
+        <div class="sentence-ko">따라서 / 연결성의 부족은 / 감소시킬 수 있다 / 보존 가치를 / 남은 서식지의 / 지도상 면적이 보여주는 것 이하로 / (이는) 파편화의 영향을 증가시키면서.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> conservation - 보존, fragmentation - 파편화</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 연결성 결여는 서식지의 실제 보존 가치를 하락시키고 생태계 파편화를 심화시킨다.<br>
+          <strong>역할:</strong> 인위적 장벽으로 인한 생태계 연결성 감소가 서식지 파편화라는 치명적 결과를 초래함을 종합하며 결론짓는다.
+        </div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">02</div><h2>어법 및 구문 포인트</h2></div>
+      <div class="card no-break">
+        <div class="point-block">
+          <div class="sentence-id">문장 3</div>
+          <div class="line-item"><strong>[Although we may see many species of animals moving across human landscapes (...), landscapes substantially altered for human use act as barriers to movement of both animal and plant species.]</strong></div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul>
+              <li>지각동사 <code>see</code>의 목적격 보어로 현재분사 <code>moving</code>이 쓰여 진행의 의미를 강조한다.</li>
+              <li>주절의 주어 <code>landscapes</code>를 수식하는 과거분사구 <code>substantially altered for human use</code>를 파악해야 한다. 동사 형태인 <code>alter</code>나 능동인 <code>altering</code>이 올 수 없음에 주의하며, 주절의 본동사는 복수형인 <code>act</code>가 바르게 쓰였다.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 7</div>
+          <div class="line-item"><strong>[Thus, lack of connectivity can decrease the conservation value of remaining habitat below what its mapped area might suggest, increasing the impact of fragmentation.]</strong></div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul>
+              <li>전치사 <code>below</code>의 목적어로 선행사를 포함하는 관계대명사 <code>what</code>이 쓰였다.</li>
+              <li>콤마(,) 뒤에 이어지는 <code>increasing</code>은 분사구문으로, '결과적으로 ~을 증가시키다'라는 연속적 상황이나 결과를 나타낸다.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">03</div><h2>문장 단위 내용 흐름 정리</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>[도입 (문장 1~2)] :</strong> 보존 생물학에서의 '연결성' 개념 정의 및 인간의 연결성(도로) 증가가 야생의 연결성 감소를 초래한다는 문제 제기.</div>
+        <div class="line-item"><strong>[전개 (문장 3)] :</strong> 인간에 의해 변형된 경관이 야생 동식물의 이동을 막는 장벽이 됨.</div>
+        <div class="line-item"><strong>[예시 (문장 4~6)] :</strong> 장벽의 부작용 사례들 (도로에서의 로드킬, 도시로 인한 유전자 교환 단절, 댐으로 인한 어류 산란 차단).</div>
+        <div class="line-item"><strong>[결론 (문장 7)] :</strong> 결국 연결성 단절은 겉보기 면적과 무관하게 서식지의 가치를 파괴하고 파편화를 악화시킴.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">04</div><h2>표현들의 연관성 정리</h2></div>
+      <div class="card no-break">
+        <h3>인위적 장벽 (물리적 구조물)</h3>
+        <div class="chip-row">
+          <span class="chip">road networks</span> <span class="arrow">=</span> <span class="chip">human landscapes</span> <span class="arrow">=</span> <span class="chip">cities</span> <span class="arrow">=</span> <span class="chip">dams</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 20px;">모두 인간의 필요에 의해 자연을 변형시켜 만든 구조물들로, 생태계 연결성을 저해하는 '인위적 장벽(barriers)'이다.</div>
+
+        <h3>생태적 고립과 파편화의 피해</h3>
+        <div class="chip-row">
+          <span class="chip">eliminate genetic exchange</span> <span class="arrow">=</span> <span class="chip">halt spawning</span> <span class="arrow">=</span> <span class="chip">impact of fragmentation</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 4px;">이동 장벽으로 인해 야생 동식물이 겪게 되는 '생태적 고립과 파편화'의 피해를 구체화한 표현들이다.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">05</div><h2>소재와 주제문</h2></div>
+      <div class="card no-break" style="border-top-color: #f59e0b;">
+        <div class="line-item" style="margin-bottom: 12px;"><strong>핵심 소재:</strong> 인간에 의해 변형된 경관이 초래하는 생태계 연결성(connectivity)의 파괴</div>
+        <div class="mini-divider"></div>
+        <div class="label" style="margin-top: 8px;">주제문 (문장 3)</div>
+        <div class="sentence-en" style="margin-bottom: 0;">Although we may see many species of animals moving across human landscapes, landscapes substantially altered for human use act as barriers to movement of both animal and plant species.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">06</div><h2>지문의 요약 및 패러프레이징</h2></div>
+      <div class="card no-break">
+        <div class="summary-pair">
+          <div class="label">요약 / Summary</div>
+          <div class="sentence-en">Landscapes altered for human use, such as roads and cities, act as barriers to the movement of wildlife, destroying ecological connectivity and exacerbating habitat fragmentation.</div>
+          <div class="sentence-ko">도로나 도시 등 인간을 위해 변형된 경관은 야생 동식물의 이동을 가로막는 장벽으로 작용하여 생태계 연결성을 파괴하고 서식지 파편화를 악화시킨다.</div>
+        </div>
+        <div class="divider"></div>
+        <div class="summary-pair">
+          <div class="label">패러프레이징 / Paraphrasing</div>
+          <div class="sentence-en">Infrastructure built for human convenience becomes fatal physical obstacles that undermine ecological integrity by isolating animal populations and blocking biological exchange.</div>
+          <div class="sentence-ko">인간의 편의를 위해 건설된 기반 시설은 동물 개체군을 고립시키고 생물학적 교류를 차단함으로써 생태계의 온전함을 저해하는 치명적인 물리적 장애물이 된다.</div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">07</div><h2>도움이 되는 배경지식</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>1. 생태 통로 (Ecological Corridor):</strong><br> 인간의 개발로 인해 단절된 야생 동물의 서식지를 띠 모양으로 이어주는 공간이다. 도로 위를 가로지르는 육교 형태나 지하 터널 형태로 조성하여 로드킬을 방지하고 유전적 다양성을 유지하는 데 기여한다.</div>
+        <div class="divider"></div>
+        <div class="line-item"><strong>2. 서식지 파편화 (Habitat Fragmentation):</strong><br> 거대한 서식지가 도로나 댐 건설 등으로 작게 쪼개지는 현상으로, 종의 멸종 위험을 크게 높이는 주요 원인 중 하나다.</div>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- [지문 4] 22강 3번                          -->
+    <!-- ========================================== -->
+    <hr class="passage-separator" />
+    
+    <div class="passage-container">
+      <div class="header-container">
+        <div class="hero-title">22강 3번 지문분석</div>
+        <div class="subtitle">Lio T 내신대비 지문분석서</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">00</div><h2>영어 본문 및 전체 해석</h2></div>
+      <div class="card no-break">
+        <div class="text-block-title">영어 본문</div>
+        <div class="eng-body">
+          One example of human interventions modifying the character of savannas is through their effects on savanna-dwelling mammals such as elephants. They are what is known as a ‘keystone species’ because they have a strong effect on many aspects of the environment in which they live. They diversify the ecosystems which they occupy and create a mosaic of habitats by browsing, trampling, and knocking over bushes and trees. They also spread seeds through their eating and defecating habits and maintain or create water holes by wallowing. All these roles are beneficial to other species. Conversely, where human interference prevents elephants from moving freely within their habitats and leads to their numbers exceeding the carrying capacity of the savanna, their effect can be environmentally disastrous. Equally, if humans reduce elephant numbers in a particular piece of savanna, the savanna may become less diverse and less open, and its water holes may fill with mud. This will be harmful to other species.
+        </div>
+        <div class="divider"></div>
+        <div class="text-block-title">전체 해석</div>
+        <div class="kor-body">
+          사바나의 특징을 수정하는 인간 개입의 한 예는 코끼리와 같이 사바나에 서식하는 포유류에 미치는 영향을 통해서이다. 그들은 자신들이 사는 환경의 여러 측면에 강한 영향을 미치기 때문에 이른바 '핵심종'이라고 알려져 있다. 그들은 관목과 나무를 뜯어먹고, 짓밟고, 쓰러뜨림으로써 자신들이 차지하고 있는 생태계를 다양화하고 서식지의 모자이크를 만든다. 그들은 또한 먹고 배설하는 습관을 통해 씨앗을 퍼뜨리고, 진흙탕에서 뒹굴어 물웅덩이를 유지하거나 만든다. 이 모든 역할은 다른 종들에게 유익하다. 반대로, 인간의 간섭으로 인해 코끼리들이 서식지 내에서 자유롭게 이동하지 못하게 되어 그 수가 사바나의 환경 수용력을 초과하게 되는 경우, 그들의 영향은 환경적으로 재앙이 될 수 있다. 마찬가지로, 인간이 사바나의 특정 구역에서 코끼리 수를 줄인다면, 사바나는 덜 다양해지고 덜 개방적으로 변할 수 있으며, 물웅덩이는 진흙으로 채워질 수 있다. 이것은 다른 종들에게 해로울 것이다.
+        </div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">01</div><h2>직독직해 및 어휘 정리</h2></div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 1</div>
+        <div class="sentence-en">One example / of human interventions / modifying the character of savannas / is / through their effects / on savanna-dwelling mammals / such as elephants.</div>
+        <div class="sentence-ko">한 가지 예는 / 인간 개입의 / 사바나의 특징을 수정하는 / 그 영향을 통해서이다 / 사바나에 서식하는 포유류에 미치는 / 코끼리와 같은.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> intervention - 개입, modify - 수정하다, savanna-dwelling - 사바나에 서식하는</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 인간의 환경 개입은 코끼리 같은 사바나 포유류에게 미치는 영향을 통해 생태계를 변화시킨다.<br>
+          <strong>역할:</strong> 글의 주요 논제인 '인간 개입이 사바나 생태계에 미치는 영향'을 도입한다.
+        </div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 2</div>
+        <div class="sentence-en">They / are / what is known / as a ‘keystone species’ / because they have a strong effect / on many aspects of the environment / in which they live.</div>
+        <div class="sentence-ko">그들은 / 알려진 것이다 / '핵심종'으로 / 왜냐하면 그들이 강한 영향을 미치기 때문이다 / 환경의 여러 측면에 / 그들이 살고 있는.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> keystone species - 핵심종</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 코끼리는 서식 환경 전반에 큰 영향을 미치므로 '핵심종'으로 불린다.<br>
+          <strong>역할:</strong> 코끼리가 사바나 생태계에서 얼마나 중요한 위상을 지니는지(핵심종) 설명한다.
+        </div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 3</div>
+        <div class="sentence-en">They / diversify / the ecosystems / which they occupy / and create / a mosaic of habitats / by browsing, trampling, and knocking over / bushes and trees.</div>
+        <div class="sentence-ko">그들은 / 다양화한다 / 생태계를 / 그들이 차지하고 있는 / 그리고 창조한다 / 서식지의 모자이크를 / 뜯어먹고, 짓밟고, 쓰러뜨림으로써 / 관목과 나무들을.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> occupy - 차지하다, browse - (잎을) 뜯어먹다, trample - 짓밟다</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 코끼리는 식물들을 먹고 부수면서 오히려 생태계를 다양하고 복잡하게(모자이크처럼) 만든다.<br>
+          <strong>역할:</strong> 코끼리가 환경에 미치는 긍정적 역할 첫 번째(지형적 다양화)를 묘사한다.
+        </div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 4</div>
+        <div class="sentence-en">They / also spread / seeds / through their eating and defecating habits / and maintain or create / water holes / by wallowing.</div>
+        <div class="sentence-ko">그들은 / 또한 퍼뜨린다 / 씨앗을 / 먹고 배설하는 습관을 통해 / 그리고 유지하거나 만든다 / 물웅덩이를 / 뒹굴면서.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> defecate - 배설하다, water hole - 물웅덩이, wallow - 뒹굴다</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 코끼리는 배설로 씨앗을 퍼뜨리고 진흙 목욕으로 물웅덩이를 조성한다.<br>
+          <strong>역할:</strong> 코끼리가 환경에 미치는 긍정적 역할 두 번째(식물 번식 및 수원지 확보)를 묘사한다.
+        </div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 5</div>
+        <div class="sentence-en">All these roles / are / beneficial / to other species.</div>
+        <div class="sentence-ko">이 모든 역할들은 / 유익하다 / 다른 종들에게.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> beneficial - 유익한</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 이러한 코끼리의 파괴적 행동들은 사실 다른 생물들의 생존을 돕는 유익한 활동이다.<br>
+          <strong>역할:</strong> 앞선 문장들의 내용(자연스러운 생태적 역할)이 긍정적인 파급효과를 낳음을 종합한다.
+        </div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 6</div>
+        <div class="sentence-en">Conversely, / where human interference prevents elephants / from moving freely within their habitats / and leads to their numbers / exceeding the carrying capacity of the savanna, / their effect / can be / environmentally disastrous.</div>
+        <div class="sentence-ko">반대로 / 인간의 간섭이 코끼리를 막는 곳(상황)에서는 / 서식지 내에서 자유롭게 이동하는 것을 / 그리고 그들의 개체수가 이어지는 (곳에서는) / 사바나의 환경 수용력을 초과하는 것으로 / 그들의 영향은 / 될 수 있다 / 환경적으로 재앙이.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> interference - 간섭, prevent A from ~ing - A가 ~하는 것을 막다, carrying capacity - 환경 수용력, disastrous - 재앙의</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 반면, 인간의 간섭으로 코끼리 이동이 제한되어 특정 지역에 개체수가 폭증하면 환경 재앙이 발생한다.<br>
+          <strong>역할:</strong> 주어진 삽입 문장으로, 인간의 개입이 초래하는 첫 번째 부정적 상황(과밀화로 인한 파괴)을 제시하여 분위기를 반전시킨다.
+        </div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 7</div>
+        <div class="sentence-en">Equally, / if humans reduce elephant numbers / in a particular piece of savanna, / the savanna / may become / less diverse and less open, / and its water holes / may fill / with mud.</div>
+        <div class="sentence-ko">마찬가지로 / 만약 인간이 코끼리 수를 줄인다면 / 사바나의 특정 구역에서 / 사바나는 / 될 수 있다 / 덜 다양해지고 덜 개방적으로 / 그리고 물웅덩이는 / 채워질 수 있다 / 진흙으로.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> equally - 마찬가지로(동등하게)</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 개체수 과잉뿐만 아니라 반대로 인간이 개체수를 줄이는 것 역시 생태계의 다양성을 파괴한다.<br>
+          <strong>역할:</strong> 인간의 개입이 초래하는 두 번째 부정적 상황(개체수 감소로 인한 쇠퇴)을 제시한다. Equally라는 연결사를 통해 양극단의 인간 개입이 모두 해로움을 강조한다.
+        </div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 8</div>
+        <div class="sentence-en">This / will be / harmful / to other species.</div>
+        <div class="sentence-ko">이것은 / 해로울 것이다 / 다른 종들에게.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> harmful - 해로운</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 이러한 인위적인 생태계 축소는 다른 종들의 생존에도 해를 끼친다.<br>
+          <strong>역할:</strong> 코끼리의 부재가 전체 생태계에 미치는 악영향을 경고하며 글을 맺는다.
+        </div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">02</div><h2>어법 및 구문 포인트</h2></div>
+      <div class="card no-break">
+        <div class="point-block">
+          <div class="sentence-id">문장 1</div>
+          <div class="line-item"><strong>[One example of human interventions modifying the character of savannas is through their effects on savanna-dwelling mammals such as elephants.]</strong></div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul>
+              <li>명사 <code>interventions</code>를 현재분사구 <code>modifying the character of savannas</code>가 뒤에서 수식하고 있다. 능동의 의미이므로 과거분사 <code>modified</code>를 쓰지 않아야 한다.</li>
+              <li>문장의 핵심 주어는 단수인 <code>One example</code>이므로 단수 동사 <code>is</code>가 쓰였다.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 6</div>
+          <div class="line-item"><strong>[where human interference prevents elephants from moving freely within their habitats and leads to their numbers exceeding the carrying capacity of the savanna, their effect can be environmentally disastrous.]</strong></div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul>
+              <li><code>prevent A from ~ing</code> (A가 ~하는 것을 막다) 구문이 쓰였다.</li>
+              <li><code>lead to</code>의 전치사 <code>to</code> 뒤에 동명사 <code>exceeding</code>이 왔으며, <code>their numbers</code>는 이 동명사의 의미상 주어이다. ('그들의 개체수가 초과하는 것으로 이어진다')</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">03</div><h2>문장 단위 내용 흐름 정리</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>[도입 (문장 1~2)] :</strong> 사바나 생태계의 '핵심종'인 코끼리의 중요성과 인간 개입의 영향력 제시.</div>
+        <div class="line-item"><strong>[자연 상태의 긍정적 역할 (문장 3~5)] :</strong> 코끼리의 자연스러운 파괴적 행동과 배설, 뒹굴기 등은 식물 다양성 확보와 수자원 생성에 유익함.</div>
+        <div class="line-item"><strong>[인간 개입의 부작용 1 (문장 6)] :</strong> '반대로(Conversely)', 인간이 이동을 막아 좁은 곳에 코끼리가 밀집되면 생태계가 과도하게 파괴되는 재앙이 일어남.</div>
+        <div class="line-item"><strong>[인간 개입의 부작용 2 (문장 7~8)] :</strong> '마찬가지로(Equally)', 인간이 억지로 코끼리 수를 줄이면 사바나의 다양성과 수자원이 말라버려 다른 종들에게 치명적임.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">04</div><h2>표현들의 연관성 정리</h2></div>
+      <div class="card no-break">
+        <h3>자연 상태에서의 유익한 기능</h3>
+        <div class="chip-row">
+          <span class="chip">keystone species</span> <span class="arrow">=</span> <span class="chip">diversify the ecosystems</span> <span class="arrow">=</span> <span class="chip">spread seeds</span> <span class="arrow">=</span> <span class="chip">beneficial</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 20px;">사바나를 건강하게 유지하는 핵심종으로서 코끼리가 지닌 '자연 상태에서의 유익한 기능'을 나타내는 표현들이다.</div>
+
+        <h3>인간의 무분별한 개입</h3>
+        <div class="chip-row">
+          <span class="chip">human interventions</span> <span class="arrow">=</span> <span class="chip">interference</span> <span class="arrow">=</span> <span class="chip">prevents elephants from moving</span> <span class="arrow">=</span> <span class="chip">reduce elephant numbers</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 20px;">자연의 균형을 깨트리는 무분별한 '인간의 개입 및 통제'를 가리키는 표현들이다.</div>
+
+        <h3>생태계 파괴 (비극적 결과)</h3>
+        <div class="chip-row">
+          <span class="chip">environmentally disastrous</span> <span class="arrow">=</span> <span class="chip">less diverse</span> <span class="arrow">=</span> <span class="chip">harmful</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 4px;">과밀화 유발이나 개체수 감축 등 잘못된 인간 개입이 불러온 생태계 파괴라는 '공통적인 비극적 결과'를 나타낸다.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">05</div><h2>소재와 주제문</h2></div>
+      <div class="card no-break" style="border-top-color: #f59e0b;">
+        <div class="line-item" style="margin-bottom: 12px;"><strong>핵심 소재:</strong> 핵심종인 코끼리에 대한 인간의 부적절한 개입이 사바나 생태계에 미치는 악영향</div>
+        <div class="mini-divider"></div>
+        <div class="label" style="margin-top: 8px;">주제문 (문장 6, 7)</div>
+        <div class="sentence-en" style="margin-bottom: 0;">Conversely, where human interference prevents elephants from moving freely within their habitats and leads to their numbers exceeding the carrying capacity of the savanna, their effect can be environmentally disastrous. Equally, if humans reduce elephant numbers in a particular piece of savanna, the savanna may become less diverse and less open...</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">06</div><h2>지문의 요약 및 패러프레이징</h2></div>
+      <div class="card no-break">
+        <div class="summary-pair">
+          <div class="label">요약 / Summary</div>
+          <div class="sentence-en">Elephants, as a keystone species, naturally maintain a diverse and healthy savanna ecosystem, but human interventions that restrict their movement or artificially reduce their numbers ultimately result in detrimental consequences for the entire ecosystem.</div>
+          <div class="sentence-ko">핵심종인 코끼리는 자연 상태에서 사바나 생태계를 다양하고 건강하게 유지하지만, 이들의 이동을 막거나 개체수를 억지로 줄이는 인간의 개입은 결국 생태계 전체에 해로운 결과를 낳는다.</div>
+        </div>
+        <div class="divider"></div>
+        <div class="summary-pair">
+          <div class="label">패러프레이징 / Paraphrasing</div>
+          <div class="sentence-en">The habitat-shaping capability of African elephants is most beneficial when left to nature; however, artificial controls that cause their density to become abnormally high or low provoke critical environmental degradation.</div>
+          <div class="sentence-ko">아프리카 코끼리의 서식 환경 조성 능력은 자연의 섭리에 맡길 때 가장 유익하며, 인위적인 통제로 인해 그들의 밀도가 비정상적으로 높아지거나 낮아지면 치명적인 환경 훼손이 야기된다.</div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">07</div><h2>도움이 되는 배경지식</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>1. 핵심종 (Keystone Species):</strong><br> 아치형 돌문이 무너지지 않도록 중심을 잡아주는 종석(Keystone)처럼, 특정 생태계의 구조와 다양성을 유지하는 데 결정적인 역할을 하는 생물종이다. 아프리카 코끼리, 해달, 늑대 등이 대표적이다.</div>
+        <div class="divider"></div>
+        <div class="line-item"><strong>2. 환경 수용력 (Carrying Capacity):</strong><br> 특정 서식지가 장기적으로 지탱할 수 있는 최대 생물 개체수를 말한다. 인간의 울타리 설치 등으로 코끼리의 이동이 제한되어 특정 지역에 갇히면, 제한된 면적 내에서 나무를 과도하게 먹어 치워 사막화가 진행된다.</div>
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>

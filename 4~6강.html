@@ -1,0 +1,1227 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>4강~6강 통합 지문분석 - Lio T</title>
+  <style>
+    /* 디자인 시스템 변수 설정 */
+    :root {
+      --bg-color: #f4f7fb;
+      --text-main: #0f172a;
+      --text-sub: #334155;
+      --text-muted: #64748b;
+      --primary: #4f46e5;
+      --primary-light: #e0e7ff;
+      --secondary: #3b82f6;
+      --border-light: #e2e8f0;
+      --card-bg: #ffffff;
+      --radius: 12px;
+    }
+
+    /* 페이지 기본 설정 (세로 모드) */
+    @page {
+      size: A4 portrait;
+      margin: 15mm; 
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg-color);
+      color: var(--text-main);
+      font-family: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+      letter-spacing: -0.02em; 
+    }
+
+    body {
+      padding: 10px; 
+      display: flex;
+      justify-content: center;
+    }
+
+    .doc {
+      width: 100%;
+      max-width: 210mm; 
+    }
+
+    /* =========================================
+       지문 간 구분선 (화면용 vs 인쇄용)
+       ========================================= */
+    .passage-separator {
+      height: 4px;
+      background-image: repeating-linear-gradient(to right, #cbd5e1 0, #cbd5e1 10px, transparent 10px, transparent 20px);
+      margin: 80px 0;
+      border: none;
+      position: relative;
+    }
+    .passage-separator::after {
+      content: '▼ 다음 지문 (인쇄 시 무조건 새 페이지에서 시작됩니다) ▼';
+      position: absolute;
+      top: -26px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--bg-color);
+      padding: 0 16px;
+      color: #94a3b8;
+      font-weight: 700;
+      font-size: 10pt;
+    }
+
+    /* 공통 레이아웃 제어 */
+    .no-break { page-break-inside: avoid; break-inside: avoid; }
+    
+    .header-container { margin-bottom: 30px; text-align: center; }
+    .hero-title {
+      display: inline-block; margin: 0 0 10px 0; padding: 8px 24px; font-size: 22pt; font-weight: 800;
+      color: #ffffff; background: linear-gradient(135deg, var(--primary), var(--secondary));
+      border-radius: 999px; box-shadow: 0 4px 14px rgba(79, 70, 229, 0.25);
+    }
+    .subtitle { font-size: 13pt; font-weight: 600; color: var(--text-muted); }
+
+    .section-title {
+      display: flex; align-items: center; gap: 12px; margin: 30px 0 16px 0;
+      border-bottom: 2px solid var(--border-light); padding-bottom: 4px;
+      page-break-after: avoid; break-after: avoid;
+    }
+    .page-no {
+      width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+      background: var(--primary); color: white; font-weight: 700; font-size: 12pt; border-radius: 8px;
+    }
+    h2 { margin: 0; font-size: 16pt; font-weight: 700; color: var(--text-main); }
+
+    .card {
+      background: var(--card-bg); border: 1px solid var(--border-light); border-top: 4px solid var(--primary);
+      border-radius: var(--radius); padding: 8px 16px; margin-bottom: 16px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    }
+    
+    /* 본문 영역 - 화면 크기에 맞춰 반응형으로 조절 (최소크기, 유동크기, 최대크기) */
+    .text-block-title { font-size: clamp(10pt, 2.5vw, 12pt); font-weight: 700; color: var(--primary); margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+    .text-block-title::before { content: ''; display: block; width: 6px; height: 6px; border-radius: 50%; background: var(--primary); }
+    .eng-body { font-size: clamp(10pt, 2.5vw, 12pt); line-height: 1.7; font-weight: 500; color: var(--text-main); margin-bottom: 20px; text-align: justify; }
+    .divider { height: 1px; background: var(--border-light); margin: 20px 0; }
+    .mini-divider { height: 1px; background: var(--border-light); margin: 8px 0; }
+    .kor-body { font-size: clamp(9.5pt, 2.3vw, 11.5pt); line-height: 1.7; color: var(--text-sub); text-align: justify; word-break: keep-all; }
+
+    .sentence-card {
+      background: var(--card-bg); border: 1px solid var(--border-light); border-left: 4px solid var(--secondary);
+      border-radius: 8px; padding: 8px 16px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    }
+    .sentence-id { display: inline-block; margin-bottom: 8px; padding: 2px 8px; border-radius: 6px; background: var(--primary-light); color: var(--primary); font-size: 9pt; font-weight: 700; }
+    .sentence-en { font-size: 12.5pt; font-weight: 600; line-height: 1.6; color: var(--text-main); margin-bottom: 4px; }
+    .sentence-ko { font-size: 9pt; line-height: 1.6; color: var(--text-sub); margin-bottom: 4px; word-break: keep-all; }
+    .vocab-box { display: inline-block; padding: 4px 8px; border-radius: 6px; background: #f8fafc; border: 1px dashed #cbd5e1; font-size: 9pt; color: var(--text-muted); }
+
+    .point-block { margin-bottom: 16px; }
+    .point-block:last-child { margin-bottom: 0; }
+    .line-item { font-size: 11.5pt; line-height: 1.7; margin: 0 0 8px 0; word-break: keep-all; }
+    .exam-note { margin-top: 8px; padding: 8px 12px; background: #fffbeb; border-left: 3px solid #f59e0b; border-radius: 0 6px 6px 0; font-size: 10.5pt; line-height: 1.6; color: #92400e; }
+    .exam-note ul { margin: 4px 0 0 0; padding-left: 20px; }
+    .exam-note li { margin-bottom: 4px; }
+    .exam-note li:last-child { margin-bottom: 0; }
+
+    .chip-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 8px 0 20px 0; }
+    .chip { padding: 4px 10px; border-radius: 999px; background: var(--primary-light); color: var(--primary); font-size: 10pt; font-weight: 600; }
+    .arrow { color: var(--text-muted); font-weight: 700; }
+    h3 { font-size: 12pt; margin: 0 0 8px 0; color: var(--text-main); }
+    .label { display: inline-block; font-size: 9.5pt; font-weight: 700; color: var(--secondary); background: #eff6ff; padding: 2px 6px; border-radius: 4px; margin-bottom: 6px; }
+    .summary-pair { margin-bottom: 20px; }
+    .summary-pair:last-child { margin-bottom: 0; }
+
+    /* 요약/역할 및 흐름 정리용 Flexbox */
+    .flex-row-item { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 6px; }
+    .flex-row-item:last-child { margin-bottom: 0; }
+    .flex-label { font-size: 10.5pt; color: var(--text-main); font-weight: 600; flex-shrink: 0; width: 40px; }
+    .flex-desc { font-size: 10.5pt; color: var(--text-muted); word-break: keep-all; line-height: 1.6; }
+    
+    .flow-label { font-size: 11.5pt; font-weight: 700; color: var(--text-main); flex-shrink: 0; width: 140px; white-space: nowrap; margin-right: 4px; }
+    .flow-label .sentence-id { margin-bottom: 0; margin-right: 4px; padding: 2px 6px; }
+    .flow-desc { font-size: 11.5pt; color: var(--text-sub); word-break: keep-all; line-height: 1.7; }
+
+    /* =========================================
+       인쇄(Print) 전용 스타일 - 25% 축소 (원본 75% 유지) 및 특정 영역 Undo
+       ========================================= */
+    @media print {
+      html, body { background: #ffffff !important; padding: 0; }
+      .doc { max-width: 100%; }
+
+      /* 지문 구분선을 강제 페이지 넘김으로 변환 */
+      .passage-separator {
+        page-break-before: always !important;
+        break-before: page !important;
+        margin: 0 !important;
+        height: 0 !important;
+        border: none !important;
+        background: none !important;
+      }
+      .passage-separator::after { display: none !important; }
+
+      .page-break { page-break-before: always !important; break-before: page !important; }
+      .card, .sentence-card { box-shadow: none !important; border: 1px solid #cbd5e1 !important; page-break-inside: avoid !important; break-inside: avoid !important; }
+      .section-title { page-break-after: avoid !important; break-after: avoid !important; }
+
+      .hero-title { background: #0f172a !important; color: white !important; }
+      .page-no { background: #0f172a !important; }
+      .sentence-id, .chip, .label { border: 1px solid #cbd5e1 !important; background: #f8fafc !important; color: #0f172a !important; }
+      .exam-note { background: #f8fafc !important; border-left-color: #94a3b8 !important; color: #334155 !important; }
+
+      /* 글자 크기 원본 대비 25% 축소 (75% 크기 유지) */
+      .page-no { font-size: 9pt !important; width: 24px !important; height: 24px !important; }
+      .sentence-id { font-size: 6.75pt !important; padding: 1.5px 6px !important; }
+      .sentence-en { font-size: 9.4pt !important; }
+      .sentence-ko { font-size: 6.75pt !important; }
+      .vocab-box { font-size: 6.75pt !important; padding: 3px 6px !important; }
+      .line-item { font-size: 8.6pt !important; }
+      .exam-note { font-size: 7.9pt !important; padding: 6px 9px !important; }
+      .chip { font-size: 7.5pt !important; padding: 3px 7.5px !important; }
+      h3 { font-size: 9pt !important; }
+      .label { font-size: 7.1pt !important; padding: 1.5px 4.5px !important; }
+      .flex-label { font-size: 7.9pt !important; }
+      .flex-desc { font-size: 7.9pt !important; }
+      .flow-label { font-size: 8.6pt !important; }
+      .flow-desc { font-size: 8.6pt !important; }
+      
+      /* 원래 크기로 복구 (Undo) 된 특정 태그들 (헤더, 본문타이틀, 00번 페이지 번호) */
+      .hero-title { font-size: 22pt !important; padding: 8px 24px !important; } 
+      .subtitle { font-size: 13pt !important; } 
+      .section-00 .page-no { font-size: 12pt !important; width: 32px !important; height: 32px !important; }
+      h2 { font-size: 16pt !important; } 
+      
+      /* 본문, 해석 영역 인쇄/화면 크기에 맞춰 유동적으로 조절 보장 */
+      .text-block-title { font-size: clamp(10pt, 2.5vw, 12pt) !important; } 
+      .eng-body { font-size: clamp(10pt, 2.5vw, 12pt) !important; } 
+      .kor-body { font-size: clamp(9.5pt, 2.3vw, 11.5pt) !important; } 
+    }
+  </style>
+</head>
+<body>
+  <div class="doc">
+
+    <!-- ========================================== -->
+    <!-- [지문 1] 04강 01번                         -->
+    <!-- ========================================== -->
+    <div class="passage-container">
+      <div class="header-container">
+        <div class="hero-title">04강 01번 지문분석</div>
+        <div class="subtitle">Lio T 내신대비 지문분석서</div>
+      </div>
+
+      <div class="section-title no-break section-00"><div class="page-no">00</div><h2>영어 본문 및 전체 해석</h2></div>
+      <div class="card no-break">
+        <div class="text-block-title">영어 본문</div>
+        <div class="eng-body">
+          There's a saying that "you can't eat information." That may be so, but the food we eat today is the fruit of thousands of years of increasingly high-quality information - the knowledge of how to farm what seeds, what tools and how to use them, what times of year, what irrigation, what sequence of one crop after another on the same land. What we eat is solar energy, filtered, concentrated, and distilled through the lens of human knowledge. The energy the Earth receives from the sun each year has remained more or less constant through all of human civilization. What's allowed us to flourish is our increasingly sophisticated knowledge of how to capture an ever-growing but still tiny fraction of that energy in a form that can fuel our bodies. Every step in the advancement of our knowledge has brought with it an increase in the amount of energy we can tap into.
+        </div>
+        <div class="divider"></div>
+        <div class="text-block-title">전체 해석</div>
+        <div class="kor-body">
+          "정보를 먹을 수는 없다."라는 속담이 있다. 그럴지도 모르지만, 오늘날 우리가 먹는 음식은 점점 더 고품질이 되어가는 수천 년 정보의 결실이다. 즉, 어떤 씨앗을 어떻게 재배할지, 어떤 도구를 어떻게 사용할지, 일 년 중 어느 시기에 할지, 어떤 관개를 할지, 동일한 땅에서 한 작물 뒤에 다른 작물을 어떤 순서로 심을지에 대한 지식의 결실이다. 우리가 먹는 것은 인류 지식의 렌즈를 통해 걸러지고, 농축되고, 증류된 태양 에너지이다. 지구가 매년 태양으로부터 받는 에너지는 인류 문명 전체를 통틀어 다소 일정하게 유지되어 왔다. 우리가 번영할 수 있게 해 준 것은 그 에너지의 늘어나고는 있지만 여전히 아주 작은 일부를 우리 몸에 연료를 공급할 수 있는 형태로 포착하는 방법에 대한 우리의 점점 더 정교해지는 지식이다. 우리 지식 발전의 모든 단계는 우리가 활용할 수 있는 에너지양의 증가를 수반했다.
+        </div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">01</div><h2>직독직해 및 어휘 정리</h2></div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 1</div>
+        <div class="sentence-en">There's a saying / that / "you can't eat information."</div>
+        <div class="sentence-ko">속담이 있다 / ~라는 / "정보를 먹을 수는 없다."라는.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> saying - 속담, 격언</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 2</div>
+        <div class="sentence-en">That / may be so, / but / the food / we eat today / is / the fruit / of thousands of years / of increasingly high-quality information / - the knowledge / of how to farm / what seeds, / what tools / and how to use them, / what times of year, / what irrigation, / what sequence / of one crop after another / on the same land.</div>
+        <div class="sentence-ko">그것이 / 그럴지도 모른다, / 하지만 / 음식은 / 우리가 오늘날 먹는 / ~이다 / 결실 / 수천 년의 / 점점 더 높은 품질의 정보의 / 즉 지식(의 결실) / 재배하는 방법에 대한 / 어떤 씨앗을, / 어떤 도구를 / 그리고 어떻게 그것들을 사용할지를, / 연중 어느 시기에 (할지), / 어떤 관개를 (할지), / 어떤 순서로 (할지) / 하나의 작물 뒤에 또 다른 작물을 / 같은 땅에서.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> fruit - 결실, 열매, increasingly - 점점 더, irrigation - 관개, sequence - 순서</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 3</div>
+        <div class="sentence-en">What we eat / is / solar energy, / filtered, concentrated, and distilled / through the lens / of human knowledge.</div>
+        <div class="sentence-ko">우리가 먹는 것은 / ~이다 / 태양 에너지 / 걸러지고, 농축되고, 그리고 증류된 / 렌즈를 통해 / 인류 지식의.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> solar - 태양의, filter - 거르다, 여과하다, concentrate - 농축하다, 집중하다, distill - 증류하다</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 4</div>
+        <div class="sentence-en">The energy / the Earth receives / from the sun / each year / has remained / more or less constant / through all of human civilization.</div>
+        <div class="sentence-ko">에너지는 / 지구가 받는 / 태양으로부터 / 매년 / 유지되어 왔다 / 다소 일정하게 / 인류 문명 전체를 통틀어.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> constant - 일정한, civilization - 문명</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 5</div>
+        <div class="sentence-en">What's allowed us / to flourish / is / our increasingly sophisticated knowledge / of how to capture / an ever-growing but still tiny fraction / of that energy / in a form / that / can fuel / our bodies.</div>
+        <div class="sentence-ko">우리를 해 준 것은 / 번영하도록 / ~이다 / 우리의 점점 더 정교해지는 지식 / 포착하는 방법에 대한 / 늘어나고는 있지만 여전히 아주 작은 일부를 / 그 에너지의 / 형태로 / (~하는) / 연료를 공급할 수 있는 / 우리 몸에.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> flourish - 번영하다, sophisticated - 정교한, 복잡한, capture - 포착하다, fraction - 일부, 부분, fuel - 연료를 공급하다</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 6</div>
+        <div class="sentence-en">Every step / in the advancement / of our knowledge / has brought / with it / an increase / in the amount of energy / we can tap into.</div>
+        <div class="sentence-ko">모든 단계는 / 발전에서의 / 우리 지식의 / 가져왔다 / 그것(발전)과 함께 / 증가를 / 에너지양의 / 우리가 활용할 수 있는.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> advancement - 발전, 진보, tap into - 활용하다, 이용하다</div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">02</div><h2>어법 및 구문 포인트</h2></div>
+      <div class="card no-break">
+        <div class="point-block">
+          <div class="sentence-id">문장 1</div>
+          <div class="line-item"><strong>[a saying that "you..."]</strong> `that`은 앞의 명사 `a saying`과 그 뒤의 완전한 절을 동격으로 연결하는 접속사다.</div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul><li>동격의 `that` 자리에는 관계대명사 `which`나 `what`을 쓰지 않문을 명심해야 한다.</li></ul>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 3</div>
+          <div class="line-item"><strong>[What we eat is solar energy, filtered, concentrated, and distilled]</strong> `What we eat`은 관계대명사 `what`이 이끄는 명사절로 주어 역할을 한다. `filtered`, `concentrated`, `distilled`는 과거분사 병렬 구조로 앞에 있는 `solar energy`를 수식한다.</div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul><li>분사들이 태양 에너지가 '여과되고 농축되는' 수동의 의미를 나타내므로 현재분사형으로 쓰이지 않도록 주의해야 한다.</li></ul>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 5</div>
+          <div class="line-item"><strong>[What's allowed us to flourish is ...]</strong> `What's`는 `What has`의 축약형이다. 관계대명사 `What`이 이끄는 절이 전체 문장의 주어이며, 동사는 `is`이다. `allow + 목적어 + to부정사` 구조가 쓰였다.</div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul>
+              <li>주어 자리에 `That`을 쓰면 뒤 문장이 불완전하므로 틀린다.</li>
+              <li>`to flourish` 자리에 원형 부정사 `flourish`를 쓰지 않아야 한다.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">03</div><h2>문장 단위 내용 흐름 정리</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>[(1)-(2) 도입 및 역설 제시] :</strong> 정보 자체를 먹을 순 없지만, 오늘날 우리가 먹는 식량은 결국 수천 년간 축적된 농업 지식(정보)의 산물임을 밝힌다.</div>
+        <div class="line-item"><strong>[(3) 은유적 표현] :</strong> 우리가 먹는 음식은 곧 인간의 지식을 통해 가공된 '태양 에너지'다.</div>
+        <div class="line-item"><strong>[(4) 변하지 않는 요소] :</strong> 지구에 도달하는 태양 에너지의 총량은 인류 역사 내내 일정했다.</div>
+        <div class="line-item"><strong>[(5) 변화를 만든 요소 (요지)] :</strong> 일정한 태양 에너지 속에서 인류를 번영하게 한 핵심은 그 에너지를 식량 형태로 포착해내는 '정교해진 지식'이다.</div>
+        <div class="line-item"><strong>[(6) 결론] :</strong> 인류 지식의 발전은 곧 우리가 활용 가능한 에너지(식량)의 증가를 의미한다.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">04</div><h2>표현들의 연관성 정리</h2></div>
+      <div class="card no-break">
+        <h3>지식의 은유</h3>
+        <div class="chip-row">
+          <span class="chip">Information</span> <span class="arrow">=</span> <span class="chip">knowledge</span> <span class="arrow">=</span> <span class="chip">lens of human knowledge</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 20px;">농업 기술, 시기, 도구 등 자연 자원을 활용하는 인류의 무형적 자산을 의미한다.</div>
+
+        <h3>식량의 은유</h3>
+        <div class="chip-row">
+          <span class="chip">Food</span> <span class="arrow">=</span> <span class="chip">solar energy</span> <span class="arrow">=</span> <span class="chip">fuel</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 20px;">우리가 생존하기 위해 섭취하는 물질적 자원이며, 이는 결국 태양 에너지가 지식에 의해 가공된 형태다.</div>
+
+        <h3>자연과 지식의 대조</h3>
+        <div class="chip-row">
+          <span class="chip">Constant</span> <span class="arrow">↔</span> <span class="chip">Increasingly sophisticated</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 4px;">자연이 주는 태양 에너지는 '일정'하지만, 그것을 활용하는 인간의 지식은 '점점 정교'해짐을 대조하여 지식의 중요성을 부각한다.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">05</div><h2>소재와 주제문</h2></div>
+      <div class="card no-break" style="border-top-color: #f59e0b;">
+        <div class="line-item" style="margin-bottom: 12px;"><strong>핵심 소재:</strong> 에너지 활용에 관한 인류 지식의 축적과 번영</div>
+        <div class="mini-divider"></div>
+        <div class="label" style="margin-top: 8px;">주제문 (문장 5)</div>
+        <div class="sentence-en" style="margin-bottom: 0;">What's allowed us to flourish is our increasingly sophisticated knowledge of how to capture an ever-growing but still tiny fraction of that energy in a form that can fuel our bodies.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">06</div><h2>지문의 요약 및 패러프레이징</h2></div>
+      <div class="card no-break">
+        <div class="summary-pair">
+          <div class="label">요약 / Summary</div>
+          <div class="sentence-en">While the total amount of solar energy remains constant, humanity has flourished by accumulating sophisticated agricultural knowledge to effectively harness that energy into food.</div>
+          <div class="sentence-ko">태양 에너지의 총량은 일정하게 유지되지만, 인류는 그 에너지를 식량으로 효과적으로 활용하기 위해 정교한 농업 지식을 축적함으로써 번영해 왔다.</div>
+        </div>
+        <div class="divider"></div>
+        <div class="summary-pair">
+          <div class="label">패러프레이징 / Paraphrasing</div>
+          <div class="sentence-en">The advancement of human civilization and our food supply rely not on an increase in raw solar power, but on the continuous evolution of our knowledge to capture and transform it into vital nourishment.</div>
+          <div class="sentence-ko">인류 문명의 발전과 우리의 식량 공급은 원시적인 태양열의 증가가 아니라, 그것을 포착하여 필수적인 영양분으로 변환시키는 우리 지식의 지속적인 진화에 의존한다.</div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">07</div><h2>도움이 되는 배경지식</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>1. 농업 혁명(Agricultural Revolution):</strong><br> 인간이 수렵 채집 생활에서 벗어나 작물을 재배하고 가축을 기르기 시작한 인류 역사의 거대한 전환점. 이는 단순히 식량을 얻는 방식을 넘어 자연(태양 에너지)을 통제하고 활용하는 지식의 비약적인 발전을 의미한다.</div>
+        <div class="divider"></div>
+        <div class="line-item"><strong>2. 에너지 전환(Energy Transformation):</strong><br> 식물은 광합성을 통해 태양 에너지를 화학 에너지로 변환(음식)한다. 지문은 인간의 '지식'이 어떤 씨앗을 언제 어떻게 심을지 결정함으로써 이 광합성(에너지 변환)의 효율을 극대화했다고 설명한다.</div>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- 지문 구분선 (인쇄 시 여기서 페이지가 나뉨) -->
+    <!-- ========================================== -->
+    <hr class="passage-separator" />
+
+    <!-- ========================================== -->
+    <!-- [지문 2] 04강 03번                         -->
+    <!-- ========================================== -->
+    <div class="passage-container">
+      <div class="header-container">
+        <div class="hero-title">04강 03번 지문분석</div>
+        <div class="subtitle">Lio T 내신대비 지문분석서</div>
+      </div>
+
+      <div class="section-title no-break section-00"><div class="page-no">00</div><h2>영어 본문 및 전체 해석</h2></div>
+      <div class="card no-break">
+        <div class="text-block-title">영어 본문</div>
+        <div class="eng-body">
+          It is a myth that all ideas are equally valid, even those with little or no objective proof. The existence of science is the commitment to objective truth. After all, science is true: fire is hot, the wheel is efficient, birds and planes can fly, we've landed on a comet and traveled to the Moon, antibiotics treat illness, and immunizations keep us from getting sick. These accomplishments are made possible by objective truths. A plausible theory can, and frequently does, push science forward. However, an intuition must be followed with testing that confirms or disproves its veracity. If a theory is disproved, one should consider it as a reason to reject or alter the hypothesis, not a justification to just keep firmly holding to the hypothesis because you are instinctively wedded to it. Critical thinking is an absolute must, and we must respect evidence. It's the only reason for anyone to trust anything about reality. Without testing and evidence, intuition is useful, but it is never the ultimate word.
+        </div>
+        <div class="divider"></div>
+        <div class="text-block-title">전체 해석</div>
+        <div class="kor-body">
+          객관적인 증거가 거의 없거나 전혀 없는 것들조차도 모든 아이디어가 똑같이 타당하다는 것은 근거 없는 믿음(오해)이다. 과학의 존재는 객관적 진실에 대한 헌신이다. 어쨌든, 과학은 사실이다. 불은 뜨겁고, 바퀴는 효율적이며, 새와 비행기는 날 수 있고, 우리는 혜성에 착륙하고 달에 여행했으며, 항생제는 질병을 치료하고, 예방 접종은 우리가 병에 걸리지 않게 해 준다. 이러한 성취들은 객관적 진실에 의해 가능해진다. 그럴듯한 이론은 과학을 앞으로 밀고 나갈 수 있으며 자주 그렇게 한다. 그러나 직관은 그것의 진실성을 확인하거나 반증하는 테스트가 뒤따라야만 한다. 만약 어떤 이론이 반증된다면, 그것을 가설을 거부하거나 변경할 이유로 간주해야지, 단지 본능적으로 그 가설에 집착하고 있다는 이유로 가설을 굳게 고수하는 정당화로 간주해서는 안 된다. 비판적 사고는 절대적인 필수 요건이며, 우리는 증거를 존중해야 한다. 그것이 누군가가 현실에 대해 어떤 것이든 신뢰할 수 있는 유일한 이유이다. 테스트와 증거가 없다면 직관은 유용하지만, 결코 최종적인 결론(궁극적인 진리)이 될 수 없다.
+        </div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">01</div><h2>직독직해 및 어휘 정리</h2></div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 1</div>
+        <div class="sentence-en">It / is a myth / that / all ideas / are equally valid, / even those / with little or no objective proof.</div>
+        <div class="sentence-ko">그것은 / 근거 없는 믿음이다 / ~라는 것은 / 모든 아이디어가 / 똑같이 타당하다, / 심지어 그것들조차도 / 객관적인 증거가 거의 혹은 전혀 없는.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> myth - 근거 없는 믿음, 신화, valid - 타당한, 유효한, objective - 객관적인, proof - 증거</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 2</div>
+        <div class="sentence-en">The existence / of science / is / the commitment / to objective truth.</div>
+        <div class="sentence-ko">존재는 / 과학의 / ~이다 / 헌신 / 객관적 진실에 대한.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> existence - 존재, commitment - 헌신, 약속</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 3</div>
+        <div class="sentence-en">After all, / science / is true: / fire / is hot, / the wheel / is efficient, / birds and planes / can fly, / we / 've landed / on a comet / and traveled / to the Moon, / antibiotics / treat illness, / and immunizations / keep us / from getting sick.</div>
+        <div class="sentence-ko">어쨌든(결국), / 과학은 / 사실이다: / 불은 / 뜨겁고, / 바퀴는 / 효율적이며, / 새와 비행기는 / 날 수 있고, / 우리는 / 착륙했다 / 혜성에 / 그리고 여행했다 / 달로, / 항생제는 / 질병을 치료하고, / 예방 접종은 / 우리가 (~하지) 않게 막는다 / 병에 걸리지 (않게).</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> comet - 혜성, antibiotic - 항생제, immunization - 예방 접종</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 4</div>
+        <div class="sentence-en">These accomplishments / are made / possible / by objective truths.</div>
+        <div class="sentence-ko">이러한 성취들은 / 만들어진다 / 가능하게 / 객관적 진실에 의해.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> accomplishment - 성취, 업적</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 5</div>
+        <div class="sentence-en">A plausible theory / can, / and frequently does, / push / science / forward.</div>
+        <div class="sentence-ko">그럴듯한 이론은 / 할 수 있고, / 그리고 자주 그렇게 한다, / 밀고 나가는 것을 / 과학을 / 앞으로.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> plausible - 그럴듯한, 타당해 보이는, frequently - 자주, 빈번하게</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 6</div>
+        <div class="sentence-en">However, / an intuition / must be followed / with testing / that / confirms / or disproves / its veracity.</div>
+        <div class="sentence-ko">그러나 / 직관은 / 반드시 뒤따라야 한다 / 테스트와 함께 / (~하는) / 확인하는 / 혹은 반증하는 / 그것의 진실성을.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> intuition - 직관, disprove - 반증하다, 논박하다, veracity - 진실성</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 7</div>
+        <div class="sentence-en">If a theory / is disproved, / one / should consider / it / as a reason / to reject / or alter / the hypothesis, / not a justification / to just keep / firmly holding / to the hypothesis / because / you / are instinctively wedded / to it.</div>
+        <div class="sentence-ko">만약 어떤 이론이 / 반증된다면, / 사람은 / 간주해야 한다 / 그것을 / 이유로 / 거부할 / 혹은 변경할 / 그 가설을, / 정당화가 아니라 / 단지 계속하는 / 굳건히 고수하는 것을 / 그 가설에 / 왜냐하면 / 당신이 / 본능적으로 집착하기(밀착되어 있기) / 그것에.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> alter - 바꾸다, 변경하다, hypothesis - 가설, justification - 정당화, instinctively - 본능적으로, be wedded to - ~에 집착하다</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 8</div>
+        <div class="sentence-en">Critical thinking / is / an absolute must, / and / we / must respect / evidence.</div>
+        <div class="sentence-ko">비판적 사고는 / ~이다 / 절대적인 필수 요건, / 그리고 / 우리는 / 존중해야 한다 / 증거를.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> absolute - 절대적인</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 9</div>
+        <div class="sentence-en">It / 's the only reason / for anyone / to trust / anything / about reality.</div>
+        <div class="sentence-ko">그것은 / 유일한 이유이다 / 누군가가 / 신뢰할 수 있는 / 어떤 것이든 / 현실에 대해.</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 10</div>
+        <div class="sentence-en">Without testing and evidence, / intuition / is useful, / but / it / is never / the ultimate word.</div>
+        <div class="sentence-ko">테스트와 증거가 없다면, / 직관은 / 유용하다, / 하지만 / 그것은 / 결코 아니다 / 최종적인 결론(궁극적 진리)이.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> ultimate - 궁극적인, 최종적인</div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">02</div><h2>어법 및 구문 포인트</h2></div>
+      <div class="card no-break">
+        <div class="point-block">
+          <div class="sentence-id">문장 1</div>
+          <div class="line-item"><strong>[It is a myth that all ideas are equally valid...]</strong> `It`은 가주어, `that` 이하 절이 진주어인 구문이다.</div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul><li>진주어를 이끄는 접속사 `that` 자리에 관계대명사 `what`을 쓰지 않도록 주의하라. 뒷문장이 완전한 형태를 취하고 있다.</li></ul>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 3</div>
+          <div class="line-item"><strong>[keep us from getting sick]</strong> `keep + 목적어 + from -ing` 구문으로 '목적어가 ~하는 것을 막다/예방하다'의 의미를 지닌다. `prevent`, `stop`, `prohibit` 등과 교체할 수 있다.</div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul><li>전치사 `from`이 누락된 채 `keep us getting sick`으로 쓰이면 '우리가 계속 아프게 하다'라는 완전히 반대의 뜻이 되므로 `from`의 유무를 반드시 확인해야 한다.</li></ul>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 6</div>
+          <div class="line-item"><strong>[an intuition must be followed with testing]</strong> 수동태 구문으로 직역하면 '직관은 테스트와 함께 뒤따라져야 한다' 즉, '직관 뒤에는 반드시 테스트가 뒤따라야 한다'는 뜻이다. `that`은 주격 관계대명사로 선행사 `testing`을 수식하며 동사 `confirms`와 `disproves`가 병렬 연결되었다.</div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul><li>`confirms`와 `disproves`는 단수 선행사 `testing`에 맞춰 모두 단수형(`-s`)을 띠어야 한다.</li></ul>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 7</div>
+          <div class="line-item"><strong>[consider it as a reason ... not a justification]</strong> `consider A as B` (A를 B로 간주하다) 구문이 쓰였으며, `a reason`과 `a justification`이 대조의 형태로 나열되었다.</div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul><li>`keep firmly holding`에서 동명사 `holding`을 목적어로 취하는 `keep`의 쓰임에 유의하라.</li></ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">03</div><h2>문장 단위 내용 흐름 정리</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>[(1)-(4) 진실과 증거의 중요성] :</strong> 객관적 증거가 없는 아이디어를 사실로 믿는 것은 오해이며, 과학의 본질은 증명 가능한 객관적 사실(비행기, 항생제 등)에 있음을 강조함.</div>
+        <div class="line-item"><strong>[(5)-(6) 이론과 직관의 한계] :</strong> 그럴듯한 이론과 직관이 과학 발전에 기여할 수는 있지만, 반드시 그것의 진실을 확인하는 테스트(검증)가 수반되어야 함.</div>
+        <div class="line-item"><strong>[(7) 반증 시 태도] :</strong> 이론이 틀렸다고 증명되면 고집부리지 말고 가설을 수정하거나 폐기해야 함.</div>
+        <div class="line-item"><strong>[(8)-(10) 결론] :</strong> 과학과 현실 이해에 있어서 객관적 증거와 비판적 사고는 절대적으로 필수적이며, 검증 없는 직관은 결코 최종 진리가 될 수 없음을 주장함.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">04</div><h2>표현들의 연관성 정리</h2></div>
+      <div class="card no-break">
+        <h3>객관적 기준</h3>
+        <div class="chip-row">
+          <span class="chip">Objective proof</span> <span class="arrow">=</span> <span class="chip">testing</span> <span class="arrow">=</span> <span class="chip">evidence</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 20px;">본문에서 과학을 지탱하고 직관을 검증하기 위해 필자가 가장 강조하는 객관적이고 과학적인 기준을 뜻한다.</div>
+
+        <h3>불확실한 아이디어</h3>
+        <div class="chip-row">
+          <span class="chip">A plausible theory</span> <span class="arrow">=</span> <span class="chip">intuition</span> <span class="arrow">=</span> <span class="chip">hypothesis</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 20px;">아직 과학적으로 완벽하게 검증되지 않은 추론이나 아이디어를 의미한다.</div>
+
+        <h3>검증의 결과</h3>
+        <div class="chip-row">
+          <span class="chip">Disproved</span> <span class="arrow">↔</span> <span class="chip">Confirms</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 20px;">테스트를 통해 가설이 틀렸음이 밝혀지는 것과 맞음이 증명되는 것을 대조한다.</div>
+
+        <h3>과학적 태도의 대조</h3>
+        <div class="chip-row">
+          <span class="chip">Alter the hypothesis</span> <span class="arrow">↔</span> <span class="chip">Keep firmly holding</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 4px;">가설이 반증되었을 때 취해야 할 올바른 과학적 태도와 잘못된 태도의 대조다.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">05</div><h2>소재와 주제문</h2></div>
+      <div class="card no-break" style="border-top-color: #f59e0b;">
+        <div class="line-item" style="margin-bottom: 12px;"><strong>핵심 소재:</strong> 직관에 대한 과학적 검증과 객관적 증거의 중요성</div>
+        <div class="mini-divider"></div>
+        <div class="label" style="margin-top: 8px;">주제문 (문장 6)</div>
+        <div class="sentence-en" style="margin-bottom: 8px;">However, an intuition must be followed with testing that confirms or disproves its veracity.</div>
+        <div class="label" style="margin-top: 8px;">주제문 (문장 10)</div>
+        <div class="sentence-en" style="margin-bottom: 0;">Without testing and evidence, intuition is useful, but it is never the ultimate word.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">06</div><h2>지문의 요약 및 패러프레이징</h2></div>
+      <div class="card no-break">
+        <div class="summary-pair">
+          <div class="label">요약 / Summary</div>
+          <div class="sentence-en">While intuition and plausible theories can advance science, they must be validated through rigorous testing and objective evidence to be accepted as truth.</div>
+          <div class="sentence-ko">직관과 그럴듯한 이론이 과학을 발전시킬 수는 있지만, 그것들이 진실로 받아들여지기 위해서는 엄격한 테스트와 객관적인 증거를 통해 검증되어야만 한다.</div>
+        </div>
+        <div class="divider"></div>
+        <div class="summary-pair">
+          <div class="label">패러프레이징 / Paraphrasing</div>
+          <div class="sentence-en">A scientific hypothesis or intuition is not absolute truth unless it survives critical evaluation and objective proof; without such evidence, any theory should be open to revision.</div>
+          <div class="sentence-ko">과학적 가설이나 직관은 비판적인 평가와 객관적인 증명을 통과하지 않는 한 절대적인 진실이 아니다. 그러한 증거가 없다면, 어떤 이론이든 수정될 가능성을 열어두어야 한다.</div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">07</div><h2>도움이 되는 배경지식</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>1. 반증 가능성(Falsifiability):</strong><br> 철학자 칼 포퍼가 제시한 과학의 기준. 어떤 이론이 과학적이려면 경험적 테스트에 의해 틀렸음을 증명할 수 있는 성질, 즉 반증될 가능성이 열려 있어야 한다는 개념이다. 지문에서 '반증되면 가설을 수정해야 한다'는 내용은 이 철학에 맞닿아 있다.</div>
+        <div class="divider"></div>
+        <div class="line-item"><strong>2. 객관주의(Objectivism):</strong><br> 개인의 직관이나 감정에 의존하지 않고, 관찰 가능하고 측정 가능한 증거에 기반하여 진리를 탐구하는 태도. 본 지문은 이 객관주의적 태도의 중요성을 역설하고 있다.</div>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- 지문 구분선 (인쇄 시 여기서 페이지가 나뉨) -->
+    <!-- ========================================== -->
+    <hr class="passage-separator" />
+
+    <!-- ========================================== -->
+    <!-- [지문 5] 05강 1번                          -->
+    <!-- ========================================== -->
+    <div class="passage-container">
+      <div class="header-container">
+        <div class="hero-title">05강 1번 지문분석</div>
+        <div class="subtitle">Lio T 내신대비 지문분석서</div>
+      </div>
+
+      <div class="section-title no-break section-00"><div class="page-no">00</div><h2>영어 본문 및 전체 해석</h2></div>
+      <div class="card no-break">
+        <div class="text-block-title">영어 본문</div>
+        <div class="eng-body">
+          Many crises today, such as the Great Recession, are simply too big and too overwhelming for you to completely comprehend, much less control. Crises of this ilk are precisely the kind that can easily engulf you with destructive reactions that interfere with your ability to overcome them. Focusing on these oversized crises will exacerbate the natural psychological, emotional, and physical reactions you are going to experience. With these sorts of crises, your best chance is to identify those aspects that are within your control. Then, you can break down the bigger crisis into smaller, more manageable problems toward which you can direct your energy and find solutions. For example, think back to the Great Recession. Although you probably didn't have the ability to influence economic policy, you were able to revisit the distribution of your investments and choose to create a more diverse portfolio.
+        </div>
+        <div class="divider"></div>
+        <div class="text-block-title">전체 해석</div>
+        <div class="kor-body">
+          대침체와 같은 오늘날의 많은 위기들은 단순히 너무 크고 너무 압도적이어서 당신이 완전히 이해할 수 없으며 통제하는 것은 말할 것도 없다. 이런 종류의 위기들은 당신이 그것들을 극복하는 능력을 방해하는 파괴적인 반응들로 당신을 쉽게 집어삼킬 수 있는 바로 그런 종류의 것들이다. 이런 특대형 위기들에 집중하는 것은 당신이 겪게 될 자연스러운 심리적, 감정적, 신체적 반응들을 악화시킬 것이다. 이런 종류의 위기들에서는, 당신의 가장 좋은 기회는 당신의 통제 범위 내에 있는 그런 측면들을 식별하는 것이다. 그런 다음, 당신은 더 큰 위기를 당신이 에너지를 쏟고 해결책을 찾을 수 있는 더 작고 더 다루기 쉬운 문제들로 쪼갤 수 있다. 예를 들어, 대침체를 되돌아보라. 당신은 경제 정책에 영향을 미칠 능력은 아마 없었겠지만, 투자의 분배를 재검토하고 더 다양한 포트폴리오를 만들기로 선택할 수는 있었다.
+        </div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">01</div><h2>직독직해 및 어휘 정리</h2></div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 1</div>
+        <div class="sentence-en">Many crises today, / such as the Great Recession, / are / simply too big and too overwhelming / for you / to completely comprehend, / much less control.</div>
+        <div class="sentence-ko">오늘날의 많은 위기들은, / 대침체와 같은, / ~이다 / 단순히 너무 크고 너무 압도적(이다) / 당신이 / 완전히 이해하기에는, / 통제하는 것은 말할 것도 없고.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> crisis - 위기 (복수형: crises), Great Recession - 대침체, overwhelming - 압도적인, comprehend - 이해하다, 파악하다, much less - ~은 말할 것도 없고</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 2</div>
+        <div class="sentence-en">Crises / of this ilk / are / precisely the kind / that / can easily engulf you / with destructive reactions / that / interfere / with your ability / to overcome them.</div>
+        <div class="sentence-ko">위기들은 / 이런 종류의 / ~이다 / 바로 그런 종류 / (~하는) / 당신을 쉽게 집어삼킬 수 있는 / 파괴적인 반응들로 / (~하는) / 방해하는 / 당신의 능력을 / 그것들(위기들)을 극복하는.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> ilk - 종류, 부류, precisely - 바로, 정확히, engulf - 집어삼키다, 완전히 에워싸다, destructive - 파괴적인, interfere with - ~을 방해하다</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 3</div>
+        <div class="sentence-en">Focusing / on these oversized crises / will exacerbate / the natural psychological, emotional, and physical reactions / you / are going to experience.</div>
+        <div class="sentence-ko">집중하는 것은 / 이런 특대형 위기들에 / 악화시킬 것이다 / 자연스러운 심리적, 감정적, 신체적 반응들을 / (어떤 반응이냐면) 당신이 / 겪게 될.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> oversized - 특대형의, 너무 큰, exacerbate - 악화시키다</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 4</div>
+        <div class="sentence-en">With these sorts of crises, / your best chance / is / to identify / those aspects / that / are within your control.</div>
+        <div class="sentence-ko">이런 종류의 위기들에서는, / 당신의 가장 좋은 기회는 / ~이다 / 식별하는 것 / 그러한 측면들을 / (~한) / 당신의 통제 범위 내에 있는.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> identify - 식별하다, 확인하다, aspect - 측면</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 5</div>
+        <div class="sentence-en">Then, / you / can break down / the bigger crisis / into smaller, more manageable problems / toward which / you / can direct your energy / and find solutions.</div>
+        <div class="sentence-ko">그런 다음, / 당신은 / 쪼갤 수 있다 / 더 큰 위기를 / 더 작고, 더 다루기 쉬운 문제들로 / (그리고 그 문제들을 향해) / 당신은 / 에너지를 쏟을 수 있고 / 해결책을 찾을 수 있다.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> break down - 쪼개다, 분해하다, manageable - 다루기 쉬운, 관리할 수 있는, direct - (에너지 등을) 쏟다, 향하게 하다</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 6</div>
+        <div class="sentence-en">For example, / think back / to the Great Recession.</div>
+        <div class="sentence-ko">예를 들어, / 되돌아보라 / 대침체를.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> think back to - ~을 되돌아보다, 회상하다</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 7</div>
+        <div class="sentence-en">Although / you / probably didn't have / the ability / to influence / economic policy, / you / were able to revisit / the distribution / of your investments / and choose / to create / a more diverse portfolio.</div>
+        <div class="sentence-ko">비록 / 당신이 / 아마 능력이 없었을지라도 / 영향을 미칠 / 경제 정책에, / 당신은 / 재검토할 수 있었다 / 분배를 / 당신 투자의 / 그리고 선택할 수 있었다 / 만들기로 / 더 다양한 포트폴리오를.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> influence - 영향을 미치다, revisit - 재검토하다, 다시 논의하다, distribution - 분배, 분포, diverse - 다양한</div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">02</div><h2>어법 및 구문 포인트</h2></div>
+      <div class="card no-break">
+        <div class="point-block">
+          <div class="sentence-id">문장 1</div>
+          <div class="line-item"><strong>[too big and too overwhelming for you to completely comprehend]</strong> `too ~ to...` 구문('너무 ~해서 ...할 수 없다' 또는 '...하기에는 너무 ~하다')이 사용되었다. `for you`는 `to comprehend`의 의미상 주어이다.</div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul><li>`comprehend`의 목적어로 `them`(crises)을 쓰면 안 된다. 문장의 주어인 `Many crises`가 이미 그 역할을 하고 있기 때문이다.</li></ul>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 2</div>
+          <div class="line-item"><strong>[precisely the kind that can easily engulf you with destructive reactions that interfere with...]</strong> 두 개의 주격 관계대명사 `that`이 사용되었다. 첫 번째 `that`은 `the kind`를, 두 번째 `that`은 `destructive reactions`를 선행사로 수식한다.</div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul><li>두 번째 관계대명사절의 동사 `interfere`는 선행사가 복수(`reactions`)이므로 단수형 `interferes`가 되지 않도록 수 일치에 주의해야 한다.</li></ul>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 5</div>
+          <div class="line-item"><strong>[smaller, more manageable problems toward which you can direct your energy]</strong> `전치사(toward) + 관계대명사(which)` 구조로, 선행사는 `problems`이다. '그 문제들을 향해 당신의 에너지를 쏟다(direct your energy toward the problems)'라는 맥락에서 `toward`가 앞으로 이동했다.</div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul><li>`toward`가 생략된 채 `which`만 쓰이면 뒤 문장이 완전하므로 어법상 틀린다. 반드시 전치사의 유무를 확인하라.</li></ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">03</div><h2>문장 단위 내용 흐름 정리</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>[(1)-(2) 문제 상황 제시] :</strong> 대침체처럼 개인이 통제할 수 없는 거대한 위기는 파괴적인 반응을 일으켜 사람을 집어삼킬 수 있다.</div>
+        <div class="line-item"><strong>[(3) 잘못된 대처 방식] :</strong> 통제 불가능한 거대한 위기 자체에 집중하면 심리적, 신체적 반응만 더욱 악화될 뿐이다.</div>
+        <div class="line-item"><strong>[(4)-(5) 해결책 제시 (주장)] :</strong> 거대한 위기를 만났을 때는 자신이 통제할 수 있는 작은 측면들을 찾아내어, 그것을 다루기 쉬운 문제로 쪼개고 에너지를 집중해야 한다.</div>
+        <div class="line-item"><strong>[(6)-(7) 구체적 예시] :</strong> 대침체 당시 개인은 국가의 경제 정책은 바꿀 수 없었지만, 자신의 투자 포트폴리오를 다양화하는 통제 가능한 행동은 할 수 있었다.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">04</div><h2>표현들의 연관성 정리</h2></div>
+      <div class="card no-break">
+        <h3>통제 불가능한 위기</h3>
+        <div class="chip-row">
+          <span class="chip">Too big and too overwhelming</span> <span class="arrow">=</span> <span class="chip">oversized crises</span> <span class="arrow">=</span> <span class="chip">the bigger crisis</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 20px;">개인이 어찌할 수 없는 거시적이고 압도적인 위기 상황을 의미한다.</div>
+
+        <h3>통제 가능한 해결책</h3>
+        <div class="chip-row">
+          <span class="chip">Within your control</span> <span class="arrow">=</span> <span class="chip">smaller, more manageable problems</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 20px;">거대한 위기 속에서 개인이 현실적으로 대처하고 해결책을 찾을 수 있는 미시적인 요소들을 뜻한다.</div>
+
+        <h3>통제 가능성의 대조</h3>
+        <div class="chip-row">
+          <span class="chip">Economic policy</span> <span class="arrow">↔</span> <span class="chip">Distribution of your investments</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 4px;">통제 불가능한 것(거시적 경제)과 통제 가능한 것(개인적 자산 관리)을 명확히 대조하는 예시다.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">05</div><h2>소재와 주제문</h2></div>
+      <div class="card no-break" style="border-top-color: #f59e0b;">
+        <div class="line-item" style="margin-bottom: 12px;"><strong>핵심 소재:</strong> 통제 불가능한 거대한 위기에 대처하는 방법</div>
+        <div class="mini-divider"></div>
+        <div class="label" style="margin-top: 8px;">주제문 (문장 4)</div>
+        <div class="sentence-en" style="margin-bottom: 0;">With these sorts of crises, your best chance is to identify those aspects that are within your control.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">06</div><h2>지문의 요약 및 패러프레이징</h2></div>
+      <div class="card no-break">
+        <div class="summary-pair">
+          <div class="label">요약 / Summary</div>
+          <div class="sentence-en">When facing an overwhelming crisis, it is effective to break it down and focus on smaller, manageable aspects within your control to avoid destructive reactions.</div>
+          <div class="sentence-ko">압도적인 위기에 직면했을 때, 파괴적인 반응을 피하기 위해 그것을 쪼개고 당신의 통제 범위 내에 있는 더 작고 다루기 쉬운 측면에 집중하는 것이 효과적이다.</div>
+        </div>
+        <div class="divider"></div>
+        <div class="summary-pair">
+          <div class="label">패러프레이징 / Paraphrasing</div>
+          <div class="sentence-en">Instead of being engulfed by massive challenges, you should concentrate on parts of the problem you can actually influence and manage.</div>
+          <div class="sentence-ko">거대한 도전에 휩싸이는 대신, 당신이 실제로 영향을 미치고 관리할 수 있는 문제의 부분들에 집중해야 한다.</div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">07</div><h2>도움이 되는 배경지식</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>1. 통제 소재(Locus of Control):</strong><br> 심리학 개념으로, 개인이 자신의 삶에서 일어나는 사건들의 결과를 스스로 통제할 수 있다고 믿는 정도를 말한다. 내적 통제 소재가 강한 사람은 위기 상황에서도 자신이 할 수 있는 일(통제 가능한 부분)에 집중하여 더 효과적으로 역경을 이겨낸다.</div>
+        <div class="divider"></div>
+        <div class="line-item"><strong>2. 대침체(The Great Recession):</strong><br> 2007년 말부터 2009년까지 미국에서 시작되어 전 세계로 퍼진 심각한 글로벌 경제 쇠퇴기를 일컫는다.</div>
+      </div>
+    </div>
+
+
+    <!-- ========================================== -->
+    <!-- [지문 6] 05강 3번                          -->
+    <!-- ========================================== -->
+    <hr class="passage-separator" />
+    
+    <div class="passage-container">
+      <div class="header-container">
+        <div class="hero-title">05강 3번 지문분석</div>
+        <div class="subtitle">Lio T 내신대비 지문분석서</div>
+      </div>
+
+      <div class="section-title no-break section-00"><div class="page-no">00</div><h2>영어 본문 및 전체 해석</h2></div>
+      <div class="card no-break">
+        <div class="text-block-title">영어 본문</div>
+        <div class="eng-body">
+          My business partner Charles and I embraced the servant leader's way of doing things. In other words, nothing was beneath us. We led by example and did the work. When any new salesman came into the store, he would look around, notice Charles polishing some corner of the floor and me covered in flour, and assume the decision-maker was not present. He'd then hand off whatever he was selling to me and say, "Can you give this to the owner?" Now, if Charles and I had remained in the bakery for too long, we wouldn't have been able to grow and scale, so I'm not saying you should be sweeping the floors forever. It's more about modeling what's important. If cleanliness and details are important, be sure you aren't above doing the work and pitching in. Come into your workspace and ask how you can help. If it's clear your team is in the weeds, jump in without asking.
+        </div>
+        <div class="divider"></div>
+        <div class="text-block-title">전체 해석</div>
+        <div class="kor-body">
+          나의 동업자 Charles와 나는 서번트 리더(섬기는 리더)의 일 처리 방식을 수용했다. 다시 말해서, 어떤 일도 우리에게 체면이 깎이는 일은 없었다. 우리는 솔선수범했고 그 일을 했다. 어떤 새로운 영업 사원이 가게에 들어올 때면, 그는 주위를 둘러보고, 바닥 구석을 닦고 있는 Charles와 밀가루를 뒤집어쓴 나를 보고는 의사 결정권자가 부재중이라고 가정하곤 했다. 그러고 나서 그는 자신이 팔고 있는 것이 무엇이든 나에게 넘겨주며 "이것 좀 사장님께 전해주시겠어요?"라고 말하곤 했다. 자, 만약 Charles와 내가 빵집에 너무 오래 머물렀다면 우리는 성장하고 규모를 키울 수 없었을 것이므로, 여러분이 영원히 바닥을 쓸고 있어야 한다고 말하는 것은 아니다. 그것은 오히려 중요한 것의 본보기를 보여주는 것에 관한 것이다. 청결과 세부 사항이 중요하다면, 반드시 여러분이 그 일을 하고 협력하는 것을 꺼리지 않도록(그 일을 하는 것 위에 있지 않도록) 하라. 여러분의 작업 공간으로 들어가 어떻게 도울 수 있을지 물어보라. 여러분의 팀이 어려움에 처한 것이 분명하다면, 묻지 말고 뛰어들어라.
+        </div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">01</div><h2>직독직해 및 어휘 정리</h2></div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 1</div>
+        <div class="sentence-en">My business partner Charles and I / embraced / the servant leader's way / of doing things.</div>
+        <div class="sentence-ko">나의 동업자 Charles와 나는 / 수용했다 / 서번트 리더의 방식을 / 일 처리의.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> embrace - 수용하다, 받아들이다, servant leader - 서번트 리더(섬기는 리더)</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 2</div>
+        <div class="sentence-en">In other words, / nothing / was beneath us.</div>
+        <div class="sentence-ko">다시 말해서, / 어떤 것도 / 우리 밑에 있지 않았다(우리 체면을 깎는 일은 없었다).</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> in other words - 다시 말해서, beneath - ~의 밑에, ~의 수준에 못 미치는</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 3</div>
+        <div class="sentence-en">We / led / by example / and did / the work.</div>
+        <div class="sentence-ko">우리는 / 이끌었다 / 모범을 보임으로써(솔선수범했다) / 그리고 했다 / 그 일을.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> lead by example - 솔선수범하다</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 4</div>
+        <div class="sentence-en">When / any new salesman / came into the store, / he / would look around, / notice / Charles / polishing some corner of the floor / and me / covered in flour, / and assume / the decision-maker / was not present.</div>
+        <div class="sentence-ko">~할 때면 / 어떤 새로운 영업 사원이 / 가게에 들어올 (때면), / 그는 / 주위를 둘러보고, / 알아차리고 / Charles가 / 바닥의 어떤 구석을 닦고 있는 것을 / 그리고 내가 / 밀가루를 뒤집어쓴 것을, / 그리고 가정하곤 했다 / 의사 결정권자가 / 부재중이라고.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> polish - 닦다, 윤을 내다, flour - 밀가루, assume - 가정하다, 추정하다, decision-maker - 의사 결정권자, present - 참석한, 있는</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 5</div>
+        <div class="sentence-en">He / 'd then hand off / whatever he was selling / to me / and say, / "Can you give this / to the owner?"</div>
+        <div class="sentence-ko">그는 / 그러고 나서 넘겨주곤 했다 / 그가 팔고 있는 것이 무엇이든 / 나에게 / 그리고 말하곤 했다, / "이것을 주실 수 있나요 / 사장님께?"</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> hand off - 넘겨주다</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 6</div>
+        <div class="sentence-en">Now, / if Charles and I / had remained / in the bakery / for too long, / we / wouldn't have been able / to grow and scale, / so / I'm not saying / you / should be sweeping / the floors / forever.</div>
+        <div class="sentence-ko">자, / 만약 Charles와 내가 / 머물렀다면 / 빵집에 / 너무 오래, / 우리는 / 할 수 없었을 것이다 / 성장하고 규모를 키우는 것을, / 그러므로 / 내가 말하는 것은 아니다 / 여러분이 / 쓸고 있어야 한다고 / 바닥을 / 영원히.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> scale - 규모를 키우다, 확장하다, sweep - 쓸다</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 7</div>
+        <div class="sentence-en">It / 's more about modeling / what's important.</div>
+        <div class="sentence-ko">그것은 / 본보기를 보여주는 것에 더 가깝다 / 중요한 것의.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> model - 본보기를 보여주다, 모델이 되다</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 8</div>
+        <div class="sentence-en">If / cleanliness and details / are important, / be sure / you / aren't above / doing the work / and pitching in.</div>
+        <div class="sentence-ko">만약 / 청결과 세부 사항이 / 중요하다면, / 확실히 하라(명심하라) / 여러분이 / 위에 있지 않도록(꺼리지 않도록) / 그 일을 하는 것 / 그리고 협력하는 것.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> cleanliness - 청결, be above ~ing - ~을 할 사람이 아니다(체면상 못하다), pitch in - 협력하다, 참여하다</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 9</div>
+        <div class="sentence-en">Come / into your workspace / and ask / how / you / can help.</div>
+        <div class="sentence-ko">들어와라 / 여러분의 작업 공간으로 / 그리고 물어보라 / 어떻게 / 여러분이 / 도울 수 있을지.</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 10</div>
+        <div class="sentence-en">If / it's clear / your team / is in the weeds, / jump in / without asking.</div>
+        <div class="sentence-ko">만약 / 분명하다면 / 여러분의 팀이 / 어려움에 처한 것이, / 뛰어들어라 / 묻지 말고.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> clear - 분명한, in the weeds - 어려움에 처한, 문제에 얽매인, jump in - 뛰어들다</div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">02</div><h2>어법 및 구문 포인트</h2></div>
+      <div class="card no-break">
+        <div class="point-block">
+          <div class="sentence-id">문장 4</div>
+          <div class="line-item"><strong>[notice Charles polishing ... and me covered ...]</strong> 지각동사 `notice`의 목적어로 `Charles`와 `me`가 왔고, 각각에 대한 목적격 보어로 현재분사 `polishing`(진행/능동)과 과거분사 `covered`(수동)가 병렬로 연결된 5형식 구조다.</div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul><li>찰스는 능동적으로 닦고 있으므로 `polishing`, 나는 밀가루에 덮여 있으므로 `covered`를 썼다. 이 둘의 분사 형태(현재/과거분사)를 혼동하여 쓰지 않도록 주의해야 한다.</li></ul>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 5</div>
+          <div class="line-item"><strong>[whatever he was selling]</strong> 복합관계대명사 `whatever`가 이끄는 명사절로 `hand off`의 목적어 역할을 한다. '그가 팔고 있는 것은 무엇이든'으로 해석된다.</div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul><li>명사절 자리이므로 부사절을 이끄는 `no matter what`으로 바꿔 쓸 수 없다. `what`으로 바꾸면 '그가 팔고 있는 것'이라는 의미는 통하지만 '무엇이든'의 뉘앙스가 약해진다.</li></ul>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 6</div>
+          <div class="line-item"><strong>[if Charles and I had remained ..., we wouldn't have been able to ...]</strong> 과거 사실의 반대를 가정하는 가정법 과거완료 구문이다. `If + 주어 + had p.p., 주어 + 조동사 과거형 + have p.p.` 형태를 취한다.</div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul><li>시제 일치가 매우 중요하다. `had remained` 대신 `remained`를 쓰거나, `wouldn't have been` 대신 `wouldn't be`를 쓰면 가정법의 시제가 어긋나 틀린 문법이 된다.</li></ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">03</div><h2>문장 단위 내용 흐름 정리</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>[(1)-(3) 도입] :</strong> 필자와 동업자는 궂은일도 마다하지 않고 직접 참여하며 솔선수범하는 '서번트 리더십'을 실천했다.</div>
+        <div class="line-item"><strong>[(4)-(5) 구체적 일화] :</strong> 가게 바닥을 닦고 밀가루를 뒤집어쓴 채 일하는 모습을 보고 외부 영업 사원은 이들이 사장인 줄 몰랐다는 일화를 소개한다.</div>
+        <div class="line-item"><strong>[(6)-(7) 오해 방지 및 핵심 원리] :</strong> 계속 바닥만 쓸라는 것이 아니라, 팀원들에게 무엇이 중요한지에 대한 긍정적인 행동 양식(본보기)을 몸소 보여주라는 의미임을 명확히 한다.</div>
+        <div class="line-item"><strong>[(8)-(10) 결론 (행동 촉구)] :</strong> 청결 등 회사의 핵심 가치를 중시한다면 리더가 직접 체면을 버리고 현장에 뛰어들어 팀원들을 돕고 협력해야 한다고 주장한다.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">04</div><h2>표현들의 연관성 정리</h2></div>
+      <div class="card no-break">
+        <h3>서번트 리더십</h3>
+        <div class="chip-row">
+          <span class="chip">Servant leader's way</span> <span class="arrow">=</span> <span class="chip">nothing was beneath us</span> <span class="arrow">=</span> <span class="chip">led by example</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 20px;">권위의식 없이 구성원을 돕고 솔선수범하는 리더십의 핵심 태도를 나타낸다.</div>
+
+        <h3>실무 참여</h3>
+        <div class="chip-row">
+          <span class="chip">Sweeping the floors</span> <span class="arrow">=</span> <span class="chip">doing the work and pitching in</span> <span class="arrow">=</span> <span class="chip">jump in</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 20px;">리더가 말로만 지시하는 것이 아니라 구체적이고 궂은 실무 현장에 직접 참여하는 행동을 의미한다.</div>
+
+        <h3>자존심과 체면</h3>
+        <div class="chip-row">
+          <span class="chip">Be above doing the work</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 4px;">'(자존심 때문에) 그런 궂은일은 하지 않으려 하다'는 뜻으로, 본문에서는 `aren't above`로 쓰여 체면을 차리지 말고 실무에 참여하라는 의미로 쓰였다.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">05</div><h2>소재와 주제문</h2></div>
+      <div class="card no-break" style="border-top-color: #f59e0b;">
+        <div class="line-item" style="margin-bottom: 12px;"><strong>핵심 소재:</strong> 솔선수범하는 리더의 자세(서번트 리더십)</div>
+        <div class="mini-divider"></div>
+        <div class="label" style="margin-top: 8px;">주제문 (문장 8)</div>
+        <div class="sentence-en" style="margin-bottom: 0;">If cleanliness and details are important, be sure you aren't above doing the work and pitching in.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">06</div><h2>지문의 요약 및 패러프레이징</h2></div>
+      <div class="card no-break">
+        <div class="summary-pair">
+          <div class="label">요약 / Summary</div>
+          <div class="sentence-en">Leaders should model the values they emphasize by actively participating in tasks, showing that no work is beneath them.</div>
+          <div class="sentence-ko">리더는 어떤 일도 그들에게 체면이 깎이는 일이 아님을 보여주며, 업무에 적극적으로 참여함으로써 그들이 강조하는 가치의 본보기가 되어야 한다.</div>
+        </div>
+        <div class="divider"></div>
+        <div class="summary-pair">
+          <div class="label">패러프레이징 / Paraphrasing</div>
+          <div class="sentence-en">Effective leadership involves leading by example and being willing to assist with any practical duty when the team needs support.</div>
+          <div class="sentence-ko">효과적인 리더십은 솔선수범하고 팀이 지원을 필요로 할 때 기꺼이 실무를 돕는 것을 포함한다.</div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">07</div><h2>도움이 되는 배경지식</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>1. 서번트 리더십(Servant Leadership):</strong><br> 로버트 그린리프(Robert Greenleaf)가 제안한 개념으로, 리더가 타인을 통제하고 군림하는 것이 아니라 구성원을 존중하고 그들의 성장을 돕기 위해 '섬기는(servant)' 태도를 갖는 리더십이다.</div>
+        <div class="divider"></div>
+        <div class="line-item"><strong>2. In the weeds:</strong><br> 식당이나 주방에서 주문이 밀려 극도로 바쁘고 통제 불가능한 상태를 일컫는 슬랭에서 유래한 표현으로, 실무적으로 매우 어려움에 처한 상황을 의미한다.</div>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- 지문 구분선 (인쇄 시 여기서 페이지가 나뉨) -->
+    <!-- ========================================== -->
+    <hr class="passage-separator" />
+
+    <!-- ========================================== -->
+    <!-- [지문 7] 06강 1번                          -->
+    <!-- ========================================== -->
+    <div class="passage-container">
+      <div class="header-container">
+        <div class="hero-title">06강 1번 지문분석</div>
+        <div class="subtitle">Lio T 내신대비 지문분석서</div>
+      </div>
+
+      <div class="section-title no-break section-00"><div class="page-no">00</div><h2>영어 본문 및 전체 해석</h2></div>
+      <div class="card no-break">
+        <div class="text-block-title">영어 본문</div>
+        <div class="eng-body">
+          In the United States, the practice of permitting aliens to vote could be seen as compatible with the idea of an exclusionary citizenship, but that is a hard balance to maintain. If the vote, of all rights, is in the hands of noncitizens, why should they not count as citizens, and the entire distinction between resident alien and citizen be abandoned? Indeed, something like this thought probably lay behind the disappearance of alien voting: with universal adult citizen suffrage after 1920, the only way to maintain an exclusionary kind of citizenship was to restrict the vote to citizens and not residents. But no theory of "active" democracy can countenance this distinction: the laws concerning our common life must be made by all those who are taking part in it, and residence is the only convincing test of whether someone is taking part as is understood almost universally when it comes to questions of which citizens should have a voice in local government.
+        </div>
+        <div class="divider"></div>
+        <div class="text-block-title">전체 해석</div>
+        <div class="kor-body">
+          미국에서 외국인에게 투표를 허용하는 관행은 배타적 시민권이라는 개념과 양립할 수 있는 것으로 여겨질 수도 있었지만, 그것은 유지하기 어려운 균형이다. 만약 모든 권리 중에서 투표권이 비시민의 손에 있다면, 왜 그들이 시민으로 간주되어서는 안 되며, 거주 외국인과 시민 사이의 전체적인 구분이 폐기되어서는 안 되는가? 참으로, 아마도 이와 같은 생각이 외국인 투표권의 소멸 이면에 있었을 것이다. 1920년 이후의 보편적인 성인 시민 선거권과 함께, 배타적 성격의 시민권을 유지하는 유일한 방법은 거주자가 아닌 시민에게로 투표권을 제한하는 것이었다. 그러나 '능동적' 민주주의의 어떤 이론도 이러한 구분을 지지(용인)할 수 없다. 우리의 공동생활에 관한 법률은 그것(공동생활)에 참여하고 있는 모든 사람들에 의해 만들어져야 하며, 지역 정부에서 어떤 시민이 목소리를 내야 하는지에 대한 문제에 관한 한 거의 보편적으로 이해되듯이 거주야말로 누군가가 참여하고 있는지에 대한 유일하고 설득력 있는 기준(시험)이다.
+        </div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">01</div><h2>직독직해 및 어휘 정리</h2></div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 1</div>
+        <div class="sentence-en">In the United States, / the practice / of permitting aliens to vote / could be seen / as compatible / with the idea / of an exclusionary citizenship, / but / that / is a hard balance / to maintain.</div>
+        <div class="sentence-ko">미국에서, / 관행은 / 외국인에게 투표를 허용하는 / 여겨질 수 있었다 / 양립할 수 있는 것으로 / 개념과 / 배타적 시민권이라는, / 하지만 / 그것은 / 어려운 균형이다 / 유지하기.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> permit - 허용하다, alien - 외국인, compatible with - ~과 양립할 수 있는, exclusionary - 배타적인, citizenship - 시민권</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 2</div>
+        <div class="sentence-en">If the vote, / of all rights, / is / in the hands / of noncitizens, / why / should they not count / as citizens, / and the entire distinction / between resident alien and citizen / be abandoned?</div>
+        <div class="sentence-ko">만약 투표권이, / 모든 권리 중에서도, / 있다면 / 손에 / 비시민의, / 왜 / 그들이 간주되어서는 안 되는가 / 시민으로, / 그리고 전체적인 구분이 / 거주 외국인과 시민 사이의 / 폐기되어서는 (안 되는가)?</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> right - 권리, count as - ~로 간주되다, 여겨지다, distinction - 구분, 차이, resident alien - 거주 외국인, abandon - 버리다, 폐기하다</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 3</div>
+        <div class="sentence-en">Indeed, / something like this thought / probably lay / behind the disappearance / of alien voting: / with universal adult citizen suffrage / after 1920, / the only way / to maintain / an exclusionary kind of citizenship / was / to restrict / the vote / to citizens / and not residents.</div>
+        <div class="sentence-ko">참으로, / 이와 같은 어떤 생각이 / 아마도 있었을 것이다 / 소멸의 이면에 / 외국인 투표권의: / 보편적인 성인 시민 선거권과 함께 / 1920년 이후의, / 유일한 방법은 / 유지하는 / 배타적 성격의 시민권을 / ~였다 / 제한하는 것 / 투표권을 / 시민들에게 / 거주자가 아니라.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> lay behind - ~의 이면에 있다(lie의 과거형), disappearance - 소멸, 사라짐, universal - 보편적인, suffrage - 선거권, 참정권, restrict A to B - A를 B로 제한하다</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 4</div>
+        <div class="sentence-en">But / no theory / of "active" democracy / can countenance / this distinction: / the laws / concerning our common life / must be made / by all those / who / are taking part / in it, / and / residence / is the only convincing test / of whether / someone / is taking part / as is understood / almost universally / when it comes to questions / of which citizens / should have a voice / in local government.</div>
+        <div class="sentence-ko">그러나 / 어떤 이론도 / '능동적' 민주주의의 / 이 구분을 지지(용인)할 수 없다: / 법률은 / 우리의 공동생활에 관한 / 만들어져야 한다 / 모든 사람들에 의해 / (~하는) / 참여하고 있는 / 그것에, / 그리고 / 거주(지)는 / 유일한 설득력 있는 기준(시험)이다 / ~인지에 대한 / 누군가가 / 참여하고 있는지 / 이해되듯이 / 거의 보편적으로 / 문제에 관한 한 / 어떤 시민이 / 목소리를 내야 하는지에 대한 / 지역 정부에서.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> democracy - 민주주의, countenance - 지지하다, 용인하다, concerning - ~에 관한, take part in - ~에 참여하다, residence - 거주, convincing - 설득력 있는, when it comes to - ~에 관한 한</div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">02</div><h2>어법 및 구문 포인트</h2></div>
+      <div class="card no-break">
+        <div class="point-block">
+          <div class="sentence-id">문장 2</div>
+          <div class="line-item"><strong>[why should they not count as citizens, and the entire distinction ... be abandoned?]</strong> `why should`에 연결되는 두 개의 동사 원형 `count`와 `be abandoned`가 병렬 구조를 이루고 있다. '왜 그들이 시민으로 간주되지 않아야 하고, 왜 구분이 폐기되지 않아야 하는가?'라는 수사의문문이다.</div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul><li>병렬 구조의 두 번째 동사인 `be abandoned`에서 `be`가 생략되거나 다른 형태로 쓰이지 않도록 유의해야 한다.</li></ul>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 3</div>
+          <div class="line-item"><strong>[probably lay behind...]</strong> `lay`는 자동사 `lie`(-에 있다, 놓여 있다)의 과거형이다. (`lie - lay - lain`)</div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul><li>타동사 `laid`(-을 놓다)로 착각하여 출제될 수 있으므로 자동사/타동사의 구분을 명확히 해야 한다.</li></ul>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 4</div>
+          <div class="line-item"><strong>[as is understood almost universally]</strong> `as`는 유사 관계대명사처럼 쓰여 앞의 내용(거주가 참여의 기준이라는 것)을 받아 '~하듯이, ~한 것처럼'의 의미를 나타낸다.</div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul><li>수동태 `is understood`의 쓰임에 주의하며, `as it is understood`로도 이해할 수 있다.</li></ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">03</div><h2>문장 단위 내용 흐름 정리</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>[(1)-(2) 과거의 관행과 모순 제기] :</strong> 과거 미국에서는 외국인에게도 투표권을 허용했으나, 투표권을 주면서 시민권은 배타적으로 유지하려는 것은 모순(유지하기 힘든 균형)임을 지적한다.</div>
+        <div class="line-item"><strong>[(3) 외국인 투표권 폐지의 배경] :</strong> 1920년 이후 성인 시민에게 보편적 선거권이 주어지면서, 배타적 시민권을 지키기 위해 결국 투표권을 '거주자'가 아닌 '시민'에게만 주기로 제한하게 되었다.</div>
+        <div class="line-item"><strong>[(4) 필자의 주장 (민주주의적 관점)] :</strong> 진정한 능동적 민주주의에서는 이러한 구분(시민 vs 거주 외국인)을 지지할 수 없다. 공동체의 법은 그곳에 참여하는(거주하는) 모든 사람이 만들어야 하며, 지역 정치에서는 '거주' 자체가 참여의 가장 확실한 증거이기 때문이다.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">04</div><h2>표현들의 연관성 정리</h2></div>
+      <div class="card no-break">
+        <h3>권리에서 소외된 계층</h3>
+        <div class="chip-row">
+          <span class="chip">Aliens</span> <span class="arrow">=</span> <span class="chip">noncitizens</span> <span class="arrow">=</span> <span class="chip">resident alien</span> <span class="arrow">=</span> <span class="chip">residents</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 20px;">시민권을 갖지 못했지만 해당 지역에 거주하는 사람들을 의미한다.</div>
+
+        <h3>정치적 이념의 대립</h3>
+        <div class="chip-row">
+          <span class="chip">Exclusionary citizenship</span> <span class="arrow">↔</span> <span class="chip">"Active" democracy</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 20px;">소수의 시민에게만 권리를 제한하려는 배타적 태도와, 거주하며 참여하는 모든 이에게 권리를 주어야 한다는 능동적 민주주의의 대립이다.</div>
+
+        <h3>민주주의 참여의 증거</h3>
+        <div class="chip-row">
+          <span class="chip">Taking part in it</span> <span class="arrow">=</span> <span class="chip">residence</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 4px;">필자가 민주주의 사회에서 정치적 목소리를 내기 위한 핵심 조건으로 간주하는 요소다.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">05</div><h2>소재와 주제문</h2></div>
+      <div class="card no-break" style="border-top-color: #f59e0b;">
+        <div class="line-item" style="margin-bottom: 12px;"><strong>핵심 소재:</strong> 민주주의에서 진정한 참여와 거주자의 투표권 보장 필요성</div>
+        <div class="mini-divider"></div>
+        <div class="label" style="margin-top: 8px;">주제문 (문장 4)</div>
+        <div class="sentence-en" style="margin-bottom: 0;">But no theory of "active" democracy can countenance this distinction: the laws concerning our common life must be made by all those who are taking part in it, and residence is the only convincing test of whether someone is taking part...</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">06</div><h2>지문의 요약 및 패러프레이징</h2></div>
+      <div class="card no-break">
+        <div class="summary-pair">
+          <div class="label">요약 / Summary</div>
+          <div class="sentence-en">While the US restricted voting rights to citizens to maintain exclusionary citizenship, true active democracy requires that all participating residents have a voice in shaping the laws that govern their lives.</div>
+          <div class="sentence-ko">미국은 배타적 시민권을 유지하기 위해 시민에게 투표권을 제한했지만, 진정한 능동적 민주주의는 참여하는 모든 거주자가 자신의 삶을 지배하는 법을 형성하는 데 목소리를 낼 것을 요구한다.</div>
+        </div>
+        <div class="divider"></div>
+        <div class="summary-pair">
+          <div class="label">패러프레이징 / Paraphrasing</div>
+          <div class="sentence-en">Denying resident aliens the right to vote contradicts the core principle of active democracy, which states that living and participating in a community should be the only requirement for political representation.</div>
+          <div class="sentence-ko">거주 외국인에게 투표권을 거부하는 것은 공동체에 거주하고 참여하는 것이 정치적 대표성을 위한 유일한 요건이어야 한다는 능동적 민주주의의 핵심 원칙과 모순된다.</div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">07</div><h2>도움이 되는 배경지식</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>1. 외국인 투표권(Alien Voting):</strong><br> 역사적으로 미국의 여러 주에서는 인구 유입을 장려하기 위해 비시민권자(거주 외국인)에게도 지방선거 투표권을 부여했었으나, 제1차 세계대전 이후 반이민 정서와 시민권 강화의 일환으로 대부분 폐지되었다.</div>
+        <div class="divider"></div>
+        <div class="line-item"><strong>2. 주민 자치와 참정권:</strong><br> 현대 민주주의 이론에서는 국적(시민권)보다 실질적인 생활 터전(거주)에 기반한 '주민'의 권리를 중시하는 경향이 있으며, 이를 근거로 지방선거에서 외국인 영주권자에게 투표권을 부여하는 국가들이 늘고 있다(한국도 제한적으로 허용함).</div>
+      </div>
+    </div>
+
+
+    <!-- ========================================== -->
+    <!-- 지문 구분선 (인쇄 시 여기서 페이지가 나뉨) -->
+    <!-- ========================================== -->
+    <hr class="passage-separator" />
+
+    <!-- ========================================== -->
+    <!-- [지문 8] 06강 3번                          -->
+    <!-- ========================================== -->
+    <div class="passage-container">
+      <div class="header-container">
+        <div class="hero-title">06강 3번 지문분석</div>
+        <div class="subtitle">Lio T 내신대비 지문분석서</div>
+      </div>
+
+      <div class="section-title no-break section-00"><div class="page-no">00</div><h2>영어 본문 및 전체 해석</h2></div>
+      <div class="card no-break">
+        <div class="text-block-title">영어 본문</div>
+        <div class="eng-body">
+          The reliance on the computer as a model for the operations of the human mind may well prove to be as limited as an earlier fascination with behaviorism. Psychologists have already begun to recognize the flaws of the mind-as-computer metaphor. Some have turned to cultural anthropology as a way of understanding the factors outside any particular individual's brain that help the individual make sense out of the world. Others, such as Jerome Bruner, one of the founders of cognitive psychology, find that the computer analogy carries with it an unfortunate shift "from the construction of meaning to the processing of information." Bruner's reflections on the limits of the machine model lead him back to a humanistic emphasis on narrative and story-telling as essential ingredients in understanding human cognition, a fascinating intellectual journey that reveals both the power and the limits of computers as guides to the way we think.
+        </div>
+        <div class="divider"></div>
+        <div class="text-block-title">전체 해석</div>
+        <div class="kor-body">
+          인간 마음의 작용을 위한 모델로서 컴퓨터에 의존하는 것은 행동주의에 대한 초기의 매료만큼이나 한계가 있는 것으로 판명될지도 모른다. 심리학자들은 이미 '컴퓨터로서의 마음'이라는 비유의 결함을 인식하기 시작했다. 어떤 이들은 개인이 세상을 이해하도록 돕는 특정 개인의 뇌 외부의 요인들을 이해하는 방법으로 문화 인류학으로 눈을 돌렸다. 인지 심리학의 창시자 중 한 명인 Jerome Bruner와 같은 다른 이들은 컴퓨터 비유가 "의미의 구성에서 정보의 처리로"의 유감스러운 전환을 수반한다는 것을 발견한다. 기계 모델의 한계에 대한 Bruner의 성찰은 그를 인간의 인지를 이해하는 데 필수적인 요소로서 서사와 스토리텔링에 대한 인본주의적 강조로 되돌아가게 하는데, 이는 우리가 생각하는 방식에 대한 길잡이로서 컴퓨터의 힘과 한계를 모두 드러내는 매력적인 지적 여정이다.
+        </div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">01</div><h2>직독직해 및 어휘 정리</h2></div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 1</div>
+        <div class="sentence-en">The reliance / on the computer / as a model / for the operations of the human mind / may well prove / to be as limited / as an earlier fascination / with behaviorism.</div>
+        <div class="sentence-ko">의존은 / 컴퓨터에 대한 / 모델로서 / 인간 마음의 작용을 위한 / 판명될지도 모른다 / 제한적인 것으로 / 초기의 매료만큼이나 / 행동주의에 대한.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> reliance - 의존, operation - 작용, 작동, may well - ~하는 것도 당연하다, ~일지도 모른다, limited - 제한된, 한계가 있는, fascination - 매료, 매력, behaviorism - 행동주의</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 2</div>
+        <div class="sentence-en">Psychologists / have already begun / to recognize / the flaws / of the mind-as-computer metaphor.</div>
+        <div class="sentence-ko">심리학자들은 / 이미 시작했다 / 인식하기 / 결함을 / '컴퓨터로서의 마음'이라는 비유의.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> flaw - 결함, 결점, metaphor - 비유, 은유</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 3</div>
+        <div class="sentence-en">Some / have turned / to cultural anthropology / as a way / of understanding / the factors / outside any particular individual's brain / that / help / the individual / make sense / out of the world.</div>
+        <div class="sentence-ko">어떤 이들은 / 눈을 돌렸다 / 문화 인류학으로 / 방법으로서 / 이해하는 / 요인들을 / 어떤 특정 개인의 뇌 외부의 / (~하는) / 돕는 / 그 개인이 / 이해하도록 / 세상을.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> turn to - ~로 눈을 돌리다, ~에 의지하다, anthropology - 인류학, make sense out of - ~을 이해하다</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 4</div>
+        <div class="sentence-en">Others, / such as Jerome Bruner, / one of the founders / of cognitive psychology, / find / that / the computer analogy / carries / with it / an unfortunate shift / "from the construction of meaning / to the processing of information."</div>
+        <div class="sentence-ko">다른 이들은, / Jerome Bruner와 같은, / 창시자 중 한 명인 / 인지 심리학의, / 발견한다 / ~라는 것을 / 컴퓨터 비유가 / 수반한다고 / 그것과 함께 / 유감스러운 전환을 / "의미의 구성에서 / 정보의 처리로"의.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> founder - 창시자, cognitive - 인지의, analogy - 비유, 유추, carry with it - 수반하다, shift - 전환, 변화, construction - 구성, processing - 처리</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 5</div>
+        <div class="sentence-en">Bruner's reflections / on the limits / of the machine model / lead / him / back to a humanistic emphasis / on narrative and story-telling / as essential ingredients / in understanding / human cognition, / a fascinating intellectual journey / that / reveals / both the power and the limits / of computers / as guides / to the way we think.</div>
+        <div class="sentence-ko">Bruner의 성찰은 / 한계에 대한 / 기계 모델의 / 이끈다 / 그를 / 인본주의적 강조로 되돌아 가도록 / 서사와 스토리텔링에 대한 / 필수적인 요소로서 / 이해하는 데 있어서 / 인간의 인지를, / (이것은) 매력적인 지적 여정이다 / (~하는) / 드러내는 / 힘과 한계를 모두 / 컴퓨터의 / 길잡이로서 / 우리가 생각하는 방식에 대한.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> reflection - 성찰, 반성, humanistic - 인본주의적인, emphasis - 강조, narrative - 서사, 이야기, ingredient - 요소, 재료, cognition - 인지, fascinating - 매력적인, intellectual - 지적인, reveal - 드러내다</div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">02</div><h2>어법 및 구문 포인트</h2></div>
+      <div class="card no-break">
+        <div class="point-block">
+          <div class="sentence-id">문장 1</div>
+          <div class="line-item"><strong>[may well prove to be as limited as...]</strong> `may well + 동사원형`은 '~하는 것도 무리가 아니다, 당연하다, 아마 ~일 것이다'라는 뜻의 관용 표현이다. `as limited as`의 원급 비교 구문을 사용하여 과거의 행동주의만큼이나 한계가 있음을 나타낸다.</div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul><li>`prove`는 2형식 동사 역할을 하므로 뒤에 보어인 `limited`가 형용사 형태로 와야 한다.</li></ul>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 3</div>
+          <div class="line-item"><strong>[the factors ... that help the individual make sense...]</strong> `that`은 주격 관계대명사로 선행사 `the factors`를 수식한다. `help`는 준사역동사로 목적어 `the individual` 뒤에 목적격 보어로 원형 부정사 `make`를 취했다.</div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul><li>선행사가 복수이므로 `help`의 수 일치에 주의해야 한다. 목적격 보어 자리에는 `to make`도 가능하지만, `making`은 틀린다.</li></ul>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 5</div>
+          <div class="line-item"><strong>[a fascinating intellectual journey that reveals...]</strong> 콤마 뒤의 `a fascinating intellectual journey`는 앞 내용(서사와 스토리텔링의 강조로 회귀한 것)을 부연 설명하는 동격 명사구다. `that`은 주격 관계대명사다.</div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul><li>선행사가 단수(`journey`)이므로 동사는 `reveals`로 단수형을 취한다.</li></ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">03</div><h2>문장 단위 내용 흐름 정리</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>[(1)-(2) 문제 제기] :</strong> 인간의 마음을 컴퓨터에 비유하는 관점은 과거의 행동주의처럼 큰 한계와 결함이 있음이 심리학자들에 의해 인식되고 있다.</div>
+        <div class="line-item"><strong>[(3) 대안 1 (문화 인류학)] :</strong> 컴퓨터 모델의 한계를 극복하기 위해, 일부는 뇌 내부의 기계적 작동이 아닌 외부 환경과 문화를 연구하는 인류학으로 시선을 돌렸다.</div>
+        <div class="line-item"><strong>[(4) 대안 2 (의미 구성의 상실 지적)] :</strong> 제롬 브루너 등은 컴퓨터 비유가 인간 고유의 '의미 구성' 능력을 단순한 '정보 처리'로 폄하했다고 비판한다.</div>
+        <div class="line-item"><strong>[(5) 결론] :</strong> 기계 모델에 대한 이러한 한계 인식은 인간의 인지를 이해하기 위해 정보 처리가 아닌 '서사와 스토리텔링'이라는 인본주의적 관점을 다시 강조하는 결과를 낳았다.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">04</div><h2>표현들의 연관성 정리</h2></div>
+      <div class="card no-break">
+        <h3>비판받는 초기 관점</h3>
+        <div class="chip-row">
+          <span class="chip">Computer as a model</span> <span class="arrow">=</span> <span class="chip">mind-as-computer metaphor</span> <span class="arrow">=</span> <span class="chip">machine model</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 20px;">인간의 뇌를 단순한 계산기처럼 바라보는 인지 심리학의 초기 관점으로, 필자가 비판하는 대상이다.</div>
+
+        <h3>정보 처리와 의미 창조의 대비</h3>
+        <div class="chip-row">
+          <span class="chip">Processing of information</span> <span class="arrow">↔</span> <span class="chip">Construction of meaning / narrative and story-telling</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 20px;">단순한 데이터의 연산(컴퓨터의 방식)과 인간만이 할 수 있는 주관적이고 문화적인 의미 창조 과정(인간의 방식)의 대비를 나타낸다.</div>
+
+        <h3>기계론적 모델의 문제점</h3>
+        <div class="chip-row">
+          <span class="chip">Flaws</span> <span class="arrow">=</span> <span class="chip">limits</span> <span class="arrow">=</span> <span class="chip">unfortunate shift</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 4px;">기계론적 모델이 가지고 있는 명백한 한계점들을 지적하는 표현들이다.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">05</div><h2>소재와 주제문</h2></div>
+      <div class="card no-break" style="border-top-color: #f59e0b;">
+        <div class="line-item" style="margin-bottom: 12px;"><strong>핵심 소재:</strong> 인간 마음을 컴퓨터에 비유하는 모델의 한계와 대안적 관점</div>
+        <div class="mini-divider"></div>
+        <div class="label" style="margin-top: 8px;">주제문 (문장 2)</div>
+        <div class="sentence-en" style="margin-bottom: 0;">Psychologists have already begun to recognize the flaws of the mind-as-computer metaphor.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">06</div><h2>지문의 요약 및 패러프레이징</h2></div>
+      <div class="card no-break">
+        <div class="summary-pair">
+          <div class="label">요약 / Summary</div>
+          <div class="sentence-en">Viewing the human mind simply as a computer is fundamentally flawed because it reduces the humanistic process of meaning construction into mere information processing.</div>
+          <div class="sentence-ko">인간의 마음을 단순히 컴퓨터로 보는 것은 의미 구성이라는 인본주의적 과정을 단순한 정보 처리로 축소하기 때문에 근본적으로 결함이 있다.</div>
+        </div>
+        <div class="divider"></div>
+        <div class="summary-pair">
+          <div class="label">패러프레이징 / Paraphrasing</div>
+          <div class="sentence-en">Recognizing the limitations of the machine metaphor, psychologists are shifting their focus away from data processing and toward cultural and narrative approaches to better understand human cognition.</div>
+          <div class="sentence-ko">기계 비유의 한계를 인식한 심리학자들은 인간의 인지를 더 잘 이해하기 위해 데이터 처리에서 벗어나 문화적이고 서사적인 접근법으로 초점을 옮기고 있다.</div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">07</div><h2>도움이 되는 배경지식</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>1. 인지 혁명과 컴퓨터 은유:</strong><br> 1950년대 행동주의(자극과 반응만 연구)에 반발하며 일어난 인지 혁명은 인간의 마음을 '정보 처리 장치(컴퓨터)'로 간주했다. 입력(input)이 뇌에서 알고리즘으로 처리되어 출력(output)된다는 관점이다.</div>
+        <div class="divider"></div>
+        <div class="line-item"><strong>2. 제롬 브루너의 후기 사상:</strong><br> 초기 인지 심리학의 창시자였던 브루너는 나중에 자신이 주도했던 '정보 처리' 모델에 회의를 느끼고, 인간은 이야기를 통해 세상의 의미를 구성한다는 '내러티브(서사) 심리학'을 주창했다. 본 지문은 이 사상적 전환을 핵심으로 다루고 있다.</div>
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>

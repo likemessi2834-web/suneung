@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>26강 지문분석 (1번, 3번) - Lio T</title>
+  <style>
+    /* 디자인 시스템 변수 설정 */
+    :root {
+      --bg-color: #f4f7fb;
+      --text-main: #0f172a;
+      --text-sub: #334155;
+      --text-muted: #64748b;
+      --primary: #4f46e5;
+      --primary-light: #e0e7ff;
+      --secondary: #3b82f6;
+      --border-light: #e2e8f0;
+      --card-bg: #ffffff;
+      --radius: 12px;
+    }
+
+    /* 페이지 기본 설정 (세로 모드) */
+    @page {
+      size: A4 portrait;
+      margin: 15mm; 
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg-color);
+      color: var(--text-main);
+      font-family: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+      letter-spacing: -0.02em; 
+    }
+
+    body {
+      padding: 10px; 
+      display: flex;
+      justify-content: center;
+    }
+
+    .doc {
+      width: 100%;
+      max-width: 210mm; 
+    }
+
+    /* =========================================
+       지문 간 구분선 (화면용 vs 인쇄용)
+       ========================================= */
+    .passage-separator {
+      height: 4px;
+      background-image: repeating-linear-gradient(to right, #cbd5e1 0, #cbd5e1 10px, transparent 10px, transparent 20px);
+      margin: 80px 0;
+      border: none;
+      position: relative;
+    }
+    .passage-separator::after {
+      content: '▼ 다음 지문 (인쇄 시 무조건 새 페이지에서 시작됩니다) ▼';
+      position: absolute;
+      top: -26px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--bg-color);
+      padding: 0 16px;
+      color: #94a3b8;
+      font-weight: 700;
+      font-size: 10pt;
+    }
+
+    /* 공통 레이아웃 제어 */
+    .no-break { page-break-inside: avoid; break-inside: avoid; }
+    
+    .header-container { margin-bottom: 30px; text-align: center; }
+    .hero-title {
+      display: inline-block; margin: 0 0 10px 0; padding: 8px 24px; font-size: 22pt; font-weight: 800;
+      color: #ffffff; background: linear-gradient(135deg, var(--primary), var(--secondary));
+      border-radius: 999px; box-shadow: 0 4px 14px rgba(79, 70, 229, 0.25);
+    }
+    .subtitle { font-size: 13pt; font-weight: 600; color: var(--text-muted); }
+
+    .section-title {
+      display: flex; align-items: center; gap: 12px; margin: 30px 0 16px 0;
+      border-bottom: 2px solid var(--border-light); padding-bottom: 4px;
+      page-break-after: avoid; break-after: avoid;
+    }
+    .page-no {
+      width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+      background: var(--primary); color: white; font-weight: 700; font-size: 12pt; border-radius: 8px;
+    }
+    h2 { margin: 0; font-size: 16pt; font-weight: 700; color: var(--text-main); }
+
+    .card {
+      background: var(--card-bg); border: 1px solid var(--border-light); border-top: 4px solid var(--primary);
+      border-radius: var(--radius); padding: 8px 16px; margin-bottom: 16px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    }
+    
+    .text-block-title { font-size: 12pt; font-weight: 700; color: var(--primary); margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+    .text-block-title::before { content: ''; display: block; width: 6px; height: 6px; border-radius: 50%; background: var(--primary); }
+    .eng-body { font-size: 12pt; line-height: 1.7; font-weight: 500; color: var(--text-main); margin-bottom: 20px; text-align: justify; }
+    .divider { height: 1px; background: var(--border-light); margin: 20px 0; }
+    .mini-divider { height: 1px; background: var(--border-light); margin: 8px 0; }
+    .kor-body { font-size: 11.5pt; line-height: 1.7; color: var(--text-sub); text-align: justify; word-break: keep-all; }
+
+    .sentence-card {
+      background: var(--card-bg); border: 1px solid var(--border-light); border-left: 4px solid var(--secondary);
+      border-radius: 8px; padding: 8px 16px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    }
+    .sentence-id { display: inline-block; margin-bottom: 8px; padding: 2px 8px; border-radius: 6px; background: var(--primary-light); color: var(--primary); font-size: 9pt; font-weight: 700; }
+    .sentence-en { font-size: 12.5pt; font-weight: 600; line-height: 1.6; color: var(--text-main); margin-bottom: 4px; }
+    .sentence-ko { font-size: 9pt; line-height: 1.6; color: var(--text-sub); margin-bottom: 4px; word-break: keep-all; }
+    .vocab-box { display: inline-block; padding: 4px 8px; border-radius: 6px; background: #f8fafc; border: 1px dashed #cbd5e1; font-size: 9pt; color: var(--text-muted); margin-bottom: 4px;}
+    .analysis-text { font-size: 9.5pt; color: var(--text-muted); line-height: 1.5; margin-top: 4px;}
+
+    .point-block { margin-bottom: 16px; }
+    .point-block:last-child { margin-bottom: 0; }
+    .line-item { font-size: 11.5pt; line-height: 1.7; margin: 0 0 8px 0; word-break: keep-all; }
+    .exam-note { margin-top: 8px; padding: 8px 12px; background: #fffbeb; border-left: 3px solid #f59e0b; border-radius: 0 6px 6px 0; font-size: 10.5pt; line-height: 1.6; color: #92400e; }
+    .exam-note ul { margin: 4px 0 0 0; padding-left: 20px; }
+    .exam-note li { margin-bottom: 4px; }
+    .exam-note li:last-child { margin-bottom: 0; }
+
+    .chip-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 8px 0 20px 0; }
+    .chip { padding: 4px 10px; border-radius: 999px; background: var(--primary-light); color: var(--primary); font-size: 10pt; font-weight: 600; }
+    .arrow { color: var(--text-muted); font-weight: 700; }
+    h3 { font-size: 12pt; margin: 0 0 8px 0; color: var(--text-main); }
+    .label { display: inline-block; font-size: 9.5pt; font-weight: 700; color: var(--secondary); background: #eff6ff; padding: 2px 6px; border-radius: 4px; margin-bottom: 6px; }
+    .summary-pair { margin-bottom: 20px; }
+    .summary-pair:last-child { margin-bottom: 0; }
+
+    .img-box { text-align: center; padding: 20px; margin: 10px 0; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px; color: var(--text-muted); font-size: 11pt;}
+
+    /* =========================================
+       인쇄(Print) 전용 스타일 - 다중 지문 분할 처리
+       ========================================= */
+    @media print {
+      html, body { background: #ffffff !important; padding: 0; }
+      .doc { max-width: 100%; }
+
+      .passage-separator {
+        page-break-before: always !important;
+        break-before: page !important;
+        margin: 0 !important;
+        height: 0 !important;
+        border: none !important;
+        background: none !important;
+      }
+      .passage-separator::after { display: none !important; }
+
+      .page-break { page-break-before: always !important; break-before: page !important; }
+      .card, .sentence-card { box-shadow: none !important; border: 1px solid #cbd5e1 !important; page-break-inside: avoid !important; break-inside: avoid !important; }
+      .section-title { page-break-after: avoid !important; break-after: avoid !important; }
+
+      .hero-title { background: #0f172a !important; color: white !important; }
+      .page-no { background: #0f172a !important; }
+      .sentence-id, .chip, .label { border: 1px solid #cbd5e1 !important; background: #f8fafc !important; color: #0f172a !important; }
+      .exam-note { background: #f8fafc !important; border-left-color: #94a3b8 !important; color: #334155 !important; }
+      .img-box { background: #ffffff !important; border-color: #94a3b8 !important; color: #334155 !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="doc">
+
+    <!-- ========================================== -->
+    <!-- [지문 2] 26강 1번                          -->
+    <!-- ========================================== -->
+    <div class="passage-container">
+      <div class="header-container">
+        <div class="hero-title">26강 1번 지문분석</div>
+        <div class="subtitle">Lio T 내신대비 지문분석서</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">00</div><h2>영어 본문 및 전체 해석</h2></div>
+      <div class="card no-break">
+        <div class="text-block-title">영어 본문</div>
+        <div class="eng-body">
+          In the context of a studio visit, the viewer might notice several clipped newspaper articles pinned to the wall, a wax-coated hotplate, walls with paint marks, resin-drizzled floors and several sculptures barely visible through their plastic wrap. Such real-world clues offer the visitor a foothold onto the artist’s oeuvre. The studio visitor imagines that the artist is currently a painter, who applies wax and resin and finds inspiration in particular articles. Similarly, guests experiencing artworks in some homes notice art positioned next to furnishings, family photographs displayed on the piano and coffee table books stacked to demonstrate preferences. Together, these components affect particular experiences. Within the artist’s studio or collector’s home, residue from studio activities or the collector’s personal belongings help to connect the artworks to the world. By contrast, artworks displayed in exhibitions feel comparatively isolated, practically clipped from the world where they originated. This could explain why aestheticians tend to treat artworks as singletons, rather than as members of some set.
+        </div>
+        <div class="divider"></div>
+        <div class="text-block-title">전체 해석</div>
+        <div class="kor-body">
+          작업실 방문의 맥락에서, 관람객은 벽에 꽂혀 있는 오려낸 신문 기사 몇 장, 밀랍이 입혀진 핫플레이트, 페인트 자국이 있는 벽, 수지가 흘러내린 바닥, 플라스틱 랩을 통해 간신히 보이는 몇 개의 조각품들을 알아차릴 수도 있다. 그러한 현실 세계의 단서들은 방문객에게 그 예술가의 작품 세계(oeuvre)에 대한 발판을 제공한다. 작업실 방문객은 그 예술가가 현재 밀랍과 수지를 칠하고 특정 기사에서 영감을 찾는 화가라고 상상한다. 마찬가지로, 일부 가정집에서 예술 작품을 경험하는 손님들은 가구 옆에 놓인 예술 작품, 피아노 위에 전시된 가족 사진, 취향을 보여주기 위해 쌓아둔 커피 테이블 책들을 알아차린다. 이 구성 요소들은 함께 특정 경험에 영향을 미친다. 예술가의 작업실이나 수집가의 집 안에서, 작업실 활동의 잔여물이나 수집가의 개인 소지품은 예술 작품을 세상과 연결하는 데 도움을 준다. 대조적으로, 전시회에 전시된 예술 작품들은 비교적 고립되어, 그것들이 유래한 세상으로부터 사실상 잘려 나간 느낌을 준다. 이것은 왜 미학자들이 예술 작품을 어떤 집합의 일원이 아니라 단독 개체로 취급하는 경향이 있는지를 설명해 줄 수 있다.
+        </div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">01</div><h2>직독직해 및 어휘 정리</h2></div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 1</div>
+        <div class="sentence-en">In the context / of a studio visit, / the viewer / might notice / several clipped newspaper articles / pinned to the wall, a wax-coated hotplate, walls with paint marks, resin-drizzled floors and several sculptures / barely visible / through their plastic wrap.</div>
+        <div class="sentence-ko">맥락에서 / 작업실 방문의 / 관람객은 / 알아차릴지도 모른다 / 오려낸 신문 기사 몇 장을 / 벽에 꽂혀 있는, 밀랍이 칠해진 핫플레이트, 페인트 자국이 있는 벽, 수지가 흐른 바닥, 그리고 몇 개의 조각품들을 / 간신히 보이는 / 플라스틱 랩을 통해.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> clipped - 오려낸, resin-drizzled - 수지가 흘러내린, barely - 간신히(거의 ~않게)</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 작업실에 가면 예술 작품 주변의 지저분한 도구와 현실적 단서들을 보게 된다.<br>
+          <strong>역할:</strong> 예술 작품이 창작된 현실적 '맥락(context)'의 예시를 작업실 풍경을 통해 묘사한다.
+        </div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 2</div>
+        <div class="sentence-en">Such real-world clues / offer / the visitor / a foothold / onto the artist’s oeuvre.</div>
+        <div class="sentence-ko">그러한 현실 세계의 단서들은 / 제공한다 / 방문객에게 / 발판을 / 그 예술가의 작품 세계(평생의 작품)에 대한.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> foothold - 발판, oeuvre - (한 작가의) 모든 작품(작품 세계)</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 이런 작업실의 단서들은 관람객이 예술가의 작품 세계를 이해하는 데 발판이 된다.<br>
+          <strong>역할:</strong> 주변 맥락 요소(clues)가 작품 감상에 어떤 긍정적 기여를 하는지 밝힌다.
+        </div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 3</div>
+        <div class="sentence-en">The studio visitor / imagines / that the artist is currently a painter, / who applies wax and resin / and finds inspiration / in particular articles.</div>
+        <div class="sentence-ko">작업실 방문객은 / 상상한다 / 그 예술가가 현재 화가라고 / 밀랍과 수지를 바르고 / 영감을 찾는 / 특정 기사에서.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> inspiration - 영감</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 관람객은 작업실의 물건들을 통해 예술가의 창작 과정과 영감을 상상할 수 있다.<br>
+          <strong>역할:</strong> 발판(foothold)이 구체적으로 관람객의 상상력과 작품 이해를 어떻게 자극하는지 예시를 든다.
+        </div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 4</div>
+        <div class="sentence-en">Similarly, / guests / experiencing artworks in some homes / notice / art / positioned next to furnishings, / family photographs displayed on the piano / and coffee table books stacked / to demonstrate preferences.</div>
+        <div class="sentence-ko">마찬가지로 / 손님들은 / 일부 가정집에서 예술 작품을 경험하는 / 알아차린다 / 예술 작품을 / 가구 옆에 놓여진 / 피아노 위에 전시된 가족 사진 / 그리고 쌓여 있는 커피 테이블 책들을 / 취향을 보여주기 위해.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> furnishing - 가구, stack - 쌓다, preference - 취향(선호)</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 수집가의 집에서도 가구, 사진, 책 같은 주변 요소들이 예술 작품과 함께 인식된다.<br>
+          <strong>역할:</strong> 작업실에서 '수집가의 집'으로 장소를 옮겨, 맥락이 영향을 미치는 또 다른 사례를 추가한다.
+        </div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 5</div>
+        <div class="sentence-en">Together, / these components / affect / particular experiences.</div>
+        <div class="sentence-ko">함께 / 이 구성 요소들은 / 영향을 미친다 / 특정 경험에.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> component - 구성 요소</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 작품 주변의 물건들은 관람객의 예술 감상 경험에 복합적으로 영향을 준다.<br>
+          <strong>역할:</strong> 작업실과 수집가의 집에 있는 맥락적 요소들이 예술 경험에 미치는 파급력을 요약한다.
+        </div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 6</div>
+        <div class="sentence-en">Within the artist’s studio or collector’s home, / residue / from studio activities / or the collector’s personal belongings / help / to connect / the artworks / to the world.</div>
+        <div class="sentence-ko">예술가의 작업실이나 수집가의 집 안에서 / 잔여물은 / 작업실 활동에서 나온 / 혹은 수집가의 개인 소지품은 / 돕는다 / 연결하는 것을 / 예술 작품을 / 세상과.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> residue - 잔여물, belongings - 소지품</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 창작이나 일상의 흔적들은 예술 작품을 현실 세상과 강하게 이어준다.<br>
+          <strong>역할:</strong> 맥락이 제공하는 핵심 기능이 바로 작품과 현실 세계(world)의 '연결(connect)'임을 역설한다.
+        </div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 7</div>
+        <div class="sentence-en">By contrast, / artworks / displayed in exhibitions / feel / comparatively isolated, / practically clipped / from the world / where they originated.</div>
+        <div class="sentence-ko">대조적으로 / 예술 작품들은 / 전시회에 전시된 / 느껴진다 / 비교적 고립된 것으로 / 사실상 잘려 나간 / 세상으로부터 / 그것들이 유래한.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> comparatively - 비교적, isolate - 고립시키다, originate - 유래하다</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 반면 미술관에 전시된 작품들은 창작된 현실 세계로부터 단절되고 고립된 느낌을 준다.<br>
+          <strong>역할:</strong> 현실적 맥락이 제거된 미술관(exhibition) 상황을 대조하여, 맥락의 유무에 따른 감상 차이를 부각한다.
+        </div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 8</div>
+        <div class="sentence-en">This / could explain / why aestheticians tend to treat artworks / as singletons, / rather than as members / of some set.</div>
+        <div class="sentence-ko">이것은 / 설명해 줄 수 있다 / 왜 미학자들이 예술 작품을 취급하는 경향이 있는지를 / 단독 개체로 / 일원으로서보다는 / 어떤 집합의.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> aesthetician - 미학자, singleton - 단독 개체</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 이러한 고립성 때문에 미학자들은 예술 작품을 맥락 집합의 일부가 아닌 단일한 객체로만 취급하는 경향이 있다.<br>
+          <strong>역할:</strong> 전시회 중심의 감상 문화가 예술 작품을 맥락이 거세된 단일 객체(singleton)로만 바라보게 만들었음을 분석하며 글을 마친다.
+        </div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">02</div><h2>어법 및 구문 포인트</h2></div>
+      <div class="card no-break">
+        <div class="point-block">
+          <div class="sentence-id">문장 4</div>
+          <div class="line-item"><strong>[guests experiencing artworks in some homes notice art positioned next to furnishings, family photographs displayed on the piano...]</strong></div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul>
+              <li>지각동사 <code>notice</code>의 목적어로 여러 명사구(<code>art</code>, <code>family photographs</code>, <code>books</code>)가 병렬 연결되어 있으며, 각 명사구 뒤에는 수동의 의미를 지닌 과거분사구(<code>positioned</code>, <code>displayed</code>, <code>stacked</code>)가 결합되어 목적어를 후치 수식하고 있다.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 7</div>
+          <div class="line-item"><strong>[artworks displayed in exhibitions feel comparatively isolated, practically clipped from the world where they originated.]</strong></div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul>
+              <li><code>clipped</code>는 분사구문으로 <code>being</code>이 생략된 수동태 형태이다. 주어인 <code>artworks</code>가 세상으로부터 '잘려 나간' 것이므로 과거분사가 적절하다.</li>
+              <li><code>where</code>는 관계부사로 선행사 <code>the world</code>를 수식하며, 뒤에는 <code>they originated</code>라는 완전한 형태의 절(자동사)이 온다.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">03</div><h2>문장 단위 내용 흐름 정리</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>[맥락의 중요성 1 (문장 1~3)] :</strong> 작가의 작업실에 있는 지저분한 도구와 흔적(맥락)들은 관람객이 작품의 탄생 과정을 상상하고 이해하는 발판이 됨.</div>
+        <div class="line-item"><strong>[맥락의 중요성 2 (문장 4~6)] :</strong> 수집가의 집에 놓인 가구와 일상용품 역시 작품을 현실 세계와 연결하여 감상 경험을 풍부하게 함.</div>
+        <div class="line-item"><strong>[대조 (문장 7~8)] :</strong> 이와 대조적으로 미술관 전시는 이런 현실적 맥락이 싹둑 잘려 나가 고립되어 있으며, 이는 미학자들이 작품을 주변 맥락과 무관한 '단독 개체'로 다루는 이유가 됨.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">04</div><h2>표현들의 연관성 정리</h2></div>
+      <div class="card no-break">
+        <h3>물리적, 일상적 맥락</h3>
+        <div class="chip-row">
+          <span class="chip">context</span> <span class="arrow">=</span> <span class="chip">real-world clues</span> <span class="arrow">=</span> <span class="chip">components</span> <span class="arrow">=</span> <span class="chip">residue</span> <span class="arrow">=</span> <span class="chip">belongings</span> <span class="arrow">=</span> <span class="chip">world</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 20px;">예술 작품에 생명력을 불어넣고 의미를 풍성하게 만드는 주변 환경적, 물리적 '맥락'을 뜻하는 유의어들이다.</div>
+
+        <h3>맥락의 부재 (고립성)</h3>
+        <div class="chip-row">
+          <span class="chip">isolated</span> <span class="arrow">=</span> <span class="chip">clipped from the world</span> <span class="arrow">=</span> <span class="chip">singletons</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 4px;">작업실이나 가정집과 대조적으로, 미술관(전시회)이 갖는 맥락이 제거된 '단절성'과 '고립성'을 상징하는 표현들이다.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">05</div><h2>소재와 주제문</h2></div>
+      <div class="card no-break" style="border-top-color: #f59e0b;">
+        <div class="line-item" style="margin-bottom: 12px;"><strong>핵심 소재:</strong> 예술 작품의 감상에 영향을 미치는 현실 세계의 맥락(Context)</div>
+        <div class="mini-divider"></div>
+        <div class="label" style="margin-top: 8px;">주제문 (문장 6, 7)</div>
+        <div class="sentence-en" style="margin-bottom: 0;">Within the artist’s studio or collector’s home, residue from studio activities or the collector’s personal belongings help to connect the artworks to the world. By contrast, artworks displayed in exhibitions feel comparatively isolated, practically clipped from the world where they originated.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">06</div><h2>지문의 요약 및 패러프레이징</h2></div>
+      <div class="card no-break">
+        <div class="summary-pair">
+          <div class="label">요약 / Summary</div>
+          <div class="sentence-en">Everyday traces and belongings in an artist's studio or a collector's home connect artworks to reality and positively affect appreciation, whereas artworks in exhibitions are perceived as isolated singletons cut off from their context.</div>
+          <div class="sentence-ko">작업실이나 가정집의 일상적 흔적과 소지품들은 예술 작품을 현실과 연결하여 감상에 긍정적인 영향을 미치지만, 전시회의 작품은 맥락이 단절되어 고립된 개체로 인식된다.</div>
+        </div>
+        <div class="divider"></div>
+        <div class="summary-pair">
+          <div class="label">패러프레이징 / Paraphrasing</div>
+          <div class="sentence-en">The physical environment and everyday cues surrounding an artwork are essential interpretive foundations that breathe life into it. Conversely, the neatly controlled display methods of museums detach the artwork from its origin, thereby erasing its organic context.</div>
+          <div class="sentence-ko">예술 작품 주변에 존재하는 물리적 환경과 일상의 단서들은 작품에 생명력을 부여하는 필수적인 해석의 토대이다. 이와 반대로 깔끔하게 통제된 미술관의 전시 방식은 작품을 탄생지로부터 분리하여 그 유기적 맥락을 소거한다.</div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">07</div><h2>도움이 되는 배경지식</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>화이트 큐브 (White Cube):</strong><br> 현대 미술관의 전형적인 전시 공간 형태로, 사방이 하얀 벽으로 둘러싸여 창문이나 외부의 흔적(맥락)이 완벽하게 차단된 공간이다. 본문에서 지적하듯 작품을 세상(world)으로부터 고립시키고 오직 작품(singleton) 자체에만 집중하게 만드는 특성을 지닌다.</div>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- [지문 4] 26강 3번                          -->
+    <!-- ========================================== -->
+    <hr class="passage-separator" />
+    
+    <div class="passage-container">
+      <div class="header-container">
+        <div class="hero-title">26강 3번 지문분석</div>
+        <div class="subtitle">Lio T 내신대비 지문분석서</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">00</div><h2>영어 본문 및 전체 해석</h2></div>
+      <div class="card no-break">
+        <div class="text-block-title">영어 본문</div>
+        <div class="eng-body">
+          Through stories we can explore the human condition and see how other people think. This can affirm our own beliefs and perceptions, but it also challenges them. Regardless of the language, there is something universal about what occurs in the brain at the point when we are processing narratives, triggering better self-awareness and empathy for others. Psychologists scanned people listening to narratives in English, Farsi, and Mandarin, and found the same patterns of brain activation when people found meaning in the stories. Other studies find that reading fiction significantly increases empathy toward others, including people of a different race or religion. And the more absorbed in a story a reader is, the more empathetically they behave in real life. For instance, if the researcher “accidentally” dropped his pens, those participants who had previously reported being “highly absorbed” in the story were about twice as likely to help pick up the pens. Another study concluded that literary fiction “uniquely engages the psychological processes needed to gain access to characters’ subjective experiences.” That is to say, if you read novels, you can probably read emotions, vital skills for forming cooperative societies.
+        </div>
+        <div class="divider"></div>
+        <div class="text-block-title">전체 해석</div>
+        <div class="kor-body">
+          이야기를 통해 우리는 인간의 조건을 탐구하고 다른 사람들이 어떻게 생각하는지 볼 수 있다. 이것은 우리 자신의 믿음과 인식을 확인시켜 줄 수도 있지만, 그것들에 도전하기도 한다. 언어와 상관없이, 우리가 내러티브(이야기)를 처리하는 시점에 뇌에서 일어나는 일에는 보편적인 무언가가 있으며, 이는 더 나은 자기 인식과 타인에 대한 공감을 촉발한다. 심리학자들은 영어, 페르시아어, 중국어로 된 내러티브를 듣는 사람들을 스캔했고, 사람들이 이야기에서 의미를 찾았을 때 동일한 뇌 활성화 패턴을 발견했다. 다른 연구들은 소설을 읽는 것이 다른 인종이나 종교를 가진 사람들을 포함하여 타인에 대한 공감 능력을 크게 증가시킨다는 것을 발견했다. 그리고 독자가 이야기에 더 많이 몰입할수록, 그들은 실생활에서 더 공감적으로 행동한다. 예를 들어, 만약 연구자가 '우연히' 펜을 떨어뜨렸을 때, 이전에 이야기에 '매우 몰입했다'고 보고했던 참가자들이 펜을 줍도록 도와줄 가능성이 약 두 배 더 높았다. 또 다른 연구는 순수 문학 소설이 "캐릭터의 주관적인 경험에 접근하기 위해 필요한 심리적 과정에 독특하게 관여한다"라고 결론지었다. 즉, 만약 여러분이 소설을 읽는다면, 여러분은 아마도 협력적인 사회를 형성하는 데 필수적인 기술인 감정을 읽을 수 있을 것이다.
+        </div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">01</div><h2>직독직해 및 어휘 정리</h2></div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 1</div>
+        <div class="sentence-en">Through stories / we / can explore / the human condition / and see / how other people think.</div>
+        <div class="sentence-ko">이야기를 통해 / 우리는 / 탐구할 수 있다 / 인간의 조건을 / 그리고 볼 수 있다 / 다른 사람들이 어떻게 생각하는지.</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 이야기를 통해 우리는 인간의 내면과 타인의 생각을 탐색한다.<br>
+          <strong>역할:</strong> 스토리(내러티브)가 제공하는 기본적 가치인 '인간 이해'를 제시하며 글을 연다.
+        </div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 2</div>
+        <div class="sentence-en">This / can affirm / our own beliefs and perceptions, / but it / also challenges / them.</div>
+        <div class="sentence-ko">이것은 / 확인시켜 줄 수 있다 / 우리 자신의 믿음과 인식을 / 그러나 그것은 / 또한 도전한다 / 그것들에.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> affirm - 확인하다(긍정하다)</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 이야기는 기존의 신념을 공고히 하거나 때로는 비판적으로 성찰하게 만든다.<br>
+          <strong>역할:</strong> 독서가 자아 성찰과 인식의 확장을 가져옴을 설명한다.
+        </div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 3</div>
+        <div class="sentence-en">Regardless of the language, / there / is / something universal / about what occurs in the brain / at the point / when we are processing narratives, / triggering better self-awareness and empathy / for others.</div>
+        <div class="sentence-ko">언어와 상관없이 / 보편적인 무언가가 있다 / 뇌에서 일어나는 일에 관해 / 그 시점에 / 우리가 내러티브를 처리하고 있는 / (그것은) 더 나은 자기 인식과 공감을 촉발한다 / 타인에 대한.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> regardless of - ~와 상관없이, universal - 보편적인, process - 처리하다, empathy - 공감</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 언어를 불문하고, 이야기를 읽을 때 뇌는 보편적으로 자아 인식과 타인에 대한 공감을 자극한다.<br>
+          <strong>역할:</strong> 문학 감상이 뇌과학적으로 '공감 능력'을 향상시킨다는 글의 핵심 논지를 선언한다.
+        </div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 4</div>
+        <div class="sentence-en">Psychologists / scanned / people / listening to narratives / in English, Farsi, and Mandarin, / and found / the same patterns / of brain activation / when people found meaning / in the stories.</div>
+        <div class="sentence-ko">심리학자들은 / 스캔했다 / 사람들을 / 내러티브를 듣고 있는 / 영어, 페르시아어, 중국어로 된 / 그리고 발견했다 / 동일한 패턴을 / 뇌 활성화의 / 사람들이 의미를 찾았을 때 / 그 이야기 속에서.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> scan - 스캔하다, Farsi - 페르시아어</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 여러 언어권 실험에서 이야기에 의미를 부여할 때 뇌가 동일하게 활성화됨이 증명되었다.<br>
+          <strong>역할:</strong> 앞 문장의 '보편적 현상'을 뒷받침하는 과학적 실험 결과를 제시한다.
+        </div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 5</div>
+        <div class="sentence-en">Other studies / find / that reading fiction significantly increases / empathy toward others, / including people of a different race or religion.</div>
+        <div class="sentence-ko">다른 연구들은 / 발견한다 / 소설을 읽는 것이 크게 증가시킨다는 것을 / 타인에 대한 공감을 / 다른 인종이나 종교를 가진 사람들을 포함하여.</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 독서는 자신과 전혀 다른 배경(인종, 종교)을 가진 사람에 대한 공감 능력도 키워준다.<br>
+          <strong>역할:</strong> 독서가 협소한 공감을 넘어 사회적 다름을 극복하는 넓은 공감을 이끌어냄을 보여준다.
+        </div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 6</div>
+        <div class="sentence-en">And / the more absorbed in a story / a reader / is, / the more empathetically / they / behave / in real life.</div>
+        <div class="sentence-ko">그리고 / 이야기에 더 많이 몰입할수록 / 독자가 / 더 공감적으로 / 그들은 / 행동한다 / 실생활에서.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> absorbed in - ~에 몰입한, empathetically - 공감적으로</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 이야기에 깊이 빠져들수록 현실에서 타인에게 더 이타적이고 공감적으로 대한다.<br>
+          <strong>역할:</strong> 문학적 몰입도와 현실에서의 이타적 행동 간의 비례 관계를 설명한다.
+        </div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 7</div>
+        <div class="sentence-en">For instance, / if the researcher “accidentally” dropped his pens, / those participants / who had previously reported / being “highly absorbed” in the story / were / about twice as likely / to help pick up the pens.</div>
+        <div class="sentence-ko">예를 들어 / 만약 연구자가 '우연히' 그의 펜을 떨어뜨렸을 때 / 그 참가자들은 / 이전에 보고했던 / 이야기에 '매우 몰입했다'고 / 약 두 배 더 ~할 가능성이 있었다 / 펜 줍는 것을 도와줄.</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 소설에 깊이 몰입한 사람은 타인의 펜을 주워줄 이타적 확률이 두 배나 높았다.<br>
+          <strong>역할:</strong> 독서가 실생활의 협력적, 공감적 행동을 유발한다는 구체적이고 일상적인 행동 실험 결과를 제시한다.
+        </div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 8</div>
+        <div class="sentence-en">Another study / concluded / that literary fiction “uniquely engages the psychological processes / needed to gain access / to characters’ subjective experiences.”</div>
+        <div class="sentence-ko">또 다른 연구는 / 결론지었다 / 순수 문학 소설이 독특하게 심리적 과정에 관여한다고 / 접근하기 위해 필요한 / 인물의 주관적 경험에.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> subjective - 주관적인</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 소설 읽기는 타인의 주관적 감정과 경험을 이해하는 특별한 심리 훈련이다.<br>
+          <strong>역할:</strong> 문학이 타인의 마음을 읽어내는 모의 실험 장치로 기능함을 학술적으로 명시한다.
+        </div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 9</div>
+        <div class="sentence-en">That is to say, / if you read novels, / you / can probably read / emotions, / vital skills / for forming cooperative societies.</div>
+        <div class="sentence-ko">즉 / 만약 당신이 소설을 읽는다면 / 당신은 아마도 읽을 수 있을 것이다 / 감정을 / 필수적인 기술인 / 협력적인 사회를 형성하기 위한.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> that is to say - 즉(다시 말해), vital - 필수적인</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 소설을 읽는 것은 타인의 감정을 읽고 협력적 사회를 만드는 훌륭한 방법이다.<br>
+          <strong>역할:</strong> 본문의 빈칸 추론 문장으로, 문학적 경험이 사회적 공감과 협력을 가져온다는 최종 결론을 맺는다.
+        </div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">02</div><h2>어법 및 구문 포인트</h2></div>
+      <div class="card no-break">
+        <div class="point-block">
+          <div class="sentence-id">문장 6</div>
+          <div class="line-item"><strong>[And the more absorbed in a story a reader is, the more empathetically they behave in real life.]</strong></div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul>
+              <li><code>The + 비교급 ..., the + 비교급 ~</code> (~하면 할수록 점점 더 ~하다) 구문이다. 주격 보어 역할을 하는 <code>absorbed in a story</code>가 앞으로 도치되었고, 동사를 수식하는 부사 <code>empathetically</code>가 비교급 <code>more</code>와 함께 강조되었다.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 7</div>
+          <div class="line-item"><strong>[... those participants who had previously reported being “highly absorbed” in the story were about twice as likely to help pick up the pens.]</strong></div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul>
+              <li><code>twice as likely to</code> 구문을 통해 배수사를 표현했다.</li>
+              <li>대과거(<code>had reported</code>)를 사용하여, 실험 상황에서 펜을 떨어뜨리기 전(과거)에 이미 몰입했다고 보고한 사실(대과거)의 시점을 명확히 구분했다. 또한 동사 <code>report</code>는 동명사 <code>being</code>을 목적어로 취했다.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">03</div><h2>문장 단위 내용 흐름 정리</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>[도입 (문장 1~2)] :</strong> 내러티브(이야기)는 인간 조건을 탐구하고 자신의 인식을 성찰하게 만듦.</div>
+        <div class="line-item"><strong>[뇌과학적 원리 (문장 3~4)] :</strong> 언어와 무관하게 이야기를 처리할 때 뇌는 보편적으로 공감과 자기 인식의 영역을 활성화함.</div>
+        <div class="line-item"><strong>[현실적 효과 및 실험 (문장 5~7)] :</strong> 소설을 읽고 깊이 몰입한 사람일수록 인종과 종교를 뛰어넘는 공감 능력을 보이며, 실제 타인을 돕는 이타적 행동(펜 줍기)의 비율도 월등히 높음.</div>
+        <div class="line-item"><strong>[결론 (문장 8~9)] :</strong> 즉, 문학을 읽는 행위는 캐릭터의 마음에 접속하는 훈련을 통해 현실의 타인 감정을 읽어내고, 궁극적으로 이타적이고 협력적인 사회를 만드는 필수 기술을 배양함.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">04</div><h2>표현들의 연관성 정리</h2></div>
+      <div class="card no-break">
+        <h3>문학 작품 (공감의 매개체)</h3>
+        <div class="chip-row">
+          <span class="chip">stories</span> <span class="arrow">=</span> <span class="chip">narratives</span> <span class="arrow">=</span> <span class="chip">fiction</span> <span class="arrow">=</span> <span class="chip">novels</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 20px;">공감을 매개하는 예술 형태인 '문학 작품'을 의미하는 유의어들이다.</div>
+
+        <h3>공감적 능력 (내적 변화)</h3>
+        <div class="chip-row">
+          <span class="chip">how other people think</span> <span class="arrow">=</span> <span class="chip">empathy for others</span> <span class="arrow">=</span> <span class="chip">subjective experiences</span> <span class="arrow">=</span> <span class="chip">read emotions</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 20px;">독서를 통해 궁극적으로 획득하게 되는 가치, 즉 타인의 마음에 이입하고 이해하는 '공감적 능력'을 나타낸다.</div>
+
+        <h3>이타적이고 협력적인 행동 (외적 실천)</h3>
+        <div class="chip-row">
+          <span class="chip">empathetically behave</span> <span class="arrow">=</span> <span class="chip">help pick up</span> <span class="arrow">=</span> <span class="chip">cooperative societies</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 4px;">뇌 속의 공감이 실천으로 이어진 '이타적이고 협력적인 행동'을 묶어주는 키워드들이다.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">05</div><h2>소재와 주제문</h2></div>
+      <div class="card no-break" style="border-top-color: #f59e0b;">
+        <div class="line-item" style="margin-bottom: 12px;"><strong>핵심 소재:</strong> 소설 읽기를 통한 공감 능력 향상과 협력적 행동 유발</div>
+        <div class="mini-divider"></div>
+        <div class="label" style="margin-top: 8px;">주제문 (문장 9)</div>
+        <div class="sentence-en" style="margin-bottom: 0;">That is to say, if you read novels, you can probably read emotions, vital skills for forming cooperative societies.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">06</div><h2>지문의 요약 및 패러프레이징</h2></div>
+      <div class="card no-break">
+        <div class="summary-pair">
+          <div class="label">요약 / Summary</div>
+          <div class="sentence-en">Regardless of language, deeply immersing oneself in stories stimulates the empathy regions of our brains, significantly improving our ability to read the emotions of others and act cooperatively in real life.</div>
+          <div class="sentence-ko">언어에 관계없이 소설을 읽으며 이야기에 깊이 몰입하는 경험은 우리 뇌의 공감 영역을 자극하여, 실생활에서 타인의 감정을 읽고 협력적으로 행동하게 하는 능력을 향상시킨다.</div>
+        </div>
+        <div class="divider"></div>
+        <div class="summary-pair">
+          <div class="label">패러프레이징 / Paraphrasing</div>
+          <div class="sentence-en">Cognitive absorption in narratives is a powerful psychological simulation that activates the brain to foster altruism. Readers who learn to empathize with fictional characters astutely capture the subjective suffering of others, ultimately solidifying social solidarity.</div>
+          <div class="sentence-ko">내러티브에 대한 인지적 몰입은 뇌를 활성화하여 이타주의를 함양하는 강력한 심리적 시뮬레이션이다. 소설의 인물에게 이입하는 법을 배운 독자는 타인의 주관적 고통을 예민하게 포착하여 결국 사회 연대를 굳건히 다진다.</div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">07</div><h2>도움이 되는 배경지식</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>마음 이론 (Theory of Mind):</strong><br> 타인이 나와는 다른 믿음, 의도, 욕구, 감정을 가지고 있음을 이해하는 능력이다. 소설 속 등장인물의 관점을 추론하고 감정에 이입하는 행위(Reading Fiction)는 이 마음 이론의 발달을 촉진시키는 최고의 훈련장으로 간주된다.</div>
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>

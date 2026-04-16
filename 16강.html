@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>16강 전체 지문분석 - Lio T</title>
+  <style>
+    /* 디자인 시스템 변수 설정 */
+    :root {
+      --bg-color: #f4f7fb;
+      --text-main: #0f172a;
+      --text-sub: #334155;
+      --text-muted: #64748b;
+      --primary: #4f46e5;
+      --primary-light: #e0e7ff;
+      --secondary: #3b82f6;
+      --border-light: #e2e8f0;
+      --card-bg: #ffffff;
+      --radius: 12px;
+    }
+
+    /* 페이지 기본 설정 (세로 모드) */
+    @page {
+      size: A4 portrait;
+      margin: 15mm; 
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg-color);
+      color: var(--text-main);
+      font-family: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+      letter-spacing: -0.02em; 
+    }
+
+    body {
+      padding: 10px; 
+      display: flex;
+      justify-content: center;
+    }
+
+    .doc {
+      width: 100%;
+      max-width: 210mm; 
+    }
+
+    /* =========================================
+       지문 간 구분선 (화면용 vs 인쇄용)
+       ========================================= */
+    .passage-separator {
+      height: 4px;
+      background-image: repeating-linear-gradient(to right, #cbd5e1 0, #cbd5e1 10px, transparent 10px, transparent 20px);
+      margin: 80px 0;
+      border: none;
+      position: relative;
+    }
+    .passage-separator::after {
+      content: '▼ 다음 지문 (인쇄 시 무조건 새 페이지에서 시작됩니다) ▼';
+      position: absolute;
+      top: -26px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--bg-color);
+      padding: 0 16px;
+      color: #94a3b8;
+      font-weight: 700;
+      font-size: 10pt;
+    }
+
+    /* 공통 레이아웃 제어 */
+    .no-break { page-break-inside: avoid; break-inside: avoid; }
+    
+    .header-container { margin-bottom: 30px; text-align: center; }
+    .hero-title {
+      display: inline-block; margin: 0 0 10px 0; padding: 8px 24px; font-size: 22pt; font-weight: 800;
+      color: #ffffff; background: linear-gradient(135deg, var(--primary), var(--secondary));
+      border-radius: 999px; box-shadow: 0 4px 14px rgba(79, 70, 229, 0.25);
+    }
+    .subtitle { font-size: 13pt; font-weight: 600; color: var(--text-muted); }
+
+    .section-title {
+      display: flex; align-items: center; gap: 12px; margin: 30px 0 16px 0;
+      border-bottom: 2px solid var(--border-light); padding-bottom: 4px;
+      page-break-after: avoid; break-after: avoid;
+    }
+    .page-no {
+      width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+      background: var(--primary); color: white; font-weight: 700; font-size: 12pt; border-radius: 8px;
+    }
+    h2 { margin: 0; font-size: 16pt; font-weight: 700; color: var(--text-main); }
+
+    .card {
+      background: var(--card-bg); border: 1px solid var(--border-light); border-top: 4px solid var(--primary);
+      border-radius: var(--radius); padding: 8px 16px; margin-bottom: 16px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    }
+    
+    .text-block-title { font-size: 12pt; font-weight: 700; color: var(--primary); margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+    .text-block-title::before { content: ''; display: block; width: 6px; height: 6px; border-radius: 50%; background: var(--primary); }
+    .eng-body { font-size: 12pt; line-height: 1.7; font-weight: 500; color: var(--text-main); margin-bottom: 20px; text-align: justify; }
+    .divider { height: 1px; background: var(--border-light); margin: 20px 0; }
+    .mini-divider { height: 1px; background: var(--border-light); margin: 8px 0; }
+    .kor-body { font-size: 11.5pt; line-height: 1.7; color: var(--text-sub); text-align: justify; word-break: keep-all; }
+
+    .sentence-card {
+      background: var(--card-bg); border: 1px solid var(--border-light); border-left: 4px solid var(--secondary);
+      border-radius: 8px; padding: 8px 16px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    }
+    .sentence-id { display: inline-block; margin-bottom: 8px; padding: 2px 8px; border-radius: 6px; background: var(--primary-light); color: var(--primary); font-size: 9pt; font-weight: 700; }
+    .sentence-en { font-size: 12.5pt; font-weight: 600; line-height: 1.6; color: var(--text-main); margin-bottom: 4px; }
+    .sentence-ko { font-size: 9pt; line-height: 1.6; color: var(--text-sub); margin-bottom: 4px; word-break: keep-all; }
+    .vocab-box { display: inline-block; padding: 4px 8px; border-radius: 6px; background: #f8fafc; border: 1px dashed #cbd5e1; font-size: 9pt; color: var(--text-muted); }
+
+    .point-block { margin-bottom: 16px; }
+    .point-block:last-child { margin-bottom: 0; }
+    .line-item { font-size: 11.5pt; line-height: 1.7; margin: 0 0 8px 0; word-break: keep-all; }
+    .exam-note { margin-top: 8px; padding: 8px 12px; background: #fffbeb; border-left: 3px solid #f59e0b; border-radius: 0 6px 6px 0; font-size: 10.5pt; line-height: 1.6; color: #92400e; }
+    .exam-note ul { margin: 4px 0 0 0; padding-left: 20px; }
+    .exam-note li { margin-bottom: 4px; }
+    .exam-note li:last-child { margin-bottom: 0; }
+
+    .chip-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 8px 0 20px 0; }
+    .chip { padding: 4px 10px; border-radius: 999px; background: var(--primary-light); color: var(--primary); font-size: 10pt; font-weight: 600; }
+    .arrow { color: var(--text-muted); font-weight: 700; }
+    h3 { font-size: 12pt; margin: 0 0 8px 0; color: var(--text-main); }
+    .label { display: inline-block; font-size: 9.5pt; font-weight: 700; color: var(--secondary); background: #eff6ff; padding: 2px 6px; border-radius: 4px; margin-bottom: 6px; }
+    .summary-pair { margin-bottom: 20px; }
+    .summary-pair:last-child { margin-bottom: 0; }
+
+    /* =========================================
+       인쇄(Print) 전용 스타일 - 다중 지문 분할 처리
+       ========================================= */
+    @media print {
+      html, body { background: #ffffff !important; padding: 0; }
+      .doc { max-width: 100%; }
+
+      /* 지문 구분선을 강제 페이지 넘김으로 변환 */
+      .passage-separator {
+        page-break-before: always !important;
+        break-before: page !important;
+        margin: 0 !important;
+        height: 0 !important;
+        border: none !important;
+        background: none !important;
+      }
+      .passage-separator::after { display: none !important; }
+
+      .page-break { page-break-before: always !important; break-before: page !important; }
+      .card, .sentence-card { box-shadow: none !important; border: 1px solid #cbd5e1 !important; page-break-inside: avoid !important; break-inside: avoid !important; }
+      .section-title { page-break-after: avoid !important; break-after: avoid !important; }
+
+      .hero-title { background: #0f172a !important; color: white !important; }
+      .page-no { background: #0f172a !important; }
+      .sentence-id, .chip, .label { border: 1px solid #cbd5e1 !important; background: #f8fafc !important; color: #0f172a !important; }
+      .exam-note { background: #f8fafc !important; border-left-color: #94a3b8 !important; color: #334155 !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="doc">
+
+    <!-- ========================================== -->
+    <!-- [지문 2] 16강 1번                          -->
+    <!-- ========================================== -->
+    
+    <div class="passage-container">
+      <div class="header-container">
+        <div class="hero-title">16강 1번 지문분석</div>
+        <div class="subtitle">Lio T 내신대비 지문분석서</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">00</div><h2>영어 본문 및 전체 해석</h2></div>
+      <div class="card no-break">
+        <div class="text-block-title">영어 본문</div>
+        <div class="eng-body">
+          In academia, you are taught to write up your results thus: "I came up with a hypothesis, then I did this experiment, and then I did another experiment, then I tested my ideas some more, and so on until [dramatic fanfare] ta-da! I proved this." If you wrote this way online, very few of your readers would make it to your dramatic conclusion, no matter how exciting or groundbreaking it was. Online, we don't have the patience to wait for your big reveal at the end. Instead, you need to tell us up front: "I proved this! And here's how I know it..." Your readership may still dwindle and trail off over the course of your writing, but at least the vast majority know what it is you've achieved from the very beginning. A few more of them may stay along for the ride if the opening line — the "hook," in journalistic terms — is particularly interesting. If you grab their attention early, you can more likely convince more readers to stay for the whole story.
+        </div>
+        <div class="divider"></div>
+        <div class="text-block-title">전체 해석</div>
+        <div class="kor-body">
+          학계에서는 결과를 다음과 같이 작성하도록 배운다. "나는 가설을 생각해 냈고, 그런 다음 이 실험을 했고, 그런 다음 또 다른 실험을 했으며, 그런 다음 내 아이디어를 조금 더 검증했고, 기타 등등 마침내 [극적인 팡파르] 짠! 내가 이것을 증명했다." 만약 당신이 온라인에서 이런 식으로 글을 쓴다면, 그것이 아무리 흥미롭거나 획기적이더라도 당신의 독자 중 극소수만이 당신의 극적인 결론에 도달할 것이다. 온라인에서, 우리는 마지막에 당신의 큰 폭로를 기다릴 인내심이 없다. 대신, 당신은 우리에게 미리(맨 앞에) 말해야 한다. "내가 이것을 증명했다! 그리고 여기 내가 그것을 아는 방법이 있다..." 당신이 글을 쓰는 과정에서 독자 수는 여전히 줄어들고 잦아들지 모르지만, 적어도 대다수는 당신이 이룬 것이 무엇인지를 맨 처음부터 안다. 만약 저널리즘 용어로 "훅(hook)"이라고 하는 첫 문장이 특히 흥미롭다면, 그들 중 조금 더 많은 사람들이 끝까지 남아있을지 모른다. 만약 당신이 초반에 그들의 주의를 끈다면, 당신은 더 많은 독자가 전체 이야기를 보기 위해 남아있도록 더 잘 설득할 수 있다.
+        </div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">01</div><h2>직독직해 및 어휘 정리</h2></div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 1</div>
+        <div class="sentence-en">In academia, / you / are taught / to write up your results / thus: / "I came up with a hypothesis, / then I did this experiment, / and then I did another experiment, / then I tested my ideas some more, / and so on / until [dramatic fanfare] / ta-da! I proved this."</div>
+        <div class="sentence-ko">학계에서는, / 당신은 / 배운다 / 당신의 결과를 작성하도록 / 이와 같이: / "나는 가설을 생각해 냈다, / 그런 다음 이 실험을 했다, / 그리고 그런 다음 또 다른 실험을 했다, / 그런 다음 내 아이디어를 조금 더 검증했다, / 기타 등등 / [극적인 팡파르]가 울릴 때까지 / 짠! 내가 이것을 증명했다."</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> academia - 학계, write up - (글을) 작성하다, thus - 이와 같이, come up with - ~을 생각해 내다, hypothesis - 가설, fanfare - 팡파르, 요란한 소리</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 2</div>
+        <div class="sentence-en">If you wrote / this way / online, / very few of your readers / would make it / to your dramatic conclusion, / no matter how exciting or groundbreaking / it / was.</div>
+        <div class="sentence-ko">만약 당신이 글을 쓴다면 / 이런 식으로 / 온라인에서, / 당신의 독자 중 극소수만이 / 도달할 것이다 / 당신의 극적인 결론에, / 아무리 흥미롭거나 획기적이더라도 / 그것이 / (아무리 ~일지라도).</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> make it to - ~에 도달하다, 해내다, no matter how - 아무리 ~할지라도, groundbreaking - 획기적인</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 3</div>
+        <div class="sentence-en">Online, / we / don't have the patience / to wait / for your big reveal / at the end.</div>
+        <div class="sentence-ko">온라인에서, / 우리는 / 인내심이 없다 / 기다릴 / 당신의 큰 폭로(결과)를 / 마지막에.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> patience - 인내심, reveal - 폭로, 드러냄(명사)</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 4</div>
+        <div class="sentence-en">Instead, / you / need to tell / us / up front: / "I proved this! And here's how I know it..."</div>
+        <div class="sentence-ko">대신, / 당신은 / 말해야 한다 / 우리에게 / 미리(맨 앞에): / "내가 이것을 증명했다! 그리고 여기 내가 그것을 아는 방법이 있다..."</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> up front - 미리, 솔직하게, 선뜻</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 5</div>
+        <div class="sentence-en">Your readership / may still dwindle and trail off / over the course of your writing, / but / at least / the vast majority / know / what it is / you've achieved / from the very beginning.</div>
+        <div class="sentence-ko">당신의 독자 수는 / 여전히 줄어들고 잦아들지 모른다 / 글이 전개되는 과정에서, / 하지만 / 적어도 / 대다수는 / 안다 / 그것이 무엇인지를 / 당신이 이룬 것이 / 맨 처음부터.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> readership - 독자 수, 독자층, dwindle - 줄어들다, trail off - 잦아들다, 희미해지다, vast majority - 대다수</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 6</div>
+        <div class="sentence-en">A few more of them / may stay along for the ride / if / the opening line / — the "hook," / in journalistic terms — / is particularly interesting.</div>
+        <div class="sentence-ko">그들 중 몇 명은 더 / 끝까지 함께 갈(읽을) 것이다 / 만약 / 첫 문장이 / 즉 "훅(hook)"이, / 저널리즘 용어로 / 특별히 흥미롭다면.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> stay along for the ride - 여정에 함께하다 (끝까지 남아 읽다), hook - (시선을 끄는) 훅, 갈고리, term - 용어</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 7</div>
+        <div class="sentence-en">If / you / grab their attention / early, / you / can more likely convince / more readers / to stay / for the whole story.</div>
+        <div class="sentence-ko">만약 / 당신이 / 그들의 주의를 끈다면 / 초반에, / 당신은 / 더 설득할 수 있을 것이다 / 더 많은 독자가 / 남아있도록 / 전체 이야기를 보기 위해.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> grab - 잡다, 끌다, convince A to B - A가 B하도록 설득하다</div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">02</div><h2>어법 및 구문 포인트</h2></div>
+      <div class="card no-break">
+        <div class="point-block">
+          <div class="sentence-id">문장 2</div>
+          <div class="line-item"><strong>[If you wrote this way online, very few of your readers would make it ...]</strong> 가정법 과거 구문이 사용되었다. 현재 사실에 대한 반대되는 가정이나 실현 가능성이 낮은 일을 나타낸다. (`If + 주어 + 동사 과거형, 주어 + 조동사 과거형 + 동사원형`)</div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul><li>주절의 `would make`와 조건절의 `wrote`가 시제 일치를 이루고 있다. 이를 직설법 현재로 혼동하여 `write`와 `will make`로 출제하는 것을 주의해야 한다.</li></ul>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 2</div>
+          <div class="line-item"><strong>[no matter how exciting or groundbreaking it was]</strong> `no matter how`는 '아무리 ~할지라도'라는 양보의 부사절을 이끌며 `however`와 바꿔 쓸 수 있다. 뒤에 형용사 `exciting or groundbreaking`이 도치되어 먼저 나왔다.</div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 5</div>
+          <div class="line-item"><strong>[know what it is you've achieved]</strong> 동사 `know`의 목적어 자리에 온 명사절 내에서 `what`을 강조하기 위한 `it is ~ that` 강조 구문이 결합된 형태다. 원래 형태는 `what you've achieved`인데 의문사 `what`을 강조하기 위해 `what it is (that) you've achieved` 구조가 되었다.</div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul><li>매유 낯선 구문이므로 눈여겨봐야 한다. `that`이 생략된 형태로 의문사 `what` 자체가 강조되었다.</li></ul>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 7</div>
+          <div class="line-item"><strong>[convince more readers to stay]</strong> `convince + 목적어 + to부정사` 5형식 구문으로 '목적어가 ~하도록 설득하다'라는 의미다.</div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">03</div><h2>문장 단위 내용 흐름 정리</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>[(1) 문제 제기(기존 방식)] :</strong> 학계의 논문 작성 방식은 배경과 실험 과정을 길게 나열하고 맨 마지막에 결론을 내는 귀납적/미괄식 구조다.</div>
+        <div class="line-item"><strong>[(2)-(3) 온라인 환경의 한계] :</strong> 온라인 글쓰기에서 이런 방식을 사용하면, 인내심이 없는 현대의 독자들은 긴 과정을 참고 결론까지 읽어주지 않는다.</div>
+        <div class="line-item"><strong>[(4) 필자의 해결책] :</strong> 따라서 온라인 글쓰기는 결론(핵심 성과)을 맨 앞에 대놓고 던지는 두괄식 구조를 취해야 한다.</div>
+        <div class="line-item"><strong>[(5)-(7) 해결책의 이점] :</strong> 그렇게 하면 중간에 독자들이 이탈하더라도 최소한 대다수에게 핵심 결과는 전달할 수 있다. 더 나아가 매력적인 첫 문장(훅)으로 초반에 주의를 끌면, 이탈을 막고 끝까지 글을 읽게 만들 가능성도 높아진다.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">04</div><h2>표현들의 연관성 정리</h2></div>
+      <div class="card no-break">
+        <h3>기존 학계의 방식</h3>
+        <div class="chip-row">
+          <span class="chip">Academia (hypothesis -> experiment -> conclusion)</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 20px;">전통적인 오프라인(학계)의 미괄식 글쓰기 방식을 나타낸다.</div>
+
+        <h3>온라인 글쓰기 방식</h3>
+        <div class="chip-row">
+          <span class="chip">Online</span> <span class="arrow">=</span> <span class="chip">tell us up front</span> <span class="arrow">=</span> <span class="chip">the opening line ("hook")</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 20px;">인내심이 부족한 온라인 독자를 사로잡기 위해 결론과 핵심을 맨 앞에 배치하는 두괄식 역피라미드 글쓰기 구조를 의미한다.</div>
+
+        <h3>독자 유지 효과</h3>
+        <div class="chip-row">
+          <span class="chip">Stay along for the ride</span> <span class="arrow">=</span> <span class="chip">stay for the whole story</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 4px;">초반부의 '훅' 덕분에 글에서 이탈하지 않고 끝까지 읽어 내려가는 긍정적 결과를 뜻한다.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">05</div><h2>소재와 주제문</h2></div>
+      <div class="card no-break" style="border-top-color: #f59e0b;">
+        <div class="line-item" style="margin-bottom: 12px;"><strong>핵심 소재:</strong> 온라인 환경에 맞게 결론을 맨 앞에 배치하는 글쓰기 방식</div>
+        <div class="mini-divider"></div>
+        <div class="label" style="margin-top: 8px;">주제문 (문장 4)</div>
+        <div class="sentence-en" style="margin-bottom: 0;">Instead, you need to tell us up front: "I proved this! And here's how I know it..."</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">06</div><h2>지문의 요약 및 패러프레이징</h2></div>
+      <div class="card no-break">
+        <div class="summary-pair">
+          <div class="label">요약 / Summary</div>
+          <div class="sentence-en">While academic writing saves the conclusion for the end, online writing must state the main finding upfront with an engaging hook to grab readers' short attention spans.</div>
+          <div class="sentence-ko">학술적 글쓰기는 결론을 마지막을 위해 남겨두지만, 온라인 글쓰기는 짧은 독자의 주의 집중 시간을 사로잡기 위해 흥미로운 훅과 함께 주요 발견을 맨 앞에 진술해야 한다.</div>
+        </div>
+        <div class="divider"></div>
+        <div class="summary-pair">
+          <div class="label">패러프레이징 / Paraphrasing</div>
+          <div class="sentence-en">Due to the limited patience of internet readers, the traditional academic approach of delaying the conclusion fails online; authors should immediately present their core message to successfully capture and retain an audience.</div>
+          <div class="sentence-ko">인터넷 독자들의 제한된 인내심 때문에, 결론을 늦추는 전통적인 학술적 접근법은 온라인에서 실패한다. 작가들은 대중을 성공적으로 사로잡고 유지하기 위해 즉시 핵심 메시지를 제시해야 한다.</div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">07</div><h2>도움이 되는 배경지식</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>1. 역피라미드 구조(Inverted Pyramid):</strong><br> 신문 기사 등 저널리즘에서 가장 중요한 정보나 결론(Who, What, When, Where, Why)을 기사의 맨 첫 문단(리드, Lead 또는 Hook)에 배치하고, 덜 중요한 세부 사항을 뒤로 갈수록 배치하는 글쓰기 방식이다. 본 지문은 이 방식이 온라인 글쓰기에 필수적이라고 역설한다.</div>
+      </div>
+    </div>
+
+
+    <!-- ========================================== -->
+    <!-- [지문 4] 16강 3번                          -->
+    <!-- ========================================== -->
+    <hr class="passage-separator" />
+    
+    <div class="passage-container">
+      <div class="header-container">
+        <div class="hero-title">16강 3번 지문분석</div>
+        <div class="subtitle">Lio T 내신대비 지문분석서</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">00</div><h2>영어 본문 및 전체 해석</h2></div>
+      <div class="card no-break">
+        <div class="text-block-title">영어 본문</div>
+        <div class="eng-body">
+          Bir Tawil is a strange place. In January 1899, administrators of the British Empire decided to finalize a border between the countries of Egypt and Sudan. In colonial fashion, they decided to use the conveniently straight line of the twenty-second parallel of latitude. Unsurprisingly, this new international border arbitrarily tore through local tribes and communities, and in 1902, the British drew a new line to reflect tribal territories. The combination of these two intersecting lines brought about the creation of two new areas: the large, inhabitable coastal area called the Hala'ib Triangle and an empty, landlocked patch of desert, which is Bir Tawil. To keep the desirable Hala'ib, Egypt understandably claimed the original, straight border of 1899, whereas Sudan — with the same goal in mind — claimed the new 1902 line. The strange result of this long-standing conflict is that, to this day, both countries refuse to claim Bir Tawil, an area of land roughly the size of London, as it would mean giving up a greater prize. This makes Bir Tawil the largest — perhaps the only — piece of land that no country wants.
+        </div>
+        <div class="divider"></div>
+        <div class="text-block-title">전체 해석</div>
+        <div class="kor-body">
+          Bir Tawil은 이상한 곳이다. 1899년 1월, 대영 제국의 관리들은 이집트와 수단 사이의 국경을 확정하기로 결정했다. 식민지 방식으로, 그들은 22도 위도선의 편리하게 직선인 선을 사용하기로 결정했다. 놀랄 것도 없이, 이 새로운 국제 국경은 자의적으로 지역 부족과 공동체들을 분열시켰고, 1902년에 영국인들은 부족의 영토를 반영하기 위해 새로운 선을 그었다. 이 두 교차하는 선들의 결합은 두 개의 새로운 지역, 즉 할라입 삼각지대(Hala'ib Triangle)라고 불리는 거주 가능한 커다란 해안 지역과 비르 타윌(Bir Tawil)인 비어 있는 육지에 둘러싸인 사막 구역의 창조를 초래했다. 탐나는 할라입을 차지하기 위해, 이집트는 이해할 만하게도 원래의 1899년 직선 국경을 주장한 반면, 수단은 같은 목표를 염두에 두고 새로운 1902년 선을 주장했다. 이 오래 지속된 갈등의 이상한 결과는, 더 큰 전리품을 포기하는 것을 의미할 것이기 때문에 오늘날까지도 두 국가 모두 대략 런던 크기만 한 땅인 Bir Tawil을 차지하기를 거부한다는 것이다. 이것은 Bir Tawil을 어떤 나라도 원하지 않는 가장 큰, 아마도 유일한 땅 조각으로 만든다.
+        </div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">01</div><h2>직독직해 및 어휘 정리</h2></div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 1</div>
+        <div class="sentence-en">Bir Tawil / is / a strange place.</div>
+        <div class="sentence-ko">Bir Tawil은 / ~이다 / 이상한 곳(이다).</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 2</div>
+        <div class="sentence-en">In January 1899, / administrators / of the British Empire / decided to finalize / a border / between the countries / of Egypt and Sudan.</div>
+        <div class="sentence-ko">1899년 1월에, / 관리들은 / 대영 제국의 / 확정하기로 결정했다 / 국경을 / 국가들 사이의 / 이집트와 수단(이라는).</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> administrator - 관리자, 행정관, finalize - 마무리 짓다, 확정하다, border - 국경, 경계</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 3</div>
+        <div class="sentence-en">In colonial fashion, / they / decided to use / the conveniently straight line / of the twenty-second parallel of latitude.</div>
+        <div class="sentence-ko">식민지 방식으로, / 그들은 / 사용하기로 결정했다 / 편리하게 직선인 선을 / 22도 위도선의.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> colonial - 식민지의, fashion - 방식, 유행, conveniently - 편리하게, parallel of latitude - 위도선</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 4</div>
+        <div class="sentence-en">Unsurprisingly, / this new international border / arbitrarily tore through / local tribes and communities, / and / in 1902, / the British / drew a new line / to reflect tribal territories.</div>
+        <div class="sentence-ko">놀랄 것도 없이, / 이 새로운 국제 국경은 / 자의적으로 분열시켰다(갈라놓았다) / 지역 부족과 공동체들을, / 그리고 / 1902년에, / 영국인들은 / 새로운 선을 그었다 / 부족의 영토를 반영하기 위해.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> unsurprisingly - 놀랄 것도 없이, 당연하게도, arbitrarily - 자의적으로, 임의로, tear through - ~을 확 찢고 지나가다 (tore는 tear의 과거), tribe - 부족, reflect - 반영하다, territory - 영토</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 5</div>
+        <div class="sentence-en">The combination / of these two intersecting lines / brought about / the creation of two new areas: / the large, inhabitable coastal area / called the Hala'ib Triangle / and an empty, landlocked patch of desert, / which is Bir Tawil.</div>
+        <div class="sentence-ko">결합은 / 이 두 교차하는 선들의 / 초래했다 / 두 개의 새로운 지역의 창조를: / (하나는) 크고 거주 가능한 해안 지역인 / 할라입 삼각지대라고 불리는 / 그리고 (하나는) 비어 있고 육지에 둘러싸인 사막 구역인 / (그것이) 비르 타윌(Bir Tawil)이다.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> combination - 결합, intersecting - 교차하는, bring about - 초래하다, inhabitable - 거주할 수 있는, coastal - 해안의, landlocked - 육지에 둘러싸인, patch - (작은) 구역, 조각</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 6</div>
+        <div class="sentence-en">To keep / the desirable Hala'ib, / Egypt / understandably claimed / the original, straight border / of 1899, / whereas / Sudan / — with the same goal in mind — / claimed / the new 1902 line.</div>
+        <div class="sentence-ko">차지(유지)하기 위해 / 탐나는 할라입을, / 이집트는 / 이해할 만하게도 주장했다 / 원래의 직선 국경을 / 1899년의, / 반면에 / 수단은 / - 동일한 목표를 염두에 두고 - / 주장했다 / 새로운 1902년의 선을.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> desirable - 탐나는, 바람직한, understandably - 이해할 만하게도, 당연히, claim - 주장하다, whereas - 반면에</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 7</div>
+        <div class="sentence-en">The strange result / of this long-standing conflict / is / that, / to this day, / both countries / refuse to claim / Bir Tawil, / an area of land roughly the size of London, / as / it / would mean / giving up / a greater prize.</div>
+        <div class="sentence-ko">이상한 결과는 / 이 오래 지속된 갈등의 / ~이다 / ~라는 것 / 오늘날까지도, / 두 나라 모두 / 차지(주장)하기를 거부한다(는 것) / Bir Tawil을, / (즉) 대략 런던 크기만 한 땅 구역인 / 왜냐하면 / 그것(Bir Tawil을 차지하는 것)은 / 의미할 것이기 때문이다 / 포기하는 것을 / 더 큰 전리품을.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> long-standing - 오래 지속된, conflict - 갈등, refuse - 거부하다, roughly - 대략, prize - 전리품, 상</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 8</div>
+        <div class="sentence-en">This / makes / Bir Tawil / the largest / — perhaps the only — / piece of land / that / no country / wants.</div>
+        <div class="sentence-ko">이것은 / 만든다 / Bir Tawil을 / 가장 큰 / - 아마도 유일한 - / 땅 조각으로 / (~하는) / 어떤 나라도 / 원하지 않는.</div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">02</div><h2>어법 및 구문 포인트</h2></div>
+      <div class="card no-break">
+        <div class="point-block">
+          <div class="sentence-id">문장 4</div>
+          <div class="line-item"><strong>[to reflect tribal territories]</strong> 부사적 용법의 투부정사(~하기 위해)로, 서구 열강의 일방적인 직선 긋기로 인해 찢어진 부족의 삶의 터전을 다시 온전히 '반영해주기 위해' 선을 고쳐 그었다는 뜻이다.</div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 5</div>
+          <div class="line-item"><strong>[coastal area called the Hala'ib Triangle]</strong> `area`를 수식하는 과거분사 `called`이다. '할라입 삼각지대라고 불리는'이라는 수동의 의미를 지닌다.</div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 7</div>
+          <div class="line-item"><strong>[The strange result ... is that ... both countries refuse ...]</strong> `that`은 주격 보어 역할을 하는 명사절을 이끄는 접속사다.</div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 7</div>
+          <div class="line-item"><strong>[as it would mean giving up a greater prize]</strong> 접속사 `as`는 이유(~하기 때문에)를 나타낸다. `mean`은 동명사를 목적어로 취하여 `giving up`이 왔다.</div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul><li>`mean to give up`은 '포기할 작정이다'라는 의도를 나타내게 되어 뉘앙스가 달라지므로 문맥상 '포기함을 뜻하다, 의미하다'인 `mean giving up`이 자연스럽다.</li></ul>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 8</div>
+          <div class="line-item"><strong>[makes Bir Tawil the largest ... piece of land]</strong> 5형식 구조로 `make` + 목적어(`Bir Tawil`) + 목적격 보어(`the largest ... piece of land`) 형태를 취한다. 뒤의 `that`은 목적격 관계대명사로 선행사 `land`를 수식한다.</div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">03</div><h2>문장 단위 내용 흐름 정리</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>[(1)-(4) 국경선의 탄생 배경] :</strong> 영국은 이집트와 수단의 국경을 1899년에는 위도에 따라 자의적인 '직선'으로 그었으나, 부족의 거주지를 갈라놓는 문제가 생기자 1902년에 부족의 영토를 반영한 새로운 '곡선' 국경을 하나 더 그었다.</div>
+        <div class="line-item"><strong>[(5) 두 국경선의 교차와 영토의 탄생] :</strong> 이 두 개의 국경선이 겹치면서, 자원이 풍부한 바닷가 땅인 '할라입(Hala'ib)'과 쓸모없는 사막 내륙 땅인 '비르 타윌(Bir Tawil)'이 생겨났다.</div>
+        <div class="line-item"><strong>[(6) 영유권 분쟁의 딜레마] :</strong> 이집트는 1899년 지도를, 수단은 1902년 지도를 각각 자신의 공식 국경으로 주장하고 있다. 왜냐하면 그렇게 주장해야 알짜배기 땅인 '할라입'을 서로 자신의 영토로 만들 수 있기 때문이다.</div>
+        <div class="line-item"><strong>[(7)-(8) 비르 타윌의 역설적 운명] :</strong> 각자가 주장하는 선을 고집하다 보니, 역설적이게도 '비르 타윌'은 두 나라 지도 어디에도 속하지 않는 붕 뜬 땅이 되었다. 비르 타윌을 내 땅이라고 주장하는 순간, 다른 쪽의 쓸모 있는 할라입 땅을 포기하겠다고 인정하는 꼴이 되기 때문에 지구상에서 유일하게 아무도 원하지 않는 '무주지(無主地)'로 남게 되었다.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">04</div><h2>표현들의 연관성 정리</h2></div>
+      <div class="card no-break">
+        <h3>가치 있는 영토</h3>
+        <div class="chip-row">
+          <span class="chip">Desirable Hala'ib</span> <span class="arrow">=</span> <span class="chip">a greater prize</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 20px;">비옥하고 쓸모 있는 해안가 땅으로 이집트와 수단이 모두 탐내는 영토를 뜻한다.</div>
+
+        <h3>버려진 영토</h3>
+        <div class="chip-row">
+          <span class="chip">Empty, landlocked patch of desert</span> <span class="arrow">=</span> <span class="chip">Bir Tawil</span> <span class="arrow">=</span> <span class="chip">piece of land that no country wants</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 4px;">할라입을 차지하려는 외교적 논리 때문에 졸지에 버려진 황량하고 가치 없는 영토를 뜻한다.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">05</div><h2>소재와 주제문</h2></div>
+      <div class="card no-break" style="border-top-color: #f59e0b;">
+        <div class="line-item" style="margin-bottom: 12px;"><strong>핵심 소재:</strong> 이집트와 수단 국경 분쟁으로 인해 주인이 없어진 영토 비르 타윌</div>
+        <div class="mini-divider"></div>
+        <div class="label" style="margin-top: 8px;">주제문 (문장 7)</div>
+        <div class="sentence-en" style="margin-bottom: 0;">The strange result of this long-standing conflict is that, to this day, both countries refuse to claim Bir Tawil, an area of land roughly the size of London, as it would mean giving up a greater prize.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">06</div><h2>지문의 요약 및 패러프레이징</h2></div>
+      <div class="card no-break">
+        <div class="summary-pair">
+          <div class="label">요약 / Summary</div>
+          <div class="sentence-en">The creation of two conflicting borders by the British Empire left Egypt and Sudan fighting over a valuable coastal area, paradoxically rendering the barren inland area of Bir Tawil unclaimed by either nation.</div>
+          <div class="sentence-ko">대영제국에 의한 두 개의 상충하는 국경선의 창조는 이집트와 수단이 가치 있는 해안 지역을 두고 싸우게 만들었으며, 역설적이게도 비르 타윌이라는 척박한 내륙 지역을 두 국가 모두 차지하지 않은 상태로 만들었다.</div>
+        </div>
+        <div class="divider"></div>
+        <div class="summary-pair">
+          <div class="label">패러프레이징 / Paraphrasing</div>
+          <div class="sentence-en">Because claiming the barren desert patch of Bir Tawil requires forfeiting the highly desired Hala'ib region under historical boundary treaties, both Egypt and Sudan deliberately ignore it, making it the only unclaimed territory on Earth.</div>
+          <div class="sentence-ko">척박한 사막 지역인 비르 타윌을 소유한다고 주장하는 것은 역사적 국경 조약에 따라 매우 탐나는 할라입 지역을 포기하는 것을 요구하기 때문에, 이집트와 수단 모두 의도적으로 그것을 무시하며, 그것을 지구상 유일한 무주지로 만든다.</div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">07</div><h2>도움이 되는 배경지식</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>1. 무주지(Terra nullius):</strong><br> 국제법상 어느 국가의 주권에도 속하지 않는 영토. 비르 타윌(Bir Tawil)은 남극이나 공해를 제외하고 지구상에서 실제로 존재하는 매우 희귀한 무주지다. 그래서 가끔 괴짜들이 이곳에 가서 나라를 세웠다며 왕을 자처하는 해프닝이 벌어지기도 한다.</div>
+        <div class="divider"></div>
+        <div class="line-item"><strong>2. 아프리카의 직선 국경:</strong><br> 서구 열강은 19세기 아프리카를 식민 지배하며 아프리카의 민족, 문화, 지형적 특성을 철저히 무시하고 지도에 자를 대고 일방적인 직선(위도/경도)으로 국경을 갈랐다(1899년의 국경). 이로 인해 현재까지도 아프리카 곳곳에서 끔찍한 부족 분쟁과 내전이 발생하고 있다.</div>
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>

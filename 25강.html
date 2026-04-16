@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>25강 지문분석 (1번, 3번) - Lio T</title>
+  <style>
+    /* 디자인 시스템 변수 설정 */
+    :root {
+      --bg-color: #f4f7fb;
+      --text-main: #0f172a;
+      --text-sub: #334155;
+      --text-muted: #64748b;
+      --primary: #4f46e5;
+      --primary-light: #e0e7ff;
+      --secondary: #3b82f6;
+      --border-light: #e2e8f0;
+      --card-bg: #ffffff;
+      --radius: 12px;
+    }
+
+    /* 페이지 기본 설정 (세로 모드) */
+    @page {
+      size: A4 portrait;
+      margin: 15mm; 
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg-color);
+      color: var(--text-main);
+      font-family: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+      letter-spacing: -0.02em; 
+    }
+
+    body {
+      padding: 10px; 
+      display: flex;
+      justify-content: center;
+    }
+
+    .doc {
+      width: 100%;
+      max-width: 210mm; 
+    }
+
+    /* =========================================
+       지문 간 구분선 (화면용 vs 인쇄용)
+       ========================================= */
+    .passage-separator {
+      height: 4px;
+      background-image: repeating-linear-gradient(to right, #cbd5e1 0, #cbd5e1 10px, transparent 10px, transparent 20px);
+      margin: 80px 0;
+      border: none;
+      position: relative;
+    }
+    .passage-separator::after {
+      content: '▼ 다음 지문 (인쇄 시 무조건 새 페이지에서 시작됩니다) ▼';
+      position: absolute;
+      top: -26px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--bg-color);
+      padding: 0 16px;
+      color: #94a3b8;
+      font-weight: 700;
+      font-size: 10pt;
+    }
+
+    /* 공통 레이아웃 제어 */
+    .no-break { page-break-inside: avoid; break-inside: avoid; }
+    
+    .header-container { margin-bottom: 30px; text-align: center; }
+    .hero-title {
+      display: inline-block; margin: 0 0 10px 0; padding: 8px 24px; font-size: 22pt; font-weight: 800;
+      color: #ffffff; background: linear-gradient(135deg, var(--primary), var(--secondary));
+      border-radius: 999px; box-shadow: 0 4px 14px rgba(79, 70, 229, 0.25);
+    }
+    .subtitle { font-size: 13pt; font-weight: 600; color: var(--text-muted); }
+
+    .section-title {
+      display: flex; align-items: center; gap: 12px; margin: 30px 0 16px 0;
+      border-bottom: 2px solid var(--border-light); padding-bottom: 4px;
+      page-break-after: avoid; break-after: avoid;
+    }
+    .page-no {
+      width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+      background: var(--primary); color: white; font-weight: 700; font-size: 12pt; border-radius: 8px;
+    }
+    h2 { margin: 0; font-size: 16pt; font-weight: 700; color: var(--text-main); }
+
+    .card {
+      background: var(--card-bg); border: 1px solid var(--border-light); border-top: 4px solid var(--primary);
+      border-radius: var(--radius); padding: 8px 16px; margin-bottom: 16px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    }
+    
+    .text-block-title { font-size: 12pt; font-weight: 700; color: var(--primary); margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+    .text-block-title::before { content: ''; display: block; width: 6px; height: 6px; border-radius: 50%; background: var(--primary); }
+    .eng-body { font-size: 12pt; line-height: 1.7; font-weight: 500; color: var(--text-main); margin-bottom: 20px; text-align: justify; }
+    .divider { height: 1px; background: var(--border-light); margin: 20px 0; }
+    .mini-divider { height: 1px; background: var(--border-light); margin: 8px 0; }
+    .kor-body { font-size: 11.5pt; line-height: 1.7; color: var(--text-sub); text-align: justify; word-break: keep-all; }
+
+    .sentence-card {
+      background: var(--card-bg); border: 1px solid var(--border-light); border-left: 4px solid var(--secondary);
+      border-radius: 8px; padding: 8px 16px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    }
+    .sentence-id { display: inline-block; margin-bottom: 8px; padding: 2px 8px; border-radius: 6px; background: var(--primary-light); color: var(--primary); font-size: 9pt; font-weight: 700; }
+    .sentence-en { font-size: 12.5pt; font-weight: 600; line-height: 1.6; color: var(--text-main); margin-bottom: 4px; }
+    .sentence-ko { font-size: 9pt; line-height: 1.6; color: var(--text-sub); margin-bottom: 4px; word-break: keep-all; }
+    .vocab-box { display: inline-block; padding: 4px 8px; border-radius: 6px; background: #f8fafc; border: 1px dashed #cbd5e1; font-size: 9pt; color: var(--text-muted); margin-bottom: 4px;}
+    .analysis-text { font-size: 9.5pt; color: var(--text-muted); line-height: 1.5; margin-top: 4px;}
+
+    .point-block { margin-bottom: 16px; }
+    .point-block:last-child { margin-bottom: 0; }
+    .line-item { font-size: 11.5pt; line-height: 1.7; margin: 0 0 8px 0; word-break: keep-all; }
+    .exam-note { margin-top: 8px; padding: 8px 12px; background: #fffbeb; border-left: 3px solid #f59e0b; border-radius: 0 6px 6px 0; font-size: 10.5pt; line-height: 1.6; color: #92400e; }
+    .exam-note ul { margin: 4px 0 0 0; padding-left: 20px; }
+    .exam-note li { margin-bottom: 4px; }
+    .exam-note li:last-child { margin-bottom: 0; }
+
+    .chip-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 8px 0 20px 0; }
+    .chip { padding: 4px 10px; border-radius: 999px; background: var(--primary-light); color: var(--primary); font-size: 10pt; font-weight: 600; }
+    .arrow { color: var(--text-muted); font-weight: 700; }
+    h3 { font-size: 12pt; margin: 0 0 8px 0; color: var(--text-main); }
+    .label { display: inline-block; font-size: 9.5pt; font-weight: 700; color: var(--secondary); background: #eff6ff; padding: 2px 6px; border-radius: 4px; margin-bottom: 6px; }
+    .summary-pair { margin-bottom: 20px; }
+    .summary-pair:last-child { margin-bottom: 0; }
+
+    .img-box { text-align: center; padding: 20px; margin: 10px 0; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px; color: var(--text-muted); font-size: 11pt;}
+
+    /* =========================================
+       인쇄(Print) 전용 스타일 - 다중 지문 분할 처리
+       ========================================= */
+    @media print {
+      html, body { background: #ffffff !important; padding: 0; }
+      .doc { max-width: 100%; }
+
+      .passage-separator {
+        page-break-before: always !important;
+        break-before: page !important;
+        margin: 0 !important;
+        height: 0 !important;
+        border: none !important;
+        background: none !important;
+      }
+      .passage-separator::after { display: none !important; }
+
+      .page-break { page-break-before: always !important; break-before: page !important; }
+      .card, .sentence-card { box-shadow: none !important; border: 1px solid #cbd5e1 !important; page-break-inside: avoid !important; break-inside: avoid !important; }
+      .section-title { page-break-after: avoid !important; break-after: avoid !important; }
+
+      .hero-title { background: #0f172a !important; color: white !important; }
+      .page-no { background: #0f172a !important; }
+      .sentence-id, .chip, .label { border: 1px solid #cbd5e1 !important; background: #f8fafc !important; color: #0f172a !important; }
+      .exam-note { background: #f8fafc !important; border-left-color: #94a3b8 !important; color: #334155 !important; }
+      .img-box { background: #ffffff !important; border-color: #94a3b8 !important; color: #334155 !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="doc">
+
+    <!-- ========================================== -->
+    <!-- [지문 2] 25강 1번                          -->
+    <!-- ========================================== -->
+    <div class="passage-container">
+      <div class="header-container">
+        <div class="hero-title">25강 1번 지문분석</div>
+        <div class="subtitle">Lio T 내신대비 지문분석서</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">00</div><h2>영어 본문 및 전체 해석</h2></div>
+      <div class="card no-break">
+        <div class="text-block-title">영어 본문</div>
+        <div class="eng-body">
+          Teaching reflects what society itself demands; it necessitates that disorder — of students and teachers alike, of mind, behavior, and environment — yield to its opposite. Effective teaching requires that, failing their own self-imposed order, students experience the imposition of some outer order so that inner order may develop. This means in practice, for instance, that the goals of classes and courses be clearly set, that they be explained and justified, that the manner of achieving them be clear, that the presentation of materials conducive to reaching them be appropriate, and that all activities be directed somehow to their attainment. It means, too, that students take up their own obligation to maintain the conditions under which learning occurs: quiet in their classrooms, respect for and courtesy toward others, civility of language and behavior, and the like. Above all, it implies structured industry — study and activity that are oriented toward a goal and pursued with perseverance and method. That is, good teaching requires that teachers and students subject themselves to external and internal control so that learning can take place.
+        </div>
+        <div class="divider"></div>
+        <div class="text-block-title">전체 해석</div>
+        <div class="kor-body">
+          가르침은 사회 자체가 요구하는 것을 반영한다. 그것은 학생과 교사 모두의, 마음, 행동, 그리고 환경의 무질서가 그 정반대의 것(질서)에 굴복할 것을 불가피하게 만든다. 효과적인 가르침은, 학생들이 스스로 부과한 질서에 이르지 못할 경우, 내적 질서가 발달할 수 있도록 그들이 어떤 외적 질서의 부과를 경험할 것을 요구한다. 예를 들어, 이것은 실제로는 학급과 과정의 목표가 명확히 설정되고, 그것들이 설명되고 정당화되며, 그것들을 성취하는 방식이 명확하고, 그것들에 도달하는 데 도움이 되는 자료의 제시가 적절하며, 모든 활동이 어떻게든 그것들(목표)의 달성으로 향하도록 지시되는 것을 의미한다. 그것은 또한 학생들이 학습이 일어나는 조건을 유지할 자신의 의무를 기꺼이 맡는 것을 의미하는데, 교실에서의 정숙, 타인에 대한 존중과 예의, 언어와 행동의 정중함 등이다. 무엇보다도, 그것은 구조화된 근면성, 즉 목표를 지향하고 인내심과 체계적인 방법으로 추구되는 연구와 활동을 암시한다. 즉, 훌륭한 가르침은 학습이 일어날 수 있도록 교사와 학생이 자신들을 외적이고 내적인 통제에 따르게 할 것을 요구한다.
+        </div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">01</div><h2>직독직해 및 어휘 정리</h2></div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 1</div>
+        <div class="sentence-en">Teaching / reflects / what society itself demands; / it / necessitates / that disorder / — of students and teachers alike, / of mind, behavior, and environment — / yield / to its opposite.</div>
+        <div class="sentence-ko">가르침은 / 반영한다 / 사회 자체가 요구하는 것을 / 그것은 / 불가피하게 만든다 / 무질서가 / 학생과 교사 모두의 / 마음, 행동, 그리고 환경의 / 굴복할 것을 / 그것의 정반대(질서)에.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> necessitate - 불가피하게 만들다, disorder - 무질서, alike - 둘 다(똑같이), yield to - ~에 굴복하다</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 가르침은 사회의 요구를 반영하며, 필연적으로 교실 안의 무질서가 질서로 바뀌게 만든다.<br>
+          <strong>역할:</strong> 교육(가르침)의 본질이 무질서를 통제하여 질서를 확립하는 것임을 선언한다.
+        </div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 2</div>
+        <div class="sentence-en">Effective teaching / requires / that, / failing their own self-imposed order, / students / experience / the imposition / of some outer order / so that inner order may develop.</div>
+        <div class="sentence-ko">효과적인 가르침은 / 요구한다 / (~할 것을) / 그들 스스로 부과한 질서에 미치지 못할 경우 / 학생들이 / 경험할 (것을) / 부과를 / 어떤 외적 질서의 / 내적 질서가 발달할 수 있도록.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> self-imposed - 스스로 부과한, imposition - 부과, outer order - 외적 질서</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 학생 스스로 내적 질서를 잡지 못하면, 외부의 질서를 강제하여 내적 질서를 키우도록 해야 한다.<br>
+          <strong>역할:</strong> 학생의 내면적 통제력을 기르기 위해 외적 통제(규율 등)가 필요함을 설명한다.
+        </div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 3</div>
+        <div class="sentence-en">This / means / in practice, / for instance, / that the goals of classes and courses be clearly set, / that they be explained and justified, / that the manner of achieving them be clear, / that the presentation of materials / conducive to reaching them / be appropriate, / and that all activities be directed / somehow to their attainment.</div>
+        <div class="sentence-ko">이것은 / 의미한다 / 실제로는 / 예를 들어 / 학급과 과정의 목표가 명확히 설정되고 / 그것들이 설명되고 정당화되며 / 그것들을 성취하는 방식이 명확하고 / 자료의 제시가 / 그것들에 도달하는 데 도움이 되는 / 적절하며 / 그리고 모든 활동이 지시되어야 한다는 것을 / 어떻게든 그것들의 달성으로.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> in practice - 실제로는, justify - 정당화하다, conducive to - ~에 도움이 되는, attainment - 성취(달성)</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 구체적으로 이는 교육 목표가 뚜렷하고, 과정이 합리적이며, 모든 활동이 목표 달성을 향해 정렬되어야 함을 뜻한다.<br>
+          <strong>역할:</strong> 앞서 말한 '질서(통제)'가 교사의 수업 설계 및 목표 지향적 측면에서 어떻게 나타나는지 예시를 든다.
+        </div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 4</div>
+        <div class="sentence-en">It / means, / too, / that students take up their own obligation / to maintain the conditions / under which learning occurs: / quiet in their classrooms, respect for and courtesy toward others, civility of language and behavior, and the like.</div>
+        <div class="sentence-ko">그것은 / 의미한다 / 또한 / 학생들이 자신의 의무를 맡아야 한다는 것을 / 조건을 유지할 / 학습이 일어나는 / (즉) 교실에서의 정숙, 타인에 대한 존중과 예의, 언어와 행동의 정중함 등(이다).</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> take up - 맡다, obligation - 의무, courtesy - 예의, civility - 정중함</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 또한 이는 학생 측면에서도 정숙, 예의 등 학습 조건을 유지할 의무를 진다는 것을 의미한다.<br>
+          <strong>역할:</strong> '질서'가 학생의 자발적 의무와 행동 규범 측면에서 어떻게 적용되는지 설명한다.
+        </div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 5</div>
+        <div class="sentence-en">Above all, / it / implies / structured industry / — study and activity / that are oriented toward a goal / and pursued with perseverance and method.</div>
+        <div class="sentence-ko">무엇보다도 / 그것은 / 암시한다 / 구조화된 근면성을 / 즉 연구와 활동을 / 목표를 지향하고 / 인내와 체계적인 방법으로 추구되는.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> industry - 근면성, oriented - 지향하는, pursue - 추구하다, perseverance - 인내(심)</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 이 모든 것은 목표를 향해 체계적이고 인내심 있게 나아가는 구조화된 근면성을 의미한다.<br>
+          <strong>역할:</strong> 교육적 질서의 궁극적 지향점이 체계적인 인내와 노력을 통한 목표 달성임을 요약한다.
+        </div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 6</div>
+        <div class="sentence-en">That is, / good teaching / requires / that teachers and students subject themselves / to external and internal control / so that learning can take place.</div>
+        <div class="sentence-ko">즉 / 훌륭한 가르침은 / 요구한다 / 교사와 학생이 자신들을 복종시킬 것을 / 외적이고 내적인 통제에 / 학습이 일어날 수 있도록.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> subject A to B - A를 B에 종속시키다(복종시키다)</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 좋은 가르침은 학습을 위해 교사와 학생 모두가 내외부의 통제에 복종할 것을 요구한다.<br>
+          <strong>역할:</strong> 본문의 빈칸 추론 문장으로, 학습이 이루어지려면 내적/외적 '질서(통제)'가 필수적이라는 글의 요지를 단적으로 제시한다.
+        </div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">02</div><h2>어법 및 구문 포인트</h2></div>
+      <div class="card no-break">
+        <div class="point-block">
+          <div class="sentence-id">문장 1</div>
+          <div class="line-item"><strong>[it necessitates that disorder ... yield to its opposite.]</strong></div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul>
+              <li>요구, 제안, 주장, 필요를 나타내는 동사(<code>necessitate</code>, <code>require</code>, <code>demand</code> 등) 뒤의 <code>that</code> 절에서는 조동사 <code>should</code>가 생략된 동사원형을 쓴다. 무질서(<code>disorder</code>)가 3인칭 단수임에도 불구하고 동사원형 <code>yield</code>가 쓰인 이유이다. 수일치를 묻는 문제로 자주 출제된다.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 3</div>
+          <div class="line-item"><strong>[This means in practice, for instance, that the goals of classes and courses be clearly set, that they be explained and justified...]</strong></div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul>
+              <li>동사 <code>means</code>가 단순히 사실을 전달하는 것이 아니라 "~해야 한다는 것을 의미한다"라는 당위성을 내포하고 있으므로, 목적어인 5개의 <code>that</code> 절 모두에서 <code>should</code>가 생략된 형태인 <code>be set</code>, <code>be explained</code>, <code>be clear</code>, <code>be appropriate</code>, <code>be directed</code>가 쓰였다.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 6</div>
+          <div class="line-item"><strong>[good teaching requires that teachers and students subject themselves to external and internal control so that learning can take place.]</strong></div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul>
+              <li>당위성을 나타내는 동사 <code>requires</code> 뒤의 <code>that</code> 절에서 동사원형 <code>subject</code>가 사용되었다.</li>
+              <li>주어인 <code>teachers and students</code>와 목적어가 동일하므로 재귀대명사 <code>themselves</code>가 쓰였다. <code>subject</code>는 여기서 동사로 쓰여 '~을 복종시키다, 따르게 하다'라는 의미를 갖는다.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">03</div><h2>문장 단위 내용 흐름 정리</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>[도입 및 전제 (문장 1~2)] :</strong> 가르침은 사회의 요구를 반영하여 무질서를 타파하고, 학생의 내적 질서를 위해 외적 질서를 강제하기도 함.</div>
+        <div class="line-item"><strong>[적용: 교사/수업 측면 (문장 3)] :</strong> 명확한 목표 설정, 적절한 자료 제시 등 통제되고 구조화된 수업 방식을 의미함.</div>
+        <div class="line-item"><strong>[적용: 학생 측면 (문장 4)] :</strong> 수업 중 예의, 정숙 등 학습을 위한 규범(조건)을 학생들이 스스로 지켜야 함을 의미함.</div>
+        <div class="line-item"><strong>[요약 및 결론 (문장 5~6)] :</strong> 이러한 질서는 곧 '구조화된 근면성'을 뜻하며, 궁극적으로 훌륭한 교육을 위해서는 교사와 학생 모두 내적·외적 통제에 자신을 맞춰야 함을 역설함.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">04</div><h2>표현들의 연관성 정리</h2></div>
+      <div class="card no-break">
+        <h3>무질서와 질서의 대립</h3>
+        <div class="chip-row">
+          <span class="chip">disorder</span> <span class="arrow">vs</span> <span class="chip">opposite (order)</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 20px;">교육 전의 정돈되지 않은 상태와 교육이 지향하는 '질서 정연함'의 대립을 나타낸다.</div>
+
+        <h3>통제의 방향성 (외부에서 내부로)</h3>
+        <div class="chip-row">
+          <span class="chip">outer order</span> <span class="arrow">→</span> <span class="chip">self-imposed order (inner order)</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 20px;">외부 규칙(교율, 수업 구조)과 내부 규율(스스로의 통제)을 뜻하며, 교육을 통해 외부에서 내부로 이양되는 통제력을 보여준다.</div>
+
+        <h3>학습의 필수 조건 (통제)</h3>
+        <div class="chip-row">
+          <span class="chip">external and internal control</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 4px;">본문의 빈칸 정답에 해당하는 표현으로, 앞서 나온 outer/inner order와 일맥상통하는 개념이다. 학습이 일어나기 위한 필수 조건이다.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">05</div><h2>소재와 주제문</h2></div>
+      <div class="card no-break" style="border-top-color: #f59e0b;">
+        <div class="line-item" style="margin-bottom: 12px;"><strong>핵심 소재:</strong> 학습이 이루어지기 위해 필수적으로 요구되는 내적·외적 질서(통제)</div>
+        <div class="mini-divider"></div>
+        <div class="label" style="margin-top: 8px;">주제문 (문장 6)</div>
+        <div class="sentence-en" style="margin-bottom: 0;">That is, good teaching requires that teachers and students subject themselves to external and internal control so that learning can take place.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">06</div><h2>지문의 요약 및 패러프레이징</h2></div>
+      <div class="card no-break">
+        <div class="summary-pair">
+          <div class="label">요약 / Summary</div>
+          <div class="sentence-en">Effective teaching is a process of eliminating disorder and establishing inner and outer order through clear class goals and students' adherence to norms, making the control of both teachers and students essential for successful learning.</div>
+          <div class="sentence-ko">효과적인 가르침은 무질서를 배제하고 명확한 수업 목표와 학생의 규범 준수를 통해 내적, 외적 질서를 세우는 과정이며, 성공적인 학습을 위해 교사와 학생 모두의 통제가 필수적이다.</div>
+        </div>
+        <div class="divider"></div>
+        <div class="summary-pair">
+          <div class="label">패러프레이징 / Paraphrasing</div>
+          <div class="sentence-en">Education essentially involves overcoming an uncontrolled state and establishing discipline; true learning is realized only when both structured instructional content and learners' adherence to etiquette subject themselves to internal and external constraints.</div>
+          <div class="sentence-ko">교육은 본질적으로 통제되지 않은 상태를 극복하고 규율을 확립하는 행위이며, 수업 내용의 구조화와 학습자의 예절 준수 등 스스로를 대내외적 제약에 따르게 함으로써 비로소 진정한 배움이 실현된다.</div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">07</div><h2>도움이 되는 배경지식</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>1. 교육과 규율 (Discipline in Education):</strong><br> 전통적인 교육 철학에서 훈육과 규율은 단순한 억압이 아니라, 자유롭고 주체적인 자아(inner order)를 형성하기 위해 거쳐야 하는 필수적인 외적 비계(scaffolding)로 간주된다.</div>
+        <div class="divider"></div>
+        <div class="line-item"><strong>2. 존 듀이(John Dewey)와 교육의 사회적 기능:</strong><br> 교육은 개인을 사회화하고 사회의 요구를 반영하는 매개체이다. 지문에서 "Teaching reflects what society itself demands"라는 부분은 교육의 이러한 사회적 책무를 나타낸다.</div>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- [지문 4] 25강 3번                          -->
+    <!-- ========================================== -->
+    <hr class="passage-separator" />
+    
+    <div class="passage-container">
+      <div class="header-container">
+        <div class="hero-title">25강 3번 지문분석</div>
+        <div class="subtitle">Lio T 내신대비 지문분석서</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">00</div><h2>영어 본문 및 전체 해석</h2></div>
+      <div class="card no-break">
+        <div class="text-block-title">영어 본문</div>
+        <div class="eng-body">
+          The experiences of learning to ride a bicycle or drive a car illustrate well how the “what” and “how” systems — those involved in object identification and practical action — might interact during development. When we learn to drive a car, we go through a first stage where each required action and sequence of actions — such as looking in the mirror, signaling with the blinker, pressing the clutch prior to shifting into gear, and so forth — are explicitly thought of and double-checked while monitoring our situation in the environment. Once learned and after a few hours of practice, the required actions for driving become second nature, transferable to almost any vehicle and performed without explicit thinking. Information appears to be perceived directly; the affordances of the road, the car, and the traffic implicitly detected. Actually, this sort of automatization of conscious learning can be jeopardized by the return of explicit awareness. If you start to think too much about your driving, you actually increase your chances of having an accident. People in sport competitions confirm that self-consciousness is one’s worst enemy: tennis, golf, or billiard players commonly report that they lose their “touch” by thinking too much about their moves.
+        </div>
+        <div class="divider"></div>
+        <div class="text-block-title">전체 해석</div>
+        <div class="kor-body">
+          자전거를 타거나 자동차를 운전하는 법을 배우는 경험은 대상 식별 및 실질적 행동과 관련된 "무엇" 시스템과 "어떻게" 시스템이 발달 과정 동안 어떻게 상호작용하는지 잘 보여준다. 운전을 배울 때, 우리는 백미러 보기, 방향 지시등 켜기, 기어를 바꾸기 전에 클러치 밟기 등과 같이 각각의 필요한 행동과 행동 순서를 주변 상황을 모니터링하는 동안 명시적으로 생각하고 재확인하는 첫 번째 단계를 거친다. 일단 학습하고 몇 시간의 연습을 거친 후에는, 운전에 필요한 행동들이 제2의 천성이 되어 거의 모든 차량에 적용될 수 있고 명시적인 생각 없이 수행된다. 정보는 직접적으로 인식되는 것처럼 보이며, 도로, 자동차, 그리고 교통의 행동 유도성은 암묵적으로 감지된다. 실제로 이러한 의식적 학습의 자동화는 명시적 인식이 돌아옴으로써 위험에 처할 수 있다. 만약 여러분이 운전에 대해 너무 많이 생각하기 시작한다면, 여러분은 사실 사고가 날 확률을 높이는 것이다. 스포츠 경기에 참가하는 사람들은 자의식이 가장 나쁜 적임을 확인해 준다. 테니스, 골프, 또는 당구 선수들은 자신들의 움직임에 대해 너무 많이 생각함으로써 자신들의 '감'을 잃는다고 흔히 보고한다.
+        </div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">01</div><h2>직독직해 및 어휘 정리</h2></div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 1</div>
+        <div class="sentence-en">The experiences / of learning to ride a bicycle or drive a car / illustrate / well / how the “what” and “how” systems / — those involved in object identification and practical action — / might interact / during development.</div>
+        <div class="sentence-ko">경험은 / 자전거 타기나 자동차 운전을 배우는 / 잘 보여준다 / 어떻게 "무엇"과 "어떻게" 시스템이 / 즉 대상 식별과 실질적 행동과 관련된 것들이 / 상호작용하는지를 / 발달 동안.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> illustrate - 보여주다(설명하다), identification - 식별, practical action - 실질적 행동</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 자전거 타기나 운전 학습은 뇌의 '대상 식별'과 '행동 실행' 시스템이 어떻게 상호작용하는지 보여준다.<br>
+          <strong>역할:</strong> 글의 화두인 인지적 시스템(의식적 생각 vs. 무의식적 행동)의 발달 과정을 운전 학습을 예시로 들어 도입한다.
+        </div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 2</div>
+        <div class="sentence-en">When we learn to drive a car, / we / go / through a first stage / where each required action and sequence of actions / — such as looking in the mirror, signaling with the blinker, pressing the clutch / prior to shifting into gear, and so forth — / are explicitly thought of and double-checked / while monitoring our situation / in the environment.</div>
+        <div class="sentence-ko">우리가 운전을 배울 때 / 우리는 / 겪는다 / 첫 번째 단계를 / 각각의 필요한 행동과 행동 순서가 / (예를 들어 백미러 보기, 깜빡이 켜기, 클러치 누르기 같은 / 기어 변속 전에, 등등) / 명시적으로 생각되고 재확인되는 / 상황을 모니터링하는 동안 / 주변 환경의.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> sequence - 순서, prior to - ~전에, explicitly - 명시적으로(분명하게)</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 운전 학습 초기에는 모든 동작을 머릿속으로 일일이 따지고 의식적으로 확인한다.<br>
+          <strong>역할:</strong> 기술 습득의 1단계인 '의식적이고 명시적인 인지 과정(explicit awareness)'을 설명한다.
+        </div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 3</div>
+        <div class="sentence-en">Once learned and after a few hours of practice, / the required actions / for driving / become / second nature, / transferable to almost any vehicle / and performed without explicit thinking.</div>
+        <div class="sentence-ko">일단 학습되고 몇 시간의 연습을 거치면 / 필요한 행동들은 / 운전을 위해 / 제2의 천성이 된다 / 거의 모든 차량에 전이될 수 있고 / 명시적인 생각 없이 수행되는.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> second nature - 제2의 천성(몸에 밴 습관), transferable - 전이할 수 있는(적용 가능한)</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 연습 후에는 운전 동작들이 몸에 배어 의식적인 생각 없이도 자동으로 수행된다.<br>
+          <strong>역할:</strong> 기술 습득의 2단계인 '무의식적이고 자동화된 행동(automatization)'을 설명한다.
+        </div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 4</div>
+        <div class="sentence-en">Information / appears / to be perceived / directly; / the affordances / of the road, the car, and the traffic / (are) implicitly detected.</div>
+        <div class="sentence-ko">정보는 / ~인 것처럼 보인다 / 직접 인식되는 것(처럼) / 도로, 자동차, 교통의 행동 유도성은 / 암묵적으로 감지된다.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> affordance - 행동 유도성, implicitly - 암묵적으로, 무의식적으로</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 운전에 필요한 주변 정보들이 무의식적이고 자연스럽게 뇌에 감지된다.<br>
+          <strong>역할:</strong> 자동화 단계에서 우리의 인지 시스템이 작동하는 방식을 구체화한다.
+        </div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 5</div>
+        <div class="sentence-en">Actually, / this sort of automatization / of conscious learning / can be jeopardized / by the return / of explicit awareness.</div>
+        <div class="sentence-ko">실제로 / 이러한 종류의 자동화는 / 의식적 학습의 / 위험에 빠질 수 있다 / 귀환(돌아옴)에 의해 / 명시적인 인식의.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> automatization - 자동화, jeopardize - 위험에 빠뜨리다</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 기껏 몸에 밴 자동화된 행동이, 다시 의식적으로 생각하려 들면 오히려 꼬이게(위험해지게) 된다.<br>
+          <strong>역할:</strong> 주어진 삽입 문장으로, 자동화된 행동에 '의식(explicit awareness)'이 끼어들 때 발생하는 역효과를 제시하여 글의 논리를 반전시킨다.
+        </div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 6</div>
+        <div class="sentence-en">If you start to think / too much / about your driving, / you / actually increase / your chances / of having an accident.</div>
+        <div class="sentence-ko">만약 여러분이 생각하기 시작한다면 / 너무 많이 / 여러분의 운전에 대해 / 여러분은 / 사실 확률을 높이는 것이다 / 사고를 낼.</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 운전할 때 동작을 지나치게 의식하면 오히려 사고가 날 확률이 높아진다.<br>
+          <strong>역할:</strong> 명시적 인식이 돌아와 자동화를 망치는 구체적인 예시(운전 사고)를 제시한다.
+        </div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 7</div>
+        <div class="sentence-en">People / in sport competitions / confirm / that self-consciousness is one’s worst enemy: / tennis, golf, or billiard players / commonly report / that they lose their “touch” / by thinking too much / about their moves.</div>
+        <div class="sentence-ko">사람들은 / 스포츠 경기의 / 확인해 준다 / 자의식이 가장 큰 적임을 / 테니스, 골프, 당구 선수들은 / 흔히 보고한다 / 그들이 '감'을 잃는다고 / 너무 많이 생각함으로써 / 자신들의 움직임에 대해.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> self-consciousness - 자의식(남을 의식함, 자기 자신을 의식함), billiard - 당구</div>
+        <div class="analysis-text">
+          <strong>문장 요약:</strong> 운동선수들도 자신의 동작을 과도하게 의식하면 원래 있던 감을 잃고 실수를 한다.<br>
+          <strong>역할:</strong> 운전뿐만 아니라 스포츠 등 고도의 숙련이 필요한 다른 분야에서도 동일한 역효과가 발생함을 보여주며 주장을 확고히 다진다.
+        </div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">02</div><h2>어법 및 구문 포인트</h2></div>
+      <div class="card no-break">
+        <div class="point-block">
+          <div class="sentence-id">문장 3</div>
+          <div class="line-item"><strong>[Once learned and after a few hours of practice, the required actions for driving become second nature, transferable to almost any vehicle and performed without explicit thinking.]</strong></div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul>
+              <li><code>Once learned</code>는 <code>Once they are learned</code>에서 주어와 <code>be</code>동사가 생략된 분사구문이다. 행동들이 '학습되는' 수동 관계이므로 과거분사가 쓰였다.</li>
+              <li><code>second nature</code> 뒤에 부연 설명으로 형용사구 <code>transferable ~</code>과 분사구 <code>performed ~</code>가 접속사 <code>and</code>로 병렬 연결되어 있다.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 4</div>
+          <div class="line-item"><strong>[Information appears to be perceived directly; the affordances of the road, the car, and the traffic implicitly detected.]</strong></div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul>
+              <li><code>the affordances ... implicitly detected</code> 부분은 분사구문(독립분사구문)이거나 세미콜론 뒤에 <code>are</code>가 생략된 형태로 분석할 수 있다. 의미상 '(행동 유도성이) 암묵적으로 감지된 채로'라는 수동의 뜻이므로 과거분사 <code>detected</code>가 적절하다.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">03</div><h2>문장 단위 내용 흐름 정리</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>[도입 (문장 1~2)] :</strong> 신체 기술(운전 등)을 배울 때, 처음에는 모든 동작을 일일이 따지고 계산하는 명시적(explicit) 인식 단계를 거침.</div>
+        <div class="line-item"><strong>[발전 (문장 3~4)] :</strong> 연습을 통해 이 동작들이 무의식적이고 암묵적인(implicit) 수준으로 자동화(automatization)됨.</div>
+        <div class="line-item"><strong>[반전 및 문제 제기 (문장 5)] :</strong> 잘 확립된 자동화 시스템에 갑자기 명시적 인식이 끼어들면 동작이 엉키는 위험이 발생함. (주어진 문장 삽입 위치)</div>
+        <div class="line-item"><strong>[예시 및 결론 (문장 6~7)] :</strong> 운전 중에 동작 하나하나를 다시 생각하려 하면 사고 위험이 커지고, 스포츠 선수들도 자의식(생각)이 개입되면 운동의 '감'을 잃는다고 호소함.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">04</div><h2>표현들의 연관성 정리</h2></div>
+      <div class="card no-break">
+        <h3>의식적이고 명시적인 인지 상태</h3>
+        <div class="chip-row">
+          <span class="chip">explicitly thought of</span> <span class="arrow">=</span> <span class="chip">explicit awareness</span> <span class="arrow">=</span> <span class="chip">self-consciousness</span> <span class="arrow">=</span> <span class="chip">thinking too much</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 20px;">신체 동작을 관장하는 '의식적이고 명시적인 인지 상태'를 나타내는 표현들이다. 초보일 땐 필수적이나 숙련자에게는 방해가 된다.</div>
+
+        <h3>자동화된 무의식적 절차</h3>
+        <div class="chip-row">
+          <span class="chip">automatization</span> <span class="arrow">=</span> <span class="chip">second nature</span> <span class="arrow">=</span> <span class="chip">implicitly detected</span> <span class="arrow">=</span> <span class="chip">without explicit thinking</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 4px;">훈련을 통해 체득되어 의식 없이도 물 흐르듯 실행되는 '자동화된 무의식적 절차'를 가리킨다.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">05</div><h2>소재와 주제문</h2></div>
+      <div class="card no-break" style="border-top-color: #f59e0b;">
+        <div class="line-item" style="margin-bottom: 12px;"><strong>핵심 소재:</strong> 기술의 자동화 과정 및 과도한 의식(자의식)이 자동화된 기술에 미치는 역효과</div>
+        <div class="mini-divider"></div>
+        <div class="label" style="margin-top: 8px;">주제문 (문장 5)</div>
+        <div class="sentence-en" style="margin-bottom: 0;">Actually, this sort of automatization of conscious learning can be jeopardized by the return of explicit awareness.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">06</div><h2>지문의 요약 및 패러프레이징</h2></div>
+      <div class="card no-break">
+        <div class="summary-pair">
+          <div class="label">요약 / Summary</div>
+          <div class="sentence-en">Skills such as driving or sports reach a stage of automatization through practice, where they are performed without explicit thought; however, overly becoming conscious of one's movements at this stage disrupts the acquired sense and causes errors.</div>
+          <div class="sentence-ko">운전이나 스포츠와 같은 기술은 연습을 통해 명시적 생각 없이 수행되는 자동화 단계에 이르는데, 이때 자신의 동작을 과도하게 의식하게 되면 오히려 숙련된 감각이 무너지고 실수가 발생한다.</div>
+        </div>
+        <div class="divider"></div>
+        <div class="summary-pair">
+          <div class="label">패러프레이징 / Paraphrasing</div>
+          <div class="sentence-en">Once we master a skill, conscious thought processes are replaced by implicit, automatic physical responses. Nevertheless, even highly trained experts cannot avoid a decline in performance when they force themselves to explicitly monitor their physical mechanisms.</div>
+          <div class="sentence-ko">우리가 무언가를 숙달하게 되면 의식적인 사고 과정은 암묵적이고 자동적인 신체 반응으로 대체된다. 그러나 고도로 훈련된 전문가조차 자신의 신체 메커니즘을 억지로 자각하려 들면 수행 능력의 저하를 피할 수 없다.</div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">07</div><h2>도움이 되는 배경지식</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>1. 운동 기억과 절차적 기억 (Procedural Memory):</strong><br> 자전거 타기, 악기 연주, 운전 등 몸으로 익힌 기억은 뇌의 기저핵과 소뇌에 저장되어 의식적인 회상 없이 자동으로 출력된다. 반면 사실이나 지식을 다루는 '서술적 기억'은 대뇌피질에서 처리된다.</div>
+        <div class="divider"></div>
+        <div class="line-item"><strong>2. 입스 (Yips) 현상:</strong><br> 골프나 야구 등 스포츠에서 극도의 긴장감이나 과도한 자의식으로 인해, 평소에 잘하던 동작을 갑자기 잊어버리거나 근육의 통제력을 상실하는 심리적, 신체적 운동 장애 현상을 뜻한다. 본문의 '자의식이 가장 나쁜 적'이라는 내용과 일치한다.</div>
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>

@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>03강 전체 지문분석 - Lio T</title>
+  <style>
+    /* 디자인 시스템 변수 설정 */
+    :root {
+      --bg-color: #f4f7fb;
+      --text-main: #0f172a;
+      --text-sub: #334155;
+      --text-muted: #64748b;
+      --primary: #4f46e5;
+      --primary-light: #e0e7ff;
+      --secondary: #3b82f6;
+      --border-light: #e2e8f0;
+      --card-bg: #ffffff;
+      --radius: 12px;
+    }
+
+    /* 페이지 기본 설정 (세로 모드) */
+    @page {
+      size: A4 portrait;
+      margin: 15mm; 
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg-color);
+      color: var(--text-main);
+      font-family: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+      letter-spacing: -0.02em; 
+    }
+
+    body {
+      padding: 10px; 
+      display: flex;
+      justify-content: center;
+    }
+
+    .doc {
+      width: 100%;
+      max-width: 210mm; 
+    }
+
+    /* =========================================
+       지문 간 구분선 (화면용 vs 인쇄용)
+       ========================================= */
+    .passage-separator {
+      height: 4px;
+      background-image: repeating-linear-gradient(to right, #cbd5e1 0, #cbd5e1 10px, transparent 10px, transparent 20px);
+      margin: 80px 0;
+      border: none;
+      position: relative;
+    }
+    .passage-separator::after {
+      content: '▼ 다음 지문 (인쇄 시 무조건 새 페이지에서 시작됩니다) ▼';
+      position: absolute;
+      top: -26px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--bg-color);
+      padding: 0 16px;
+      color: #94a3b8;
+      font-weight: 700;
+      font-size: 10pt;
+    }
+
+    /* 공통 레이아웃 제어 */
+    .no-break { page-break-inside: avoid; break-inside: avoid; }
+    
+    .header-container { margin-bottom: 30px; text-align: center; }
+    .hero-title {
+      display: inline-block; margin: 0 0 10px 0; padding: 8px 24px; font-size: 22pt; font-weight: 800;
+      color: #ffffff; background: linear-gradient(135deg, var(--primary), var(--secondary));
+      border-radius: 999px; box-shadow: 0 4px 14px rgba(79, 70, 229, 0.25);
+    }
+    .subtitle { font-size: 13pt; font-weight: 600; color: var(--text-muted); }
+
+    .section-title {
+      display: flex; align-items: center; gap: 12px; margin: 30px 0 16px 0;
+      border-bottom: 2px solid var(--border-light); padding-bottom: 4px;
+      page-break-after: avoid; break-after: avoid;
+    }
+    .page-no {
+      width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+      background: var(--primary); color: white; font-weight: 700; font-size: 12pt; border-radius: 8px;
+    }
+    h2 { margin: 0; font-size: 16pt; font-weight: 700; color: var(--text-main); }
+
+    .card {
+      background: var(--card-bg); border: 1px solid var(--border-light); border-top: 4px solid var(--primary);
+      border-radius: var(--radius); padding: 8px 16px; margin-bottom: 16px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    }
+    
+    .text-block-title { font-size: 12pt; font-weight: 700; color: var(--primary); margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+    .text-block-title::before { content: ''; display: block; width: 6px; height: 6px; border-radius: 50%; background: var(--primary); }
+    .eng-body { font-size: 12pt; line-height: 1.7; font-weight: 500; color: var(--text-main); margin-bottom: 20px; text-align: justify; }
+    .divider { height: 1px; background: var(--border-light); margin: 20px 0; }
+    .mini-divider { height: 1px; background: var(--border-light); margin: 8px 0; }
+    .kor-body { font-size: 11.5pt; line-height: 1.7; color: var(--text-sub); text-align: justify; word-break: keep-all; }
+
+    .sentence-card {
+      background: var(--card-bg); border: 1px solid var(--border-light); border-left: 4px solid var(--secondary);
+      border-radius: 8px; padding: 8px 16px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    }
+    .sentence-id { display: inline-block; margin-bottom: 8px; padding: 2px 8px; border-radius: 6px; background: var(--primary-light); color: var(--primary); font-size: 9pt; font-weight: 700; }
+    .sentence-en { font-size: 12.5pt; font-weight: 600; line-height: 1.6; color: var(--text-main); margin-bottom: 4px; }
+    .sentence-ko { font-size: 9pt; line-height: 1.6; color: var(--text-sub); margin-bottom: 4px; word-break: keep-all; }
+    .vocab-box { display: inline-block; padding: 4px 8px; border-radius: 6px; background: #f8fafc; border: 1px dashed #cbd5e1; font-size: 9pt; color: var(--text-muted); }
+
+    .point-block { margin-bottom: 16px; }
+    .point-block:last-child { margin-bottom: 0; }
+    .line-item { font-size: 11.5pt; line-height: 1.7; margin: 0 0 8px 0; word-break: keep-all; }
+    .exam-note { margin-top: 8px; padding: 8px 12px; background: #fffbeb; border-left: 3px solid #f59e0b; border-radius: 0 6px 6px 0; font-size: 10.5pt; line-height: 1.6; color: #92400e; }
+    .exam-note ul { margin: 4px 0 0 0; padding-left: 20px; }
+    .exam-note li { margin-bottom: 4px; }
+    .exam-note li:last-child { margin-bottom: 0; }
+
+    .chip-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 8px 0 20px 0; }
+    .chip { padding: 4px 10px; border-radius: 999px; background: var(--primary-light); color: var(--primary); font-size: 10pt; font-weight: 600; }
+    .arrow { color: var(--text-muted); font-weight: 700; }
+    h3 { font-size: 12pt; margin: 0 0 8px 0; color: var(--text-main); }
+    .label { display: inline-block; font-size: 9.5pt; font-weight: 700; color: var(--secondary); background: #eff6ff; padding: 2px 6px; border-radius: 4px; margin-bottom: 6px; }
+    .summary-pair { margin-bottom: 20px; }
+    .summary-pair:last-child { margin-bottom: 0; }
+
+    /* =========================================
+       인쇄(Print) 전용 스타일 - 다중 지문 분할 처리
+       ========================================= */
+    @media print {
+      html, body { background: #ffffff !important; padding: 0; }
+      .doc { max-width: 100%; }
+
+      /* 지문 구분선을 강제 페이지 넘김으로 변환 */
+      .passage-separator {
+        page-break-before: always !important;
+        break-before: page !important;
+        margin: 0 !important;
+        height: 0 !important;
+        border: none !important;
+        background: none !important;
+      }
+      .passage-separator::after { display: none !important; }
+
+      .page-break { page-break-before: always !important; break-before: page !important; }
+      .card, .sentence-card { box-shadow: none !important; border: 1px solid #cbd5e1 !important; page-break-inside: avoid !important; break-inside: avoid !important; }
+      .section-title { page-break-after: avoid !important; break-after: avoid !important; }
+
+      .hero-title { background: #0f172a !important; color: white !important; }
+      .page-no { background: #0f172a !important; }
+      .sentence-id, .chip, .label { border: 1px solid #cbd5e1 !important; background: #f8fafc !important; color: #0f172a !important; }
+      .exam-note { background: #f8fafc !important; border-left-color: #94a3b8 !important; color: #334155 !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="doc">
+
+    <!-- ========================================== -->
+    <!-- [지문 2] 03강 1번                          -->
+    <!-- ========================================== -->
+    
+    <div class="passage-container">
+      <div class="header-container">
+        <div class="hero-title">03강 1번 지문분석</div>
+        <div class="subtitle">Lio T 내신대비 지문분석서</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">00</div><h2>영어 본문 및 전체 해석</h2></div>
+      <div class="card no-break">
+        <div class="text-block-title">영어 본문</div>
+        <div class="eng-body">
+          Even outdoors, although climate (including temperature) is usually regarded as beyond the control of man, localized temperature control is sometimes effective on a microclimate scale. Vancouver, Canada, is a few miles north of the 49th parallel, about 60 miles farther north than Minot, North Dakota, with its legendary harsh winter temperatures. But constant foehn winds off the Pacific Ocean make Vancouver winters mild and wet, although sunshine is scant. When I had a garden there in the late 1940s, a neighbor used to say that I "cheated God" to bring in my lettuce and tomatoes earlier than anyone else. The bed in which the vegetables grew was banked toward the south at approximately 50 degrees, and the area between the plants was covered with flat stones, gathered from the nearby beach, to maximize soil heating from the weak late winter-early spring sun.
+        </div>
+        <div class="divider"></div>
+        <div class="text-block-title">전체 해석</div>
+        <div class="kor-body">
+          실외에서조차 온도를 포함한 기후는 보통 인간의 통제 밖이라고 여겨지지만, 국지적인 온도 통제는 미기후 규모에서 때때로 효과적이다. 캐나다 밴쿠버는 북위 49도선에서 북쪽으로 몇 마일 떨어져 있는데, 전설적으로 혹독한 겨울 기온을 가진 노스다코타주 미놋보다 북쪽으로 약 60마일 더 먼 곳이다. 하지만 햇빛은 부족할지라도 태평양에서 불어오는 끊임없는 푄 바람이 밴쿠버의 겨울을 온화하고 습하게 만든다. 1940년대 후반에 내가 그곳에 정원을 가꿨을 때, 한 이웃은 내가 다른 누구보다 일찍 상추와 토마토를 수확하기 위해 '신을 속였다'고 말하곤 했다. 채소가 자라는 모종밭은 남쪽을 향해 약 50도 각도로 비스듬하게 둑이 져 있었고, 식물들 사이의 면적은 늦겨울과 초봄의 약한 태양으로부터 토양 가열을 극대화하기 위해 근처 해변에서 모은 납작한 돌들로 덮여 있었다.
+        </div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">01</div><h2>직독직해 및 어휘 정리</h2></div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 1</div>
+        <div class="sentence-en">Even outdoors, / although climate (including temperature) / is usually regarded / as beyond the control / of man, / localized temperature control / is sometimes effective / on a microclimate scale.</div>
+        <div class="sentence-ko">실외에서조차, / 비록 기후가 (온도를 포함하여) / 대개 여겨지지만 / 통제 밖이라고 / 인간의, / 국지적인 온도 통제는 / 때때로 효과적이다 / 미기후 규모에서.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> localized - 국지적인, microclimate - 미기후(微氣候)</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 2</div>
+        <div class="sentence-en">Vancouver, Canada, / is / a few miles north / of the 49th parallel, / about 60 miles farther north / than Minot, North Dakota, / with its legendary harsh winter temperatures.</div>
+        <div class="sentence-ko">캐나다 밴쿠버는, / 있다 / 북쪽으로 몇 마일 떨어진 곳에 / 49도 위도선에서, / 북쪽으로 약 60마일 더 먼 곳이다 / 노스다코타주 미놋보다, / 전설적으로 혹독한 겨울 기온을 가진.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> parallel - 위도선, legendary - 전설적인, harsh - 혹독한</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 3</div>
+        <div class="sentence-en">But constant foehn winds / off the Pacific Ocean / make / Vancouver winters / mild and wet, / although sunshine / is scant.</div>
+        <div class="sentence-ko">하지만 끊임없는 푄 바람이 / 태평양에서 불어오는 / 만든다 / 밴쿠버의 겨울을 / 온화하고 습하게, / 비록 햇빛은 / 부족할지라도.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> constant - 끊임없는, foehn wind - 푄 바람, scant - 부족한</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 4</div>
+        <div class="sentence-en">When I had a garden / there / in the late 1940s, / a neighbor used to say / that I "cheated God" / to bring in my lettuce and tomatoes / earlier than anyone else.</div>
+        <div class="sentence-ko">내가 정원을 가꿨을 때 / 그곳에 / 1940년대 후반에, / 한 이웃은 말하곤 했다 / 내가 '신을 속였다'고 / 나의 상추와 토마토를 수확하기 위해 / 다른 누구보다 더 일찍.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> cheat - 속이다, bring in - 수확하다, 들여오다</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 5</div>
+        <div class="sentence-en">The bed / in which the vegetables grew / was banked / toward the south / at approximately 50 degrees, / and the area / between the plants / was covered / with flat stones, / gathered from the nearby beach, / to maximize soil heating / from the weak late winter-early spring sun.</div>
+        <div class="sentence-ko">모종밭은 / 채소가 자라는 / 둑이 져 있었다(기울어져 있었다) / 남쪽을 향해 / 약 50도 각도로, / 그리고 면적은 / 식물들 사이의 / 덮여 있었다 / 납작한 돌들로, / (이 돌들은) 근처 해변에서 모은 것인데, / 토양 가열을 극대화하기 위해 / 늦겨울과 초봄의 약한 태양으로부터의.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> bed - 모종밭, bank - 비스듬히 기울이다, 둑을 쌓다, approximately - 대략, maximize - 극대화하다</div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">02</div><h2>어법 및 구문 포인트</h2></div>
+      <div class="card no-break">
+        <div class="point-block">
+          <div class="sentence-id">문장 1</div>
+          <div class="line-item"><strong>[is usually regarded as]</strong> `regard A as B` (A를 B로 여기다)의 수동태 구문이다. 주어인 `climate`가 여겨지는 대상이므로 수동형 `is regarded`가 쓰였으며 뒤에 `as`가 그대로 남는다.</div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul><li>능동태인 `regards`로 쓰면 문법상 틀리며, 수동태 뒤에 `as`가 빠지지 않도록 유의해야 한다.</li></ul>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 5</div>
+          <div class="line-item"><strong>[The bed in which]</strong> `in which`는 관계부사 `where`로 바꿀 수 있는 전치사+관계대명사 구문으로, 선행사 `The bed`를 수식한다. 뒤에는 주어(`the vegetables`)와 자동사(`grew`)로 이루어진 완전한 절이 온다.</div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul><li>`which`만 단독으로 쓰면 뒤 문장이 불완전해야 하므로 틀린 문법이 된다. 전치사 `in`의 유무를 반드시 확인해야 한다.</li></ul>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 5</div>
+          <div class="line-item"><strong>[gathered from the nearby beach]</strong> 앞에 있는 명사 `flat stones`를 부연 설명하는 과거분사구다. 돌들이 '모아진' 것이므로 수동의 의미를 갖는다.</div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul><li>능동의 의미를 지닌 현재분사 `gathering`을 쓰지 않도록 주의해야 한다.</li></ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">03</div><h2>문장 단위 내용 흐름 정리</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>[(1)-(2) 도입] :</strong> 실외 기후 통제가 어렵다는 일반적 인식과 달리, 미기후 규모에서는 국지적 온도 통제가 가능함을 밴쿠버의 지리적 위치와 비교하여 제시함.</div>
+        <div class="line-item"><strong>[(3) 기후적 특징] :</strong> 밴쿠버는 북쪽에 위치해 있지만 태평양에서 부는 푄 바람 덕분에 온화한 기후를 보임.</div>
+        <div class="line-item"><strong>[(4) 일화 소개] :</strong> 필자가 1940년대 밴쿠버에서 정원을 가꿀 때 이웃에게 '신을 속여' 채소를 일찍 수확한다는 말을 들은 경험을 소개함.</div>
+        <div class="line-item"><strong>[(5) 원리 설명 (해결)] :</strong> 모종밭을 남쪽으로 기울이고 식물 사이에 납작한 돌을 덮는 전략적 원예 방식을 통해, 약한 태양열을 극대화하여 따뜻한 미기후를 만들어낸 구체적인 방법을 설명함.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">04</div><h2>표현들의 연관성 정리</h2></div>
+      <div class="card no-break">
+        <h3>온도 통제 전략</h3>
+        <div class="chip-row">
+          <span class="chip">Localized temperature control</span> <span class="arrow">=</span> <span class="chip">cheated God</span> <span class="arrow">=</span> <span class="chip">maximize soil heating</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 20px;">자연적인 기후 조건을 극복하기 위해 인간이 고안해낸 인위적이고 전략적인 온도 통제 방법을 의미하는 표현들이다.</div>
+
+        <h3>규모의 대비</h3>
+        <div class="chip-row">
+          <span class="chip">Microclimate scale</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 20px;">전체 기후(climate)는 통제할 수 없지만, 모종밭과 같은 아주 좁은 구역에서 형성되는 미세한 기후는 통제할 수 있음을 대비시켜 보여준다.</div>
+
+        <h3>기후의 대조</h3>
+        <div class="chip-row">
+          <span class="chip">Harsh winter temperatures</span> <span class="arrow">↔</span> <span class="chip">mild and wet</span> <span class="arrow">/</span> <span class="chip">weak sun</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 4px;">자연적으로 주어지는 불리한 조건과 이를 상쇄하는 요소들 간의 대조.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">05</div><h2>소재와 주제문</h2></div>
+      <div class="card no-break" style="border-top-color: #f59e0b;">
+        <div class="line-item" style="margin-bottom: 12px;"><strong>핵심 소재:</strong> 전략적 원예 방법을 활용한 미기후 조성과 온도 통제</div>
+        <div class="mini-divider"></div>
+        <div class="label" style="margin-top: 8px;">주제문 (문장 1)</div>
+        <div class="sentence-en" style="margin-bottom: 0;">Even outdoors, although climate (including temperature) is usually regarded as beyond the control of man, localized temperature control is sometimes effective on a microclimate scale.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">06</div><h2>지문의 요약 및 패러프레이징</h2></div>
+      <div class="card no-break">
+        <div class="summary-pair">
+          <div class="label">요약 / Summary</div>
+          <div class="sentence-en">By applying strategic gardening methods such as tilting beds and using stones for heat absorption, one can create a warmer microclimate and effectively control temperatures even outdoors.</div>
+          <div class="sentence-ko">모종밭을 기울이고 열 흡수를 위해 돌을 사용하는 등의 전략적 원예 방식을 적용함으로써, 실외에서조차 더 따뜻한 미기후를 만들고 효과적으로 온도를 통제할 수 있다.</div>
+        </div>
+        <div class="divider"></div>
+        <div class="summary-pair">
+          <div class="label">패러프레이징 / Paraphrasing</div>
+          <div class="sentence-en">A gardener can successfully manipulate local temperatures on a small scale to overcome harsh weather conditions by maximizing the utilization of environmental elements like sunlight and terrain.</div>
+          <div class="sentence-ko">정원사는 햇빛과 지형 같은 환경적 요소의 활용을 극대화하여 혹독한 날씨 조건을 극복하기 위해 소규모로 국지적 온도를 성공적으로 조작할 수 있다.</div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">07</div><h2>도움이 되는 배경지식</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>1. 미기후(Microclimate):</strong><br> 주변의 넓은 지역과는 다른 지면 근처의 아주 좁은 구역에서 나타나는 특수한 기후 조건을 말한다. 돌을 깔거나 벽을 세워 열을 가두는 방법이 대표적인 농업의 미기후 조절 기술이다.</div>
+        <div class="divider"></div>
+        <div class="line-item"><strong>2. 푄 현상(Foehn wind):</strong><br> 산을 넘어오면서 따뜻하고 건조해지는 국지풍으로, 기온을 상승시켜 겨울철에도 온화한 날씨를 유지하는 데 도움을 준다.</div>
+      </div>
+    </div>
+
+
+    <!-- ========================================== -->
+    <!-- [지문 4] 03강 3번                          -->
+    <!-- ========================================== -->
+    <hr class="passage-separator" />
+    
+    <div class="passage-container">
+      <div class="header-container">
+        <div class="hero-title">03강 3번 지문분석</div>
+        <div class="subtitle">Lio T 내신대비 지문분석서</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">00</div><h2>영어 본문 및 전체 해석</h2></div>
+      <div class="card no-break">
+        <div class="text-block-title">영어 본문</div>
+        <div class="eng-body">
+          In the early 1960s the great American writer James Baldwin wrote: "People are trapped in history, and history is trapped in them." He was speaking to race when he penned those words. But the statement is equally true if the word "people" is replaced with "all of life on Earth, present and past," for each strand of DNA, in each of our cells, is an ancient record of biological history, written in simple code and passed down from generation to generation. One could say that DNA is nothing but history, one with a physical manifestation that was slowly blended and accumulated over countless eons by the most pitiless of all phenomena natural selection. DNA is a history that is inside us and yet one that is our master as well, the blueprint for our bodies, and dictator of what we will pass on to our children, gifts that can be blessings or deadly time bombs. We are indeed trapped in this particular vehicle of history as much as it is trapped in us.
+        </div>
+        <div class="divider"></div>
+        <div class="text-block-title">전체 해석</div>
+        <div class="kor-body">
+          1960년대 초, 미국의 위대한 작가 James Baldwin은 "사람들은 역사 속에 갇혀 있고, 역사는 사람들 속에 갇혀 있다."라고 썼다. 그가 이 말들을 썼을 때 그는 인종에 대해 말하고 있었다. 그러나 "사람들"이라는 단어를 "현재와 과거의 지구상 모든 생명체"로 대체하더라도 그 진술은 동일하게 사실인데, 왜냐하면 우리 각자의 세포 안에 있는 DNA의 각 가닥은 단순한 암호로 쓰여 세대에서 세대로 전해지는 생물학적 역사의 고대 기록이기 때문이다. DNA는 역사 외에는 아무것도 아니며, 모든 현상 중 가장 무자비한 것인 자연 선택에 의해 무수한 억겁의 세월에 걸쳐 서서히 섞이고 축적된 물리적 형태(구현)를 가진 역사라고 말할 수 있다. DNA는 우리 안에 있는 역사이지만, 동시에 우리의 주인이기도 하며, 우리 몸의 청사진이고, 우리가 자녀들에게 무엇을 물려줄 것인지를 결정하는 독재자이며, 축복일 수도 치명적인 시한폭탄일 수도 있는 선물이다. 그것(역사)이 우리 안에 갇혀 있는 것만큼이나 우리는 참으로 이 특정한 역사의 수단(매개체) 안에 갇혀 있다.
+        </div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">01</div><h2>직독직해 및 어휘 정리</h2></div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 1</div>
+        <div class="sentence-en">In the early 1960s / the great American writer James Baldwin / wrote: / "People / are trapped / in history, / and history / is trapped / in them."</div>
+        <div class="sentence-ko">1960년대 초에 / 미국의 위대한 작가 James Baldwin은 / 썼다: / "사람들은 / 갇혀 있고 / 역사 속에, / 역사는 / 갇혀 있다 / 그들 속에."</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> trapped - 갇힌</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 2</div>
+        <div class="sentence-en">He / was speaking / to race / when he penned / those words.</div>
+        <div class="sentence-ko">그는 / 말하고 있었다 / 인종에 대해 / 그가 썼을 때 / 그 말들을.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> race - 인종, pen - 쓰다</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 3</div>
+        <div class="sentence-en">But the statement / is equally true / if the word "people" / is replaced / with "all of life / on Earth, / present and past," / for each strand of DNA, / in each of our cells, / is / an ancient record / of biological history, / written in simple code / and passed down / from generation to generation.</div>
+        <div class="sentence-ko">그러나 그 진술은 / 똑같이 사실이다 / 만약 '사람들'이라는 단어가 / 대체된다면 / '모든 생명체로 / 지구상의, / 현재와 과거의,' / 왜냐하면 DNA의 각 가닥이, / 우리 각각의 세포 안에 있는, / ~이기 때문이다 / 고대의 기록 / 생물학적 역사의, / 단순한 암호로 쓰여진 / 그리고 전해 내려오는 / 세대에서 세대로.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> statement - 진술, replace - 대체하다, strand - 가닥, biological - 생물학적인, pass down - 물려주다, 전해주다</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 4</div>
+        <div class="sentence-en">One could say / that DNA / is nothing but history, / one / with a physical manifestation / that / was slowly blended / and accumulated / over countless eons / by the most pitiless / of all phenomena / natural selection.</div>
+        <div class="sentence-ko">사람들은 말할 수 있다 / DNA는 / 역사일 뿐이라고, / 즉 (역사라고) / 물리적 형태(구현)를 가진 / 천천히 섞이고 / 축적된 / 수많은 억겁의 세월 동안 / 가장 무자비한 것에 의해 / 모든 현상 중 / (즉) 자연 선택에 의해.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> nothing but - 오직 ~일 뿐(= only), physical manifestation - 물리적 구현(형태), accumulate - 축적하다, countless - 무수한, eon - 억겁의 세월, pitiless - 무자비한, phenomenon - 현상 (복수형: phenomena)</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 5</div>
+        <div class="sentence-en">DNA / is a history / that is inside us / and yet / one / that is our master / as well, / the blueprint / for our bodies, / and dictator / of what we will pass on / to our children, / gifts / that can be blessings / or deadly time bombs.</div>
+        <div class="sentence-ko">DNA는 / 역사이다 / 우리 안에 있는 / 그럼에도 불구하고 / 것(역사)이다 / 우리의 주인이기도 한 / 또한, / 즉 청사진이자 / 우리 몸의, / 결정하는 독재자이다 / 우리가 무엇을 물려줄지를 / 우리 아이들에게, / (그것은) 선물이다 / 축복이 될 수도 있는 / 혹은 치명적인 시한폭탄이 (될 수도 있는).</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> blueprint - 청사진, dictator - 독재자, 지배자, deadly - 치명적인</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 6</div>
+        <div class="sentence-en">We / are indeed trapped / in this particular vehicle / of history / as much as / it / is trapped / in us.</div>
+        <div class="sentence-ko">우리는 / 참으로 갇혀 있다 / 이 특정한 매개체(수단) 안에 / 역사의 / ~만큼이나 많이 / 그것(역사)이 / 갇혀 있는 (것만큼) / 우리 안에.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> indeed - 참으로, vehicle - 수단, 매개체</div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">02</div><h2>어법 및 구문 포인트</h2></div>
+      <div class="card no-break">
+        <div class="point-block">
+          <div class="sentence-id">문장 3</div>
+          <div class="line-item"><strong>[for each strand of DNA, ... is an ancient record]</strong> 여기서 `for`는 등위접속사로 '왜냐하면 ~이기 때문이다'라는 이유를 나타낸다. `written`과 `passed down`은 `an ancient record`를 수식하는 과거분사 병렬 구조다.</div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul>
+              <li>`for`를 전치사로 착각하여 뒤에 명사구만 와야 한다고 오해하면 안 된다. 접속사로서 완전한 절이 이어짐을 확인해야 참조해야 한다.</li>
+              <li>분사구문의 능동/수동을 묻는 문제에서 `writing`이나 `passing`으로 쓰이지 않게 주의하라.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 4</div>
+          <div class="line-item"><strong>[nothing but history / one with a physical manifestation that was slowly blended...]</strong> `nothing but`은 '오직, ~일 뿐'의 의미(only)를 갖는다. `that`은 주격 관계대명사로 선행사 `a physical manifestation`을 수식하며 수동태 동사 `was blended and accumulated`가 이어졌다.</div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul><li>선행사가 단수이므로 동사도 `was`가 쓰였음에 유의해야 한다. `blending`이나 `accumulating`의 능동 형태로 출제되면 오답이다.</li></ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">03</div><h2>문장 단위 내용 흐름 정리</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>[(1)-(2) 도입] :</strong> James Baldwin의 인용문을 통해 인간과 역사가 서로 안에 갇혀 있다는 관점을 소개함(본래는 인종 문제에 관한 것임).</div>
+        <div class="line-item"><strong>[(3) 관점 확장] :</strong> 이 진술을 생물학적 영역으로 확장하여, 모든 생명체의 세포 속 DNA 자체가 세대를 거쳐 내려온 역사적 기록임을 밝힘.</div>
+        <div class="line-item"><strong>[(4) 자연 선택의 결과] :</strong> DNA는 무자비한 자연 선택 과정을 거쳐 축적된 '역사의 물리적 형태' 그 자체임.</div>
+        <div class="line-item"><strong>[(5) DNA의 지배력과 양면성] :</strong> DNA는 우리 안에 있지만 동시에 우리의 육체와 후대에 물려줄 유산(축복 또는 시한폭탄)을 지배하는 주인임.</div>
+        <div class="line-item"><strong>[(6) 결론] :</strong> 역사가 우리(DNA) 안에 갇혀 있는 것만큼이나, 우리 역시 역사라는 매개체(DNA)에 단단히 갇혀 있음을 강조함.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">04</div><h2>표현들의 연관성 정리</h2></div>
+      <div class="card no-break">
+        <h3>관점의 치환</h3>
+        <div class="chip-row">
+          <span class="chip">People</span> <span class="arrow">=</span> <span class="chip">all of life on Earth</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 20px;">사회학적 의미의 '사람'을 생물학적 의미의 '생명체'로 치환하여 논의를 확장시킴.</div>
+
+        <h3>DNA의 역사적 지배력</h3>
+        <div class="chip-row">
+          <span class="chip">History</span> <span class="arrow">=</span> <span class="chip">DNA</span> <span class="arrow">=</span> <span class="chip">blueprint</span> <span class="arrow">=</span> <span class="chip">dictator</span> <span class="arrow">=</span> <span class="chip">vehicle of history</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 20px;">지문 내에서 역사는 곧 DNA를 의미하며, 이는 우리의 생물학적 운명을 결정짓는 강력한 청사진이자 지배자로 묘사됨.</div>
+
+        <h3>운명적 결합</h3>
+        <div class="chip-row">
+          <span class="chip">Trapped</span> <span class="arrow">=</span> <span class="chip">passed down</span> <span class="arrow">=</span> <span class="chip">accumulated</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 4px;">얽히고설켜서 벗어날 수 없이 누적되고 전수되는 운명적 결합을 의미함.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">05</div><h2>소재와 주제문</h2></div>
+      <div class="card no-break" style="border-top-color: #f59e0b;">
+        <div class="line-item" style="margin-bottom: 12px;"><strong>핵심 소재:</strong> 생물학적 역사이자 지배자로서의 DNA</div>
+        <div class="mini-divider"></div>
+        <div class="label" style="margin-top: 8px;">주제문 (문장 6)</div>
+        <div class="sentence-en" style="margin-bottom: 0;">We are indeed trapped in this particular vehicle of history as much as it is trapped in us.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">06</div><h2>지문의 요약 및 패러프레이징</h2></div>
+      <div class="card no-break">
+        <div class="summary-pair">
+          <div class="label">요약 / Summary</div>
+          <div class="sentence-en">DNA is a physical manifestation of evolutionary history that not only resides within us but also dictates our biology and the traits we pass down to descendants.</div>
+          <div class="sentence-ko">DNA는 우리 안에 존재할 뿐만 아니라 우리의 생물학과 자손에게 물려주는 특성을 지배하는 진화적 역사의 물리적 구현이다.</div>
+        </div>
+        <div class="divider"></div>
+        <div class="summary-pair">
+          <div class="label">패러프레이징 / Paraphrasing</div>
+          <div class="sentence-en">We are shaped by and inextricably bound to our DNA, which acts as an ancient biological record and master blueprint governing our past, present, and future generations.</div>
+          <div class="sentence-ko">우리는 우리의 과거, 현재, 미래 세대를 지배하는 고대 생물학적 기록이자 주 청사진으로 작용하는 DNA에 의해 형성되고 그것에 뗄 수 없이 묶여 있다.</div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">07</div><h2>도움이 되는 배경지식</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>1. 자연 선택(Natural Selection):</strong><br> 찰스 다윈이 주창한 진화론의 핵심 메커니즘으로, 환경에 적응하기 유리한 형질을 가진 개체가 살아남아 자손을 남긴다는 이론이다. 본문에서는 이를 "가장 무자비한 현상"으로 표현했다.</div>
+        <div class="divider"></div>
+        <div class="line-item"><strong>2. 유전자 결정론(Genetic Determinism):</strong><br> 인간의 신체적, 행동적 특성이 유전자에 의해 결정된다는 견해다. 지문에서 DNA를 '독재자', '시한폭탄' 등으로 비유한 것은 유전자의 강력한 지배력을 나타낸다.</div>
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>

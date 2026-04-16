@@ -1,0 +1,1197 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>13강~15강 통합 지문분석 - Lio T</title>
+  <style>
+    /* 디자인 시스템 변수 설정 */
+    :root {
+      --bg-color: #f4f7fb;
+      --text-main: #0f172a;
+      --text-sub: #334155;
+      --text-muted: #64748b;
+      --primary: #4f46e5;
+      --primary-light: #e0e7ff;
+      --secondary: #3b82f6;
+      --border-light: #e2e8f0;
+      --card-bg: #ffffff;
+      --radius: 12px;
+    }
+
+    /* 페이지 기본 설정 (세로 모드) */
+    @page {
+      size: A4 portrait;
+      margin: 15mm; 
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg-color);
+      color: var(--text-main);
+      font-family: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+      letter-spacing: -0.02em; 
+    }
+
+    body {
+      padding: 10px; 
+      display: flex;
+      justify-content: center;
+    }
+
+    .doc {
+      width: 100%;
+      max-width: 210mm; 
+    }
+
+    /* =========================================
+       지문 간 구분선 (화면용 vs 인쇄용)
+       ========================================= */
+    .passage-separator {
+      height: 4px;
+      background-image: repeating-linear-gradient(to right, #cbd5e1 0, #cbd5e1 10px, transparent 10px, transparent 20px);
+      margin: 80px 0;
+      border: none;
+      position: relative;
+    }
+    .passage-separator::after {
+      content: '▼ 다음 지문 (인쇄 시 무조건 새 페이지에서 시작됩니다) ▼';
+      position: absolute;
+      top: -26px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--bg-color);
+      padding: 0 16px;
+      color: #94a3b8;
+      font-weight: 700;
+      font-size: 10pt;
+    }
+
+    /* 공통 레이아웃 제어 */
+    .no-break { page-break-inside: avoid; break-inside: avoid; }
+    
+    .header-container { margin-bottom: 30px; text-align: center; }
+    .hero-title {
+      display: inline-block; margin: 0 0 10px 0; padding: 8px 24px; font-size: 22pt; font-weight: 800;
+      color: #ffffff; background: linear-gradient(135deg, var(--primary), var(--secondary));
+      border-radius: 999px; box-shadow: 0 4px 14px rgba(79, 70, 229, 0.25);
+    }
+    .subtitle { font-size: 13pt; font-weight: 600; color: var(--text-muted); }
+
+    .section-title {
+      display: flex; align-items: center; gap: 12px; margin: 30px 0 16px 0;
+      border-bottom: 2px solid var(--border-light); padding-bottom: 4px;
+      page-break-after: avoid; break-after: avoid;
+    }
+    .page-no {
+      width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+      background: var(--primary); color: white; font-weight: 700; font-size: 12pt; border-radius: 8px;
+    }
+    h2 { margin: 0; font-size: 16pt; font-weight: 700; color: var(--text-main); }
+
+    .card {
+      background: var(--card-bg); border: 1px solid var(--border-light); border-top: 4px solid var(--primary);
+      border-radius: var(--radius); padding: 8px 16px; margin-bottom: 16px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    }
+    
+    /* 본문 영역 - 화면 크기에 맞춰 반응형으로 조절 (최소크기, 유동크기, 최대크기) */
+    .text-block-title { font-size: clamp(10pt, 2.5vw, 12pt); font-weight: 700; color: var(--primary); margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+    .text-block-title::before { content: ''; display: block; width: 6px; height: 6px; border-radius: 50%; background: var(--primary); }
+    .eng-body { font-size: clamp(10pt, 2.5vw, 12pt); line-height: 1.7; font-weight: 500; color: var(--text-main); margin-bottom: 20px; text-align: justify; }
+    .divider { height: 1px; background: var(--border-light); margin: 20px 0; }
+    .mini-divider { height: 1px; background: var(--border-light); margin: 8px 0; }
+    .kor-body { font-size: clamp(9.5pt, 2.3vw, 11.5pt); line-height: 1.7; color: var(--text-sub); text-align: justify; word-break: keep-all; }
+
+    .sentence-card {
+      background: var(--card-bg); border: 1px solid var(--border-light); border-left: 4px solid var(--secondary);
+      border-radius: 8px; padding: 8px 16px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    }
+    .sentence-id { display: inline-block; margin-bottom: 8px; padding: 2px 8px; border-radius: 6px; background: var(--primary-light); color: var(--primary); font-size: 9pt; font-weight: 700; }
+    .sentence-en { font-size: 12.5pt; font-weight: 600; line-height: 1.6; color: var(--text-main); margin-bottom: 4px; }
+    .sentence-ko { font-size: 9pt; line-height: 1.6; color: var(--text-sub); margin-bottom: 4px; word-break: keep-all; }
+    .vocab-box { display: inline-block; padding: 4px 8px; border-radius: 6px; background: #f8fafc; border: 1px dashed #cbd5e1; font-size: 9pt; color: var(--text-muted); }
+
+    .point-block { margin-bottom: 16px; }
+    .point-block:last-child { margin-bottom: 0; }
+    .line-item { font-size: 11.5pt; line-height: 1.7; margin: 0 0 8px 0; word-break: keep-all; }
+    .exam-note { margin-top: 8px; padding: 8px 12px; background: #fffbeb; border-left: 3px solid #f59e0b; border-radius: 0 6px 6px 0; font-size: 10.5pt; line-height: 1.6; color: #92400e; }
+    .exam-note ul { margin: 4px 0 0 0; padding-left: 20px; }
+    .exam-note li { margin-bottom: 4px; }
+    .exam-note li:last-child { margin-bottom: 0; }
+
+    .chip-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 8px 0 20px 0; }
+    .chip { padding: 4px 10px; border-radius: 999px; background: var(--primary-light); color: var(--primary); font-size: 10pt; font-weight: 600; }
+    .arrow { color: var(--text-muted); font-weight: 700; }
+    h3 { font-size: 12pt; margin: 0 0 8px 0; color: var(--text-main); }
+    .label { display: inline-block; font-size: 9.5pt; font-weight: 700; color: var(--secondary); background: #eff6ff; padding: 2px 6px; border-radius: 4px; margin-bottom: 6px; }
+    .summary-pair { margin-bottom: 20px; }
+    .summary-pair:last-child { margin-bottom: 0; }
+
+    /* 요약/역할 및 흐름 정리용 Flexbox */
+    .flex-row-item { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 6px; }
+    .flex-row-item:last-child { margin-bottom: 0; }
+    .flex-label { font-size: 10.5pt; color: var(--text-main); font-weight: 600; flex-shrink: 0; width: 40px; }
+    .flex-desc { font-size: 10.5pt; color: var(--text-muted); word-break: keep-all; line-height: 1.6; }
+    
+    .flow-label { font-size: 11.5pt; font-weight: 700; color: var(--text-main); flex-shrink: 0; width: 140px; white-space: nowrap; margin-right: 4px; }
+    .flow-label .sentence-id { margin-bottom: 0; margin-right: 4px; padding: 2px 6px; }
+    .flow-desc { font-size: 11.5pt; color: var(--text-sub); word-break: keep-all; line-height: 1.7; }
+
+    /* =========================================
+       인쇄(Print) 전용 스타일 - 25% 축소 (원본 75% 유지) 및 특정 영역 Undo
+       ========================================= */
+    @media print {
+      html, body { background: #ffffff !important; padding: 0; }
+      .doc { max-width: 100%; }
+
+      /* 지문 구분선을 강제 페이지 넘김으로 변환 */
+      .passage-separator {
+        page-break-before: always !important;
+        break-before: page !important;
+        margin: 0 !important;
+        height: 0 !important;
+        border: none !important;
+        background: none !important;
+      }
+      .passage-separator::after { display: none !important; }
+
+      .page-break { page-break-before: always !important; break-before: page !important; }
+      .card, .sentence-card { box-shadow: none !important; border: 1px solid #cbd5e1 !important; page-break-inside: avoid !important; break-inside: avoid !important; }
+      .section-title { page-break-after: avoid !important; break-after: avoid !important; }
+
+      .hero-title { background: #0f172a !important; color: white !important; }
+      .page-no { background: #0f172a !important; }
+      .sentence-id, .chip, .label { border: 1px solid #cbd5e1 !important; background: #f8fafc !important; color: #0f172a !important; }
+      .exam-note { background: #f8fafc !important; border-left-color: #94a3b8 !important; color: #334155 !important; }
+
+      /* 글자 크기 원본 대비 25% 축소 (75% 크기 유지) */
+      .page-no { font-size: 9pt !important; width: 24px !important; height: 24px !important; }
+      .sentence-id { font-size: 6.75pt !important; padding: 1.5px 6px !important; }
+      .sentence-en { font-size: 9.4pt !important; }
+      .sentence-ko { font-size: 6.75pt !important; }
+      .vocab-box { font-size: 6.75pt !important; padding: 3px 6px !important; }
+      .line-item { font-size: 8.6pt !important; }
+      .exam-note { font-size: 7.9pt !important; padding: 6px 9px !important; }
+      .chip { font-size: 7.5pt !important; padding: 3px 7.5px !important; }
+      h3 { font-size: 9pt !important; }
+      .label { font-size: 7.1pt !important; padding: 1.5px 4.5px !important; }
+      .flex-label { font-size: 7.9pt !important; }
+      .flex-desc { font-size: 7.9pt !important; }
+      .flow-label { font-size: 8.6pt !important; }
+      .flow-desc { font-size: 8.6pt !important; }
+      
+      /* 원래 크기로 복구 (Undo) 된 특정 태그들 (헤더, 본문타이틀, 00번 페이지 번호) */
+      .hero-title { font-size: 22pt !important; padding: 8px 24px !important; } 
+      .subtitle { font-size: 13pt !important; } 
+      .section-00 .page-no { font-size: 12pt !important; width: 32px !important; height: 32px !important; }
+      h2 { font-size: 16pt !important; } 
+      
+      /* 본문, 해석 영역 인쇄/화면 크기에 맞춰 유동적으로 조절 보장 */
+      .text-block-title { font-size: clamp(10pt, 2.5vw, 12pt) !important; } 
+      .eng-body { font-size: clamp(10pt, 2.5vw, 12pt) !important; } 
+      .kor-body { font-size: clamp(9.5pt, 2.3vw, 11.5pt) !important; } 
+    }
+  </style>
+</head>
+<body>
+  <div class="doc">
+
+    <!-- ========================================== -->
+    <!-- [지문 1] 13강 1번                          -->
+    <!-- ========================================== -->
+    <div class="passage-container">
+      <div class="header-container">
+        <div class="hero-title">13강 1번 지문분석</div>
+        <div class="subtitle">Lio T 내신대비 지문분석서</div>
+      </div>
+
+      <div class="section-title no-break section-00"><div class="page-no">00</div><h2>영어 본문 및 전체 해석</h2></div>
+      <div class="card no-break">
+        <div class="text-block-title">영어 본문</div>
+        <div class="eng-body">
+          In the Physics, Aristotle asks whether nature acts for the sake of something. He offers an account of rain as water that rises when heated by the Sun, then cools, condenses, and falls to Earth, but is not particularly concerned with explaining rain as such. Rather, he addresses a more general question: how to account for natural objects, events, and processes that appear with regularity. He queries whether the sharpness of front teeth and the bluntness of molars is coincidental and rejects that possibility, because this arrangement occurs with regularity and that regularity is linked to purposefulness. The sharpness of front teeth allows them to tear while the bluntness of those in the back enables them to crush food; both are useful for eating. In Aristotle's view, all natural things happen in a given way and occur for the sake of something; that is the final cause.
+        </div>
+        <div class="divider"></div>
+        <div class="text-block-title">전체 해석</div>
+        <div class="kor-body">
+          &lt;자연학&gt;에서, 아리스토텔레스는 자연이 무언가를 위해서(목적을 위해) 작용하는지를 묻는다. 그는 비에 대해 태양에 의해 가열될 때 상승하고, 그런 다음 냉각되고 응결되어 지구로 떨어지는 물로서의 설명을 제공하지만, 비 자체를 설명하는 데 특별히 관심이 있는 것은 아니다. 오히려 그는 더 일반적인 문제, 즉 규칙성을 가지고 나타나는 자연의 사물, 사건, 과정들을 어떻게 설명할 것인가를 다룬다. 그는 앞니의 날카로움과 어금니의 뭉툭함이 우연의 일치인지 의문을 제기하고 그 가능성을 거부하는데, 왜냐하면 이러한 배열은 규칙성을 가지고 발생하며 그 규칙성은 '합목적성'과 연결되어 있기 때문이다. 앞니의 날카로움은 앞니가 음식을 찢을 수 있게 해주는 반면 뒤에 있는 것들(어금니들)의 뭉툭함은 그것들이 음식을 으깰 수 있게 해준다. 둘 다 먹는 데 유용하다. 아리스토텔레스의 관점에서, 모든 자연적인 것들은 정해진 방식으로 일어나며 무언가를 위해서 발생한다. 그것이 바로 목적인(목적 원인)이다.
+        </div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">01</div><h2>직독직해 및 어휘 정리</h2></div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 1</div>
+        <div class="sentence-en">In the Physics, / Aristotle / asks / whether / nature / acts / for the sake of something.</div>
+        <div class="sentence-ko">&lt;자연학&gt;에서, / 아리스토텔레스는 / 묻는다 / ~인지를 / 자연이 / 작용하는지 / 무언가를 위해서(목적을 위해).</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> Physics - 자연학(아리스토텔레스의 저서), for the sake of - ~을 위하여</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 2</div>
+        <div class="sentence-en">He / offers / an account / of rain / as water / that / rises / when heated by the Sun, / then cools, condenses, / and falls to Earth, / but / is not particularly concerned / with explaining rain / as such.</div>
+        <div class="sentence-ko">그는 / 제공한다 / 설명을 / 비에 대한 / 물로서의 / (~하는) / 상승하는 / 태양에 의해 가열될 때, / 그런 다음 냉각되고, 응결되고, / 지구로 떨어지는, / 하지만 / 특별히 관심이 있는 것은 아니다 / 비를 설명하는 데 / 그 자체로서.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> offer an account of - ~에 대한 설명을 제공하다, condense - 응결되다, be concerned with - ~에 관심이 있다, as such - 그 자체로서, 그런 것으로서</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 3</div>
+        <div class="sentence-en">Rather, / he / addresses / a more general question: / how to account for / natural objects, events, and processes / that / appear / with regularity.</div>
+        <div class="sentence-ko">오히려, / 그는 / 다룬다 / 더 일반적인 문제를: / 어떻게 설명할 것인가(를) / 자연의 사물, 사건, 그리고 과정들을 / (~하는) / 나타나는 / 규칙성을 가지고.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> address - (문제를) 다루다, 해결하려 하다, account for - ~을 설명하다, regularity - 규칙성</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 4</div>
+        <div class="sentence-en">He / queries / whether / the sharpness of front teeth / and the bluntness of molars / is coincidental / and rejects / that possibility, / because / this arrangement / occurs / with regularity / and / that regularity / is linked to / purposefulness.</div>
+        <div class="sentence-ko">그는 / 의문을 제기한다 / ~인지(에) / 앞니의 날카로움 / 그리고 어금니의 뭉툭함이 / 우연의 일치인지 / 그리고 거부한다 / 그 가능성을, / 왜냐하면 / 이러한 배열은 / 발생하기 때문이다 / 규칙성을 가지고 / 그리고 / 그 규칙성은 / ~와 연결되어 있다 / 합목적성과.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> query - 의문을 제기하다, 질문하다, sharpness - 날카로움, bluntness - 뭉툭함, molar - 어금니, coincidental - 우연의 일치인, 우연한, arrangement - 배열, 배치, purposefulness - 합목적성, 목적이 있음</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 5</div>
+        <div class="sentence-en">The sharpness / of front teeth / allows / them / to tear / while / the bluntness / of those in the back / enables / them / to crush food; / both / are useful / for eating.</div>
+        <div class="sentence-ko">날카로움은 / 앞니의 / 허용한다(해준다) / 그것들이 / 찢을 수 있게 / 반면에 / 뭉툭함은 / 뒤에 있는 것들의 / 가능하게 한다 / 그것들이 / 음식을 으깨도록; / 둘 다 / 유용하다 / 먹는 데.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> tear - 찢다, enable A to B - A가 B하는 것을 가능하게 하다, crush - 으깨다, 부수다</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 6</div>
+        <div class="sentence-en">In Aristotle's view, / all natural things / happen / in a given way / and occur / for the sake of something; / that / is the final cause.</div>
+        <div class="sentence-ko">아리스토텔레스의 관점에서, / 모든 자연적인 것들은 / 일어난다 / 정해진 방식으로 / 그리고 발생한다 / 무언가를 위해서; / 그것이 / 목적인(최종 원인)이다.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> given - 정해진, 특정한, final cause - 목적인(아리스토텔레스 철학에서 사물이 존재하는 목적이나 이유)</div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">02</div><h2>어법 및 구문 포인트</h2></div>
+      <div class="card no-break">
+        <div class="point-block">
+          <div class="sentence-id">문장 2</div>
+          <div class="line-item"><strong>[water that rises when heated by the Sun, then cools, condenses, and falls...]</strong> `that`은 주격 관계대명사로 선행사 `water`를 수식한다. 관계절 안에서 동사 `rises`, `cools`, `condenses`, `falls`가 병렬 연결되었다. `when heated`는 `when it is heated`에서 주어와 be동사가 생략된 분사구문이다.</div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul><li>병렬 구조에 있는 동사들의 수 일치(`-s`)를 확인해야 한다. `when heating`으로 쓰면 물이 무엇인가를 가열한다는 능동의 의미가 되므로 수동의 `heated`가 적절하다.</li></ul>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 4</div>
+          <div class="line-item"><strong>[whether the sharpness ... and the bluntness ... is coincidental]</strong> `whether` 절 안의 주어가 두 가지(`sharpness`, `bluntness`)임에도 동사가 단수 `is`로 쓰였다. 이는 앞니의 날카로움과 어금니의 뭉툭함이라는 치아의 상호보완적 구조를 하나의 단일한 현상이나 개념(this arrangement)으로 취급했기 때문이다.</div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul><li>수 일치 문제에서 기계적으로 주어가 두 개라고 `are`를 쓰기 쉬우나, 의미상 단일 개념일 때는 단수 동사를 쓸 수 있음에 유의하라.</li></ul>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 5</div>
+          <div class="line-item"><strong>[allows them to tear while ... enables them to crush]</strong> `allow + 목적어 + to부정사`와 `enable + 목적어 + to부정사` 구문이 `while`을 대칭축으로 병렬 형태를 이루고 있다. `those`는 대명사로 `teeth`를 지칭한다.</div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">03</div><h2>문장 단위 내용 흐름 정리</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>[(1)-(3) 도입] :</strong> 아리스토텔레스는 자연이 특정한 목적을 가지고 움직이는지에 대해 질문을 던졌다. 그는 비의 생성 과정 같은 개별 현상 자체보다는 자연에서 '규칙성'을 띠며 나타나는 현상들이 왜 일어나는지 설명하고자 했다.</div>
+        <div class="line-item"><strong>[(4) 치아의 예시와 논증] :</strong> 앞니는 날카롭고 어금니는 뭉툭한 형태가 항상 규칙적으로 나타나는 것은 결코 단순한 '우연'이 아니다. 이 규칙성은 분명한 '목적'과 연결되어 있다.</div>
+        <div class="line-item"><strong>[(5) 목적의 구체화] :</strong> 앞니는 음식을 찢고 어금니는 으깨기 위한 것이라는 구체적인 목적(식사)이 각각의 형태에 부여되어 있다.</div>
+        <div class="line-item"><strong>[(6) 결론] :</strong> 자연의 모든 사물과 규칙적인 현상은 우연이 아니라 특정한 '목적(the final cause)'을 달성하기 위해 발생한다는 것이 아리스토텔레스의 관점이다.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">04</div><h2>표현들의 연관성 정리</h2></div>
+      <div class="card no-break">
+        <h3>아리스토텔레스의 세계관</h3>
+        <div class="chip-row">
+          <span class="chip">Acts for the sake of something</span> <span class="arrow">=</span> <span class="chip">purposefulness</span> <span class="arrow">=</span> <span class="chip">final cause</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 20px;">지문을 관통하는 핵심 개념으로, 자연의 모든 사물과 현상에는 고유한 목적과 존재 이유가 있다는 아리스토텔레스의 '목적론적 세계관'을 의미한다.</div>
+
+        <h3>목적의 증거</h3>
+        <div class="chip-row">
+          <span class="chip">Regularity</span> <span class="arrow">↔</span> <span class="chip">Coincidental</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 20px;">자연 현상이 변함없이 일관되게 나타나는 성질(규칙성)과 아무런 목적 없이 무작위로 일어나는 성질(우연)을 대조하여, 규칙성이 곧 목적의 증거임을 주장한다.</div>
+
+        <h3>형태와 기능의 일치</h3>
+        <div class="chip-row">
+          <span class="chip">Sharpness to tear / bluntness to crush</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 4px;">구조(형태)가 곧 기능(목적)을 따른다는 목적론의 완벽한 사례다.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">05</div><h2>소재와 주제문</h2></div>
+      <div class="card no-break" style="border-top-color: #f59e0b;">
+        <div class="line-item" style="margin-bottom: 12px;"><strong>핵심 소재:</strong> 자연의 규칙성과 합목적성에 대한 아리스토텔레스의 관점</div>
+        <div class="mini-divider"></div>
+        <div class="label" style="margin-top: 8px;">주제문 (문장 6)</div>
+        <div class="sentence-en" style="margin-bottom: 0;">In Aristotle's view, all natural things happen in a given way and occur for the sake of something; that is the final cause.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">06</div><h2>지문의 요약 및 패러프레이징</h2></div>
+      <div class="card no-break">
+        <div class="summary-pair">
+          <div class="label">요약 / Summary</div>
+          <div class="sentence-en">Aristotle argued that the regularity found in nature, such as the specific shapes of teeth, is not coincidental but clear evidence of purposefulness, meaning everything exists for a reason.</div>
+          <div class="sentence-ko">아리스토텔레스는 치아의 특정 형태와 같이 자연에서 발견되는 규칙성은 우연이 아니라 합목적성의 분명한 증거이며, 이는 모든 것이 이유가 있어 존재함을 의미한다고 주장했다.</div>
+        </div>
+        <div class="divider"></div>
+        <div class="summary-pair">
+          <div class="label">패러프레이징 / Paraphrasing</div>
+          <div class="sentence-en">Rejecting the idea of random occurrence, Aristotle's philosophy posits that natural phenomena are inherently teleological; the consistent structural designs in nature, like dental arrangements, exist to fulfill specific functions.</div>
+          <div class="sentence-ko">무작위적 발생이라는 개념을 거부하면서, 아리스토텔레스의 철학은 자연 현상이 본질적으로 목적론적이라고 상정한다. 치아 배열과 같이 자연의 일관된 구조적 설계는 특정 기능을 수행하기 위해 존재한다.</div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">07</div><h2>도움이 되는 배경지식</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>1. 아리스토텔레스의 4원인설:</strong><br> 아리스토텔레스는 사물이 존재하는 원인을 질료인(재료), 형상인(형태), 동력인(원인제공자), 목적인(존재의 목적)의 네 가지로 설명했다. 본 지문에 등장하는 'final cause(목적인)'는 사물이 무엇을 위해 존재하는지 그 '궁극적 목적'을 뜻한다.</div>
+        <div class="divider"></div>
+        <div class="line-item"><strong>2. 목적론(Teleology):</strong><br> 우주와 자연의 모든 현상은 맹목적인 우연이나 기계적 인과관계에 의해서만 일어나는 것이 아니라, 어떠한 궁극적인 '목적'을 향해 나아간다는 철학적 세계관이다.</div>
+      </div>
+    </div>
+
+
+    <!-- ========================================== -->
+    <!-- 지문 구분선 (인쇄 시 여기서 페이지가 나뉨) -->
+    <!-- ========================================== -->
+    <hr class="passage-separator" />
+    
+    <!-- ========================================== -->
+    <!-- [지문 2] 13강 3번                          -->
+    <!-- ========================================== -->
+    <div class="passage-container">
+      <div class="header-container">
+        <div class="hero-title">13강 3번 지문분석</div>
+        <div class="subtitle">Lio T 내신대비 지문분석서</div>
+      </div>
+
+      <div class="section-title no-break section-00"><div class="page-no">00</div><h2>영어 본문 및 전체 해석</h2></div>
+      <div class="card no-break">
+        <div class="text-block-title">영어 본문</div>
+        <div class="eng-body">
+          Becoming aware of our internal sensations can help us handle our own emotions. Perhaps more surprisingly, the body's interoceptive faculty can also bring us into closer contact with other people's emotions. That's because the brain, on its own, has no direct access to the contents of other people's minds, no way to feel what others are feeling. Interpreting others' spoken words and facial expressions may yield only a coolly abstract sense of the emotions that stir within. The body acts as a critical conduit, supplying the brain with the visceral information it lacks. It does so in this way: When interacting with other people, we subtly and unconsciously mimic their facial expressions, gestures, posture, and vocal pitch. Then, via the interoception of our own bodies' signals, we perceive what the other person is feeling because we feel it in ourselves. We bring other people's feelings onboard, and the body is the bridge. In an act similar to taking a bite off our partner's plate, or borrowing an earbud to hear the song our friend is listening to, we are sampling their emotions.
+        </div>
+        <div class="divider"></div>
+        <div class="text-block-title">전체 해석</div>
+        <div class="kor-body">
+          우리의 내부 감각을 인식하게 되는 것은 우리가 우리 자신의 감정을 다루는 데 도움을 줄 수 있다. 아마 더 놀라운 것은, 신체의 내부 감각 수용 능력은 또한 우리를 다른 사람들의 감정과 더 긴밀하게 접촉하도록 이끌어 줄 수 있다는 것이다. 그것은 뇌가 독자적으로는 타인의 마음 내용물에 직접 접근할 수 없고, 타인이 느끼고 있는 것을 느낄 방법이 없기 때문이다. 다른 사람들의 말과 표정을 해석하는 것은 내면에서 일어나는(움직이는) 감정에 대한 차갑고 추상적인 감각만을 산출할지도 모른다. 신체는 중요한 전달자 역할을 하여, 뇌에 뇌가 부족한 본능적(내장적) 정보를 공급한다. 그것(신체)은 이런 방식으로 그렇게 한다: 다른 사람들과 상호작용할 때, 우리는 미묘하게 그리고 무의식적으로 그들의 표정, 몸짓, 자세, 그리고 목소리의 높낮이를 모방한다. 그런 다음, 우리 자신의 신체 신호에 대한 내부 감각 수용을 통해, 우리는 그것을 우리 자신 안에서 느끼기 때문에 다른 사람이 느끼고 있는 것을 인식한다. 우리는 다른 사람들의 감정을 (우리 몸에) 탑승시키며, 신체는 그 다리이다. 파트너의 접시에서 한 입 베어 먹거나 친구가 듣고 있는 노래를 듣기 위해 이어폰 한쪽을 빌리는 것과 유사한 행동으로, 우리는 그들의 감정을 '시식(표본 추출)하고' 있는 것이다.
+        </div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">01</div><h2>직독직해 및 어휘 정리</h2></div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 1</div>
+        <div class="sentence-en">Becoming aware / of our internal sensations / can help / us / handle / our own emotions.</div>
+        <div class="sentence-ko">인식하게 되는 것은 / 우리의 내부 감각을 / 도울 수 있다 / 우리가 / 다루도록 / 우리 자신의 감정을.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> become aware of - ~을 인식하다, internal sensation - 내부 감각, handle - 다루다</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 2</div>
+        <div class="sentence-en">Perhaps more surprisingly, / the body's interoceptive faculty / can also bring / us / into closer contact / with other people's emotions.</div>
+        <div class="sentence-ko">아마 더 놀라운 것은, / 신체의 내부 감각 수용 능력은 / 또한 데려갈 수 있다 / 우리를 / 더 긴밀한 접촉으로 / 타인들의 감정과의.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> interoceptive - 내부 감각 수용의, 내수용성의, faculty - 능력 기능, contact - 접촉</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 3</div>
+        <div class="sentence-en">That's because / the brain, / on its own, / has / no direct access / to the contents / of other people's minds, / no way / to feel / what others are feeling.</div>
+        <div class="sentence-ko">그것은 ~때문이다 / 뇌가, / 독자적으로는(그 자체로는), / 갖지 않는다(못한다) / 직접적인 접근을 / 내용물에 / 타인들의 마음의, / 방법이 없다 / 느낄 / 타인들이 느끼고 있는 것을.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> on its own - 독자적으로, 스스로, access to - ~에 대한 접근</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 4</div>
+        <div class="sentence-en">Interpreting / others' spoken words and facial expressions / may yield / only a coolly abstract sense / of the emotions / that / stir / within.</div>
+        <div class="sentence-ko">해석하는 것은 / 타인들의 말과 표정을 / 산출할지도 모른다 / 오직 차갑게 추상적인 감각만을 / 감정에 대한 / (~하는) / 움직이는(일어나는) / 내면에서.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> interpret - 해석하다, facial expression - 표정, yield - 산출하다, 낳다, coolly - 차갑게, 냉정하게, abstract - 추상적인, stir - 움직이다, 휘젓다, 일어나다</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 5</div>
+        <div class="sentence-en">The body / acts / as a critical conduit, / supplying / the brain / with the visceral information / it lacks.</div>
+        <div class="sentence-ko">신체는 / 역할을 한다 / 중요한 전달자로서, / 공급하면서 / 뇌에 / 본능적인(내장적인) 정보를 / 그것(뇌)이 부족한.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> conduit - 전달자, 파이프, 도관, supply A with B - A에게 B를 공급하다, visceral - 본능적인, 내장의, lack - 부족하다</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 6</div>
+        <div class="sentence-en">It / does so / in this way: / When interacting / with other people, / we / subtly and unconsciously mimic / their facial expressions, gestures, posture, / and vocal pitch.</div>
+        <div class="sentence-ko">그것은 / 그렇게 한다 / 이 방식으로: / 상호작용할 때 / 타인들과, / 우리는 / 미묘하고 무의식적으로 모방한다 / 그들의 표정, 몸짓, 자세, / 그리고 목소리의 높낮이를.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> interact with - ~와 상호작용하다, subtly - 미묘하게, unconsciously - 무의식적으로, mimic - 모방하다, posture - 자세, vocal pitch - 목소리 높낮이</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 7</div>
+        <div class="sentence-en">Then, / via the interoception / of our own bodies' signals, / we / perceive / what the other person is feeling / because / we / feel it / in ourselves.</div>
+        <div class="sentence-ko">그런 다음, / 내부 감각 수용을 통해 / 우리 자신의 신체 신호에 대한, / 우리는 / 인식한다 / 상대방이 느끼고 있는 것을 / 왜냐하면 / 우리가 / 느끼기 때문이다 그것을 / 우리 자신 안에서.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> via - ~을 통하여, perceive - 인식하다, 지각하다</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 8</div>
+        <div class="sentence-en">We / bring / other people's feelings / onboard, / and / the body / is the bridge.</div>
+        <div class="sentence-ko">우리는 / 데려온다(가져온다) / 타인들의 감정을 / 배(차)에 탄 상태로(우리 몸 안으로), / 그리고 / 신체는 / 다리(연결 고리)이다.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> bring onboard - 탑승시키다, 합류시키다</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 9</div>
+        <div class="sentence-en">In an act / similar to taking a bite / off our partner's plate, / or borrowing an earbud / to hear the song / our friend is listening to, / we / are sampling / their emotions.</div>
+        <div class="sentence-ko">행동에서 / 한 입 베어 먹는 것과 유사한 / 우리 파트너의 접시에서, / 혹은 이어폰을 빌리는 것 (과 유사한) / 노래를 듣기 위해 / 우리 친구가 듣고 있는, / 우리는 / '시식'해보고(맛보고) 있는 것이다 / 그들의 감정을.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> take a bite - 한 입 베어 먹다, sample - 시식하다, 표본을 추출하다, 경험하다</div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">02</div><h2>어법 및 구문 포인트</h2></div>
+      <div class="card no-break">
+        <div class="point-block">
+          <div class="sentence-id">문장 1</div>
+          <div class="line-item"><strong>[can help us handle ...]</strong> 5형식 구문에서 `help`의 목적격 보어로 동사원형 `handle`이 왔다.</div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul><li>`to handle`로도 쓸 수 있으나, `handling`으로 쓰면 어법상 틀린다.</li></ul>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 4</div>
+          <div class="line-item"><strong>[Interpreting ... may yield ... emotions that stir within]</strong> 주어는 동명사구 `Interpreting...`이고 단수 동사 `may yield`가 연결되었다. `that`은 주격 관계대명사로 선행사 `the emotions`를 수식하며 복수 동사 `stir`가 왔다.</div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 5</div>
+          <div class="line-item"><strong>[supplying the brain with the visceral information it lacks]</strong> 능동의 부대상황을 나타내는 분사구문 `supplying`이다. 신체가 뇌에 정보를 '공급하면서'의 의미를 지닌다. `it lacks`는 목적격 관계대명사가 생략된 절로 앞의 `the visceral information`을 수식하며, 여기서 `it`은 `the brain`을 가리킨다.</div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul><li>`supplied` 수동형 분사를 쓰면 틀린다. `supply A with B` 전치사 사용에 유의하라.</li></ul>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 6</div>
+          <div class="line-item"><strong>[When interacting with other people]</strong> `When we interact...`에서 주어와 be동사가 생략(또는 접속사를 남긴 분사구문)된 형태이다. 우리가 능동적으로 상호작용하므로 현재분사 `interacting`이 적절하다.</div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">03</div><h2>문장 단위 내용 흐름 정리</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>[(1)-(2) 도입 (신체 감각의 놀라운 기능)] :</strong> 자신의 신체 내부 감각을 느끼는 것은 내 감정 통제뿐만 아니라, 타인의 감정을 깊이 이해(공감)하는 데 필수적이다.</div>
+        <div class="line-item"><strong>[(3)-(4) 뇌의 한계] :</strong> 뇌는 타인의 감정을 직접 읽어낼 수 없으며, 시각이나 청각(말, 표정) 정보만으로는 타인의 감정을 겉핥기식(추상적)으로만 파악할 수밖에 없다.</div>
+        <div class="line-item"><strong>[(5)-(7) 신체의 공감 메커니즘 (해결책)] :</strong> 이 한계를 극복하기 위해 '신체'가 다리 역할을 한다. 우리는 무의식적으로 타인의 표정과 자세를 신체로 똑같이 '모방'하고, 그 모방으로 인해 내 신체에 발생한 내부 감각 신호를 뇌가 감지함으로써 타인이 느끼는 감정을 내 안에서 똑같이 느끼게 된다.</div>
+        <div class="line-item"><strong>[(8)-(9) 결론 (비유)] :</strong> 결국 타인의 감정에 공감하는 것은, 남의 음식을 내 입으로 직접 한 입 먹어보며(sampling) 그 맛을 똑같이 경험하는 것과 같은 신체적 동기화 과정이다.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">04</div><h2>표현들의 연관성 정리</h2></div>
+      <div class="card no-break">
+        <h3>신체의 연결 역할</h3>
+        <div class="chip-row">
+          <span class="chip">Interoceptive faculty</span> <span class="arrow">=</span> <span class="chip">body acts as a critical conduit</span> <span class="arrow">=</span> <span class="chip">body is the bridge</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 20px;">타인의 감정을 이해하기 위해 뇌에 시각/청각 이상의 신체적(본능적) 정보를 전달해 주는 육체의 핵심 역할을 의미한다.</div>
+
+        <h3>감각의 대조</h3>
+        <div class="chip-row">
+          <span class="chip">Coolly abstract sense</span> <span class="arrow">↔</span> <span class="chip">Visceral information</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 20px;">이성과 뇌만으로 타인을 판단할 때의 한계(차갑고 추상적인 감각)와, 내 몸이 직접 모방하여 느끼는 생생한 감정(본능적이고 육체적인 정보)의 대조다.</div>
+
+        <h3>공감의 구체적 과정</h3>
+        <div class="chip-row">
+          <span class="chip">Mimic their facial expressions</span> <span class="arrow">=</span> <span class="chip">feel it in ourselves</span> <span class="arrow">=</span> <span class="chip">sampling their emotions</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 4px;">상대방의 외적 상태를 내 몸으로 복사하여, 내 안에서 그 감정의 맛(샘플)을 직접 느껴보는 '공감(empathy)'의 신체적 과정을 은유적으로 나타낸다.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">05</div><h2>소재와 주제문</h2></div>
+      <div class="card no-break" style="border-top-color: #f59e0b;">
+        <div class="line-item" style="margin-bottom: 12px;"><strong>핵심 소재:</strong> 타인의 감정을 공감하게 만드는 신체의 내부 감각(모방 메커니즘)</div>
+        <div class="mini-divider"></div>
+        <div class="label" style="margin-top: 8px;">주제문 (문장 5)</div>
+        <div class="sentence-en" style="margin-bottom: 8px;">The body acts as a critical conduit, supplying the brain with the visceral information it lacks.</div>
+        <div class="label" style="margin-top: 8px;">주제문 (문장 7)</div>
+        <div class="sentence-en" style="margin-bottom: 0;">Then, via the interoception of our own bodies' signals, we perceive what the other person is feeling because we feel it in ourselves.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">06</div><h2>지문의 요약 및 패러프레이징</h2></div>
+      <div class="card no-break">
+        <div class="summary-pair">
+          <div class="label">요약 / Summary</div>
+          <div class="sentence-en">Our bodies enable us to deeply understand others' emotions by unconsciously mimicking their physical expressions, thereby recreating and sampling those feelings within our own internal sensations.</div>
+          <div class="sentence-ko">우리의 신체는 타인의 신체적 표현을 무의식적으로 모방하고, 그럼으로써 우리 자신의 내부 감각 안에서 그 감정을 재현하고 시식하게 함으로써 타인의 감정을 깊이 이해할 수 있게 해준다.</div>
+        </div>
+        <div class="divider"></div>
+        <div class="summary-pair">
+          <div class="label">패러프레이징 / Paraphrasing</div>
+          <div class="sentence-en">True empathy goes beyond the brain's intellectual interpretation; it is rooted in our physical ability to mirror the gestures of others, allowing our bodies to serve as a bridge to directly experience and "taste" their emotional states.</div>
+          <div class="sentence-ko">진정한 공감은 뇌의 지적인 해석을 넘어선다. 그것은 타인의 몸짓을 거울처럼 따라 하는 우리의 신체적 능력에 뿌리를 두고 있으며, 우리의 신체가 그들의 감정 상태를 직접 경험하고 "맛보는" 다리 역할을 하도록 허용한다.</div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">07</div><h2>도움이 되는 배경지식</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>1. 거울 신경세포(Mirror Neurons):</strong><br> 타인의 행동을 관찰하기만 해도 자신이 직접 그 행동을 할 때와 똑같이 뇌의 신경세포가 활성화되는 현상. 본 지문에서 타인의 표정이나 제스처를 무의식적으로 모방(mimic)하여 감정을 함께 느낀다는 내용이 이 거울 신경 체계를 바탕으로 한 공감(empathy) 원리를 설명하고 있다.</div>
+        <div class="divider"></div>
+        <div class="line-item"><strong>2. 신체화된 인지(Embodied Cognition):</strong><br> 마음이나 생각(인지)이 단순히 뇌 안에서만 일어나는 정보 처리 과정이 아니라, 물리적인 신체의 경험과 감각에 크게 의존한다는 심리학 이론이다. "The body is the bridge(신체가 다리이다)"라는 표현이 이를 잘 대변한다.</div>
+      </div>
+    </div>
+
+
+    <!-- ========================================== -->
+    <!-- 지문 구분선 (인쇄 시 여기서 페이지가 나뉨) -->
+    <!-- ========================================== -->
+    <hr class="passage-separator" />
+    
+    <!-- ========================================== -->
+    <!-- [지문 3] 14강 1번                          -->
+    <!-- ========================================== -->
+    <div class="passage-container">
+      <div class="header-container">
+        <div class="hero-title">14강 1번 지문분석</div>
+        <div class="subtitle">Lio T 내신대비 지문분석서</div>
+      </div>
+
+      <div class="section-title no-break section-00"><div class="page-no">00</div><h2>영어 본문 및 전체 해석</h2></div>
+      <div class="card no-break">
+        <div class="text-block-title">영어 본문</div>
+        <div class="eng-body">
+          Sharing meanings and experiences is not a simple, automatic process: whenever two or more people observe or participate in the same ongoing event they experience it from different perspectives, with different histories, with different background knowledge. These differences are most glaring when the individuals involved include an infant or very young child and an adult, although an adult arranging an event for an infant may find it difficult to keep these differences in mind. When giving a bath, for example, a parent whose experience with water play has been fun, whose knowledge about the source of the water and its disposition provides confidence, and whose body control ensures that the baby is safely held and not in danger, expects the infant to enjoy splashing water. Yet the baby may make it clear (perhaps by terrified crying) that her perspective is quite different from that of the adult. The two share an experience, but not a meaning.
+        </div>
+        <div class="divider"></div>
+        <div class="text-block-title">전체 해석</div>
+        <div class="kor-body">
+          의미와 경험을 공유하는 것은 단순하고 자동적인 과정이 아니다. 둘 이상의 사람들이 진행 중인 동일한 사건을 관찰하거나 참여할 때마다 그들은 다른 역사와 다른 배경지식을 가지고 다른 관점에서 그것을 경험한다. 이러한 차이는 비록 유아를 위해 행사를 마련하는 어른이 이 차이를 염두에 두는 것이 어렵다는 것을 알 수도 있지만, 관련된 사람들에 유아나 아주 어린아이와 어른이 포함될 때 가장 두드러진다. 예를 들어, 목욕을 시킬 때, 물놀이에 대한 경험이 즐거웠고, 물의 출처와 그 성질에 대한 지식이 자신감을 제공하며, 자신의 신체 통제력이 아기가 안전하게 안겨 있고 위험하지 않음을 보장하는 부모는 유아가 물장구치는 것을 즐길 것이라고 기대한다. 그러나 아기는 (아마도 겁에 질린 울음을 통해) 자신의 관점이 어른의 관점과 꽤 다르다는 것을 분명히 할 수도 있다. 그 둘은 경험을 공유하지만, 의미를 공유하는 것은 아니다.
+        </div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">01</div><h2>직독직해 및 어휘 정리</h2></div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 1</div>
+        <div class="sentence-en">Sharing meanings and experiences / is not a simple, automatic process: / whenever / two or more people / observe or participate / in the same ongoing event / they / experience it / from different perspectives, / with different histories, / with different background knowledge.</div>
+        <div class="sentence-ko">의미와 경험을 공유하는 것은 / 단순하고 자동적인 과정이 아니다: / ~할 때마다 / 둘 이상의 사람들이 / 관찰하거나 참여할 (때마다) / 동일한 진행 중인 사건에 / 그들은 / 그것을 경험한다 / 다른 관점에서, / 다른 역사를 가지고, / 다른 배경지식을 가지고.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> automatic - 자동적인, ongoing - 진행 중인, perspective - 관점, 시각</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 2</div>
+        <div class="sentence-en">These differences / are most glaring / when / the individuals involved / include / an infant or very young child / and an adult, / although / an adult / arranging an event / for an infant / may find it difficult / to keep these differences in mind.</div>
+        <div class="sentence-ko">이러한 차이들은 / 가장 두드러진다 / ~할 때 / 관련된 사람들이 / 포함할 (때) / 유아나 아주 어린아이 / 그리고 어른을, / 비록 ~일지라도 / 어른이 / 행사를 마련하는 / 유아를 위해 / 그것이 어렵다는 것을 알 (수도 있을지라도) / 이러한 차이들을 염두에 두는 것이.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> glaring - 두드러진, 확연한, involved - 관련된, infant - 유아, arrange - 마련하다, 준비하다, keep ~ in mind - ~을 명심하다, 염두에 두다</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 3</div>
+        <div class="sentence-en">When giving a bath, / for example, / a parent / whose experience with water play / has been fun, / whose knowledge / about the source of the water and its disposition / provides confidence, / and whose body control / ensures / that the baby is safely held / and not in danger, / expects / the infant / to enjoy splashing water.</div>
+        <div class="sentence-ko">목욕을 시킬 때, / 예를 들어, / 부모는 / 물놀이에 대한 경험이 / 즐거웠던, / 지식이 / 물의 출처와 성질에 대한 / 자신감을 제공하는, / 그리고 신체 통제력이 / 보장하는 (부모는) / 아기가 안전하게 안겨 있고 / 위험하지 않다는 것을, / 기대한다 / 유아가 / 물장구치는 것을 즐길 것이라고.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> give a bath - 목욕시키다, disposition - 성질, 기질, confidence - 자신감, ensure - 보장하다, splash - 첨벙거리다, 물장구치다</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 4</div>
+        <div class="sentence-en">Yet / the baby / may make it clear / (perhaps by terrified crying) / that her perspective / is quite different / from that of the adult.</div>
+        <div class="sentence-ko">그러나 / 아기는 / 분명히 할 수도 있다 / (아마도 겁에 질린 울음으로) / 그녀의 관점이 / 꽤 다르다는 것을 / 어른의 그것(관점)과는.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> terrified - 겁에 질린</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 5</div>
+        <div class="sentence-en">The two / share an experience, / but not a meaning.</div>
+        <div class="sentence-ko">그 둘은 / 경험을 공유한다, / 하지만 의미를 (공유하는 것은) 아니다.</div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">02</div><h2>어법 및 구문 포인트</h2></div>
+      <div class="card no-break">
+        <div class="point-block">
+          <div class="sentence-id">문장 2</div>
+          <div class="line-item"><strong>[may find it difficult to keep these differences in mind]</strong> 가목적어 `it`과 진목적어 `to keep`을 사용한 5형식 구문이다. `difficult`는 목적격 보어다.</div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul><li>`difficult` 자리에 부사 `difficultly`를 쓰면 틀린다.</li></ul>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 3</div>
+          <div class="line-item"><strong>[a parent whose experience ... whose knowledge ... and whose body control ... expects]</strong> 문장의 핵심 주어는 `a parent`이고, 본동사는 `expects`이다. 소유격 관계대명사 `whose`가 이끄는 세 개의 관계절이 병렬로 연결되어 선행사 `a parent`를 길게 수식하고 있다.</div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul><li>주어와 동사(`expects`) 사이의 거리가 매우 멀기 때문에 수 일치 문제가 출제되기 좋다. `expect`나 `expecting`을 쓰면 오답이다. `whose` 뒤에는 완전한 명사구가 온다는 점도 확인해야 한다.</li></ul>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 4</div>
+          <div class="line-item"><strong>[make it clear ... that her perspective is ...]</strong> `make + 가목적어(it) + 목적격 보어(clear) + 진목적어(that절)` 형태의 5형식 구문이다. `that of the adult`에서 `that`은 앞의 명사 `perspective`의 반복을 피하기 위해 쓰인 대명사다.</div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul><li>대명사 `that` 자리에 `those`를 쓰면 안 된다(`perspective`가 단수이므로).</li></ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">03</div><h2>문장 단위 내용 흐름 정리</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>[(1) 주제 제시] :</strong> 같은 사건을 겪는다고 해서 사람들이 그 '의미'까지 똑같이 공유하는 것은 아니다. 각자의 배경과 관점이 다르기 때문이다.</div>
+        <div class="line-item"><strong>[(2) 상황의 구체화] :</strong> 이 관점의 차이는 지식과 경험의 격차가 매우 큰 '어른과 아이' 사이에서 가장 극명하게 나타난다.</div>
+        <div class="line-item"><strong>[(3) 어른의 관점 (예시)] :</strong> 부모는 물을 통제할 능력이 있고 물놀이의 즐거움을 알기 때문에, 목욕을 시킬 때 아기도 당연히 즐거워할 것이라고 기대한다.</div>
+        <div class="line-item"><strong>[(4) 아기의 관점 (예시)] :</strong> 하지만 경험이 없는 아기에게 물은 공포의 대상일 수 있으며, 아기는 울음을 통해 부모와 자신의 관점이 다름을 명백히 보여준다.</div>
+        <div class="line-item"><strong>[(5) 결론] :</strong> 이처럼 부모와 아기는 목욕이라는 '경험(사건)'은 공유하고 있지만, 그 경험이 주는 '의미'는 전혀 다르게 받아들인다.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">04</div><h2>표현들의 연관성 정리</h2></div>
+      <div class="card no-break">
+        <h3>객관적 사실의 공유</h3>
+        <div class="chip-row">
+          <span class="chip">Experience</span> <span class="arrow">=</span> <span class="chip">the same ongoing event</span> <span class="arrow">=</span> <span class="chip">giving a bath</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 20px;">두 사람이 물리적으로 동일한 시공간에서 겪고 있는 객관적인 사건 자체를 뜻한다.</div>
+
+        <h3>주관적 해석의 차이</h3>
+        <div class="chip-row">
+          <span class="chip">Meaning</span> <span class="arrow">=</span> <span class="chip">perspectives</span> <span class="arrow">=</span> <span class="chip">histories</span> <span class="arrow">=</span> <span class="chip">background knowledge</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 4px;">각자의 내면에서 사건을 해석하고 받아들이는 주관적인 평가를 의미한다. 어른에게 물은 '재미(fun)'라는 의미지만, 아기에게는 '공포(terrified)'라는 의미다.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">05</div><h2>소재와 주제문</h2></div>
+      <div class="card no-break" style="border-top-color: #f59e0b;">
+        <div class="line-item" style="margin-bottom: 12px;"><strong>핵심 소재:</strong> 동일한 경험 속에서 나타나는 의미 해석(관점)의 차이</div>
+        <div class="mini-divider"></div>
+        <div class="label" style="margin-top: 8px;">주제문 (문장 1)</div>
+        <div class="sentence-en" style="margin-bottom: 8px;">Sharing meanings and experiences is not a simple, automatic process: whenever two or more people observe or participate in the same ongoing event they experience it from different perspectives, with different histories, with different background knowledge.</div>
+        <div class="label" style="margin-top: 8px;">주제문 (문장 5)</div>
+        <div class="sentence-en" style="margin-bottom: 0;">The two share an experience, but not a meaning.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">06</div><h2>지문의 요약 및 패러프레이징</h2></div>
+      <div class="card no-break">
+        <div class="summary-pair">
+          <div class="label">요약 / Summary</div>
+          <div class="sentence-en">Because people interpret events through their own unique backgrounds and perspectives, sharing a physical experience, like an adult bathing a baby, does not necessarily mean they share the same emotional meaning.</div>
+          <div class="sentence-ko">사람들은 자신만의 고유한 배경과 관점을 통해 사건을 해석하기 때문에, 어른이 아기를 목욕시키는 것과 같은 물리적 경험을 공유한다고 해서 반드시 동일한 감정적 의미를 공유하는 것은 아니다.</div>
+        </div>
+        <div class="divider"></div>
+        <div class="summary-pair">
+          <div class="label">패러프레이징 / Paraphrasing</div>
+          <div class="sentence-en">Engaging in the same activity does not guarantee a shared understanding; a parent's joy and a baby's terror during a bath illustrate how vastly different internal meanings can arise from a single shared event.</div>
+          <div class="sentence-ko">같은 활동에 참여하는 것이 공유된 이해를 보장하지는 않는다. 목욕 중 부모의 기쁨과 아기의 공포는 하나의 공유된 사건에서 어떻게 엄청나게 다른 내적 의미가 발생할 수 있는지를 보여준다.</div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">07</div><h2>도움이 되는 배경지식</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>1. 관점 수용(Perspective-taking):</strong><br> 타인의 입장에서 상황을 바라보는 인지적 능력이다. 본문에서 부모는 자신의 경험(물은 안전하고 재밌다)에 매몰되어 아기의 입장(물은 낯설고 무섭다)을 쉽게 잊어버리는 경향이 있다고 설명한다.</div>
+        <div class="divider"></div>
+        <div class="line-item"><strong>2. 구성주의(Constructivism):</strong><br> 객관적인 현실(경험)이 존재하더라도, 인간은 자신의 과거 지식과 사회적 배경을 바탕으로 그 현실의 의미를 스스로 구성(해석)한다는 심리학 및 교육학 이론이다.</div>
+      </div>
+    </div>
+
+
+    <!-- ========================================== -->
+    <!-- 지문 구분선 (인쇄 시 여기서 페이지가 나뉨) -->
+    <!-- ========================================== -->
+    <hr class="passage-separator" />
+    
+    <!-- ========================================== -->
+    <!-- [지문 4] 14강 3번                          -->
+    <!-- ========================================== -->
+    <div class="passage-container">
+      <div class="header-container">
+        <div class="hero-title">14강 3번 지문분석</div>
+        <div class="subtitle">Lio T 내신대비 지문분석서</div>
+      </div>
+
+      <div class="section-title no-break section-00"><div class="page-no">00</div><h2>영어 본문 및 전체 해석</h2></div>
+      <div class="card no-break">
+        <div class="text-block-title">영어 본문</div>
+        <div class="eng-body">
+          The idea of music direction, in the sense of someone shaping and leading a musical performance, goes back to the beginnings of music. Even the gamelans of ancient Indonesia had leaders who would signal to the group changes of meter and tempo, beginnings and endings, and transitions from piece to piece. Yet listening audiences are rarely aware of any musical leadership and for good aesthetic reason. They need not be aware to fulfill their experience; indeed, the unnecessarily conspicuous presence of a musical leader will detract from it. An audience is better off, for the most part, taking in the whole of a stage work rather than being party to the techniques that go into realizing it. This is not to say that when an orchestra plays alone the audience members' eyes are not fixed on the conductor for the majority of the time; they probably are. When music is accompanying something happening on stage, however, all eyes turn to the stage, and so do everyone's ears, too (including the music director's).
+        </div>
+        <div class="divider"></div>
+        <div class="text-block-title">전체 해석</div>
+        <div class="kor-body">
+          누군가가 음악 공연을 형성하고 이끈다는 의미에서 음악 감독의 개념은 음악의 기원으로 거슬러 올라간다. 심지어 고대 인도네시아의 가믈란(전통 악단)에도 무리에게 박자와 템포의 변화, 시작과 끝, 그리고 곡에서 곡으로의 전환을 신호로 알리는 리더들이 있었다. 그러나 듣는 청중은 어떠한 음악적 리더십도 거의 인식하지 못하는데, 이는 타당한 미학적 이유 때문이다. 그들은 자신들의 경험을 충족하기 위해 인식할 필요가 없다. 참으로, 음악 리더의 불필요하게 눈에 띄는 존재감은 그것(경험)을 손상시킬 것이다. 관객은 대개 무대 작품을 실현하는 데 들어가는 기술에 관여하기보다는 무대 작품 전체를 받아들이는 편이 더 낫다. 이것이 오케스트라가 단독으로 연주할 때 관객들의 눈이 대부분의 시간 동안 지휘자에게 고정되지 않는다는 것을 말하는 것은 아니다. 아마도 고정되어 있을 것이다. 그러나 음악이 무대에서 일어나는 어떤 일에 수반될 때(반주할 때), 모든 눈은 무대로 향하고, 모든 사람의 귀 또한 마찬가지이다 (음악 감독의 귀를 포함하여).
+        </div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">01</div><h2>직독직해 및 어휘 정리</h2></div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 1</div>
+        <div class="sentence-en">The idea of music direction, / in the sense / of someone shaping and leading / a musical performance, / goes back / to the beginnings of music.</div>
+        <div class="sentence-ko">음악 감독의 개념은, / 의미에서 / 누군가가 형성하고 이끈다는 / 음악 공연을, / 거슬러 올라간다 / 음악의 기원으로.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> direction - 지휘, 감독, shape - 형성하다, go back to - ~로 거슬러 올라가다</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 2</div>
+        <div class="sentence-en">Even the gamelans / of ancient Indonesia / had leaders / who / would signal / to the group / changes of meter and tempo, / beginnings and endings, / and transitions / from piece to piece.</div>
+        <div class="sentence-ko">심지어 가믈란(악단)조차도 / 고대 인도네시아의 / 리더들을 가졌다 / (~하는) / 신호를 보내곤 했던 / 무리에게 / 박자와 템포의 변화, / 시작과 끝, / 그리고 전환(을) / 곡에서 곡으로의.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> meter - 박자, tempo - 속도, 템포, transition - 전환, 변화, piece - 곡, 작품</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 3</div>
+        <div class="sentence-en">Yet / listening audiences / are rarely aware / of any musical leadership / and / for good aesthetic reason.</div>
+        <div class="sentence-ko">그러나 / 듣는 청중은 / 거의 인식하지 못한다 / 어떠한 음악적 리더십도 / 그리고 / 타당한 미학적 이유 때문에 (그렇다).</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> rarely - 거의 ~않다, be aware of - ~을 인식하다, 알아채다, aesthetic - 미학적인, 미적인</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 4</div>
+        <div class="sentence-en">They / need not be aware / to fulfill / their experience; / indeed, / the unnecessarily conspicuous presence / of a musical leader / will detract / from it.</div>
+        <div class="sentence-ko">그들은 / 인식할 필요가 없다 / 충족하기 위해 / 그들의 경험을; / 참으로, / 불필요하게 눈에 띄는 존재감은 / 음악 리더의 / 손상시킬 것이다 / 그것(경험)을.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> fulfill - 충족하다, 실현하다, conspicuous - 눈에 띄는, 뚜렷한, presence - 존재(감), detract from - ~을 손상시키다, 떨어뜨리다</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 5</div>
+        <div class="sentence-en">An audience / is better off, / for the most part, / taking in / the whole of a stage work / rather than / being party to the techniques / that / go into / realizing it.</div>
+        <div class="sentence-ko">관객은 / 더 낫다, / 대개(대부분의 경우), / 받아들이는 편이 / 무대 작품 전체를 / ~하기보다는 / 기술에 관여하기(보다는) / (~하는) / 들어가는 / 그것을 실현하는 데.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> be better off ~ing - ~하는 편이 더 낫다, for the most part - 대개, 대부분, take in - 받아들이다, 흡수하다, be party to - ~에 관여하다, 한통속이 되다, realize - 실현하다</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 6</div>
+        <div class="sentence-en">This / is not to say / that / when an orchestra plays alone / the audience members' eyes / are not fixed / on the conductor / for the majority of the time; / they / probably are.</div>
+        <div class="sentence-ko">이것이 / 말하는 것은 아니다 / ~라고 / 오케스트라가 단독으로 연주할 때 / 관객들의 눈이 / 고정되어 있지 않다고 / 지휘자에게 / 대부분의 시간 동안; / 그들은 / 아마 그럴 것이다(고정되어 있을 것이다).</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> fixed on - ~에 고정된, conductor - 지휘자, majority - 대다수, 대부분</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 7</div>
+        <div class="sentence-en">When music / is accompanying / something happening / on stage, / however, / all eyes / turn to the stage, / and / so do everyone's ears, too / (including the music director's).</div>
+        <div class="sentence-ko">음악이 / 수반될(반주할) 때 / 일어나는 어떤 일에 / 무대 위에서, / 그러나, / 모든 눈은 / 무대로 향한다, / 그리고 / 모든 사람의 귀 또한 마찬가지이다 / (음악 감독의 것을 포함하여).</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> accompany - 수반하다, 동반하다, 반주하다, so + 동사 + 주어 - 주어 역시 그렇다</div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">02</div><h2>어법 및 구문 포인트</h2></div>
+      <div class="card no-break">
+        <div class="point-block">
+          <div class="sentence-id">문장 4</div>
+          <div class="line-item"><strong>[need not be aware]</strong> 조동사로 쓰인 `need`의 부정형이다. `need not + 동사원형`은 '~할 필요가 없다'는 뜻으로 `don't have to be`와 같다.</div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 5</div>
+          <div class="line-item"><strong>[is better off ... taking in ... rather than being party to ...]</strong> `be better off ~ing` 구문으로 '~하는 편이 낫다'라는 의미다. 전치사적 의미의 `rather than`을 사이에 두고 동명사 `taking`과 `being`이 병렬 구조를 이루고 있다. `that go into realizing it`에서 `that`은 주격 관계대명사다.</div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 6</div>
+          <div class="line-item"><strong>[they probably are]</strong> 대동사 구문으로 앞 문장의 `are fixed on the conductor`를 생략하고 `are`까지만 썼다.</div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul><li>`are` 자리에 `do`를 쓰면 안 된다.</li></ul>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 7</div>
+          <div class="line-item"><strong>[so do everyone's ears, too]</strong> `so + 조동사/be동사/do동사 + 주어` 구문으로 '주어 또한 그렇다(마찬가지다)'라는 뜻이다. 앞 문장의 일반동사 `turn`을 받기 때문에 대동사 `do`가 쓰였다.</div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul><li>이 자리에 `are`를 쓰면 어법상 틀리게 된다.</li></ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">03</div><h2>문장 단위 내용 흐름 정리</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>[(1)-(2) 음악 감독의 역사] :</strong> 고대 시대부터 음악 연주에는 템포와 흐름을 조율하는 리더(지휘자)가 존재해 왔다.</div>
+        <div class="line-item"><strong>[(3)-(5) 미학적 원리 (청중의 무지)] :</strong> 하지만 청중은 리더의 존재를 잘 인식하지 못하며, 그래야만 한다. 지휘자가 너무 튀면 관객이 작품 전체를 온전히 감상하는 것을 방해하기 때문이다. 관객은 음악을 만드는 기술적 과정에 개입하기보다 완성된 결과물(전체)을 즐기는 편이 낫다.</div>
+        <div class="line-item"><strong>[(6) 예외적 상황] :</strong> 물론 오케스트라 단독 교향곡 공연처럼 지휘자가 무대의 주인공일 때는 청중이 지휘자를 본다.</div>
+        <div class="line-item"><strong>[(7) 결론] :</strong> 하지만 오페라나 뮤지컬처럼 음악이 무대(연기 등)를 보조하는 역할일 때는 지휘자의 존재는 뒤로 숨고 모두의 이목이 오직 무대 위로만 집중되어야 한다.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">04</div><h2>표현들의 연관성 정리</h2></div>
+      <div class="card no-break">
+        <h3>음악의 조율자</h3>
+        <div class="chip-row">
+          <span class="chip">Music direction / musical leadership / conductor</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 20px;">연주자들을 통제하고 지휘하는 리더의 역할을 가리킨다.</div>
+
+        <h3>지휘자의 존재감 대조</h3>
+        <div class="chip-row">
+          <span class="chip">Unnecessarily conspicuous presence</span> <span class="arrow">↔</span> <span class="chip">Rare aware</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 20px;">지휘자가 자신을 너무 겉으로 드러내어 작품 감상을 방해하는 것과, 관객이 그 존재를 눈치채지 못하고 자연스럽게 빠져드는 상황을 대조한다.</div>
+
+        <h3>감상의 초점</h3>
+        <div class="chip-row">
+          <span class="chip">Techniques that go into realizing it</span> <span class="arrow">↔</span> <span class="chip">The whole of a stage work</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 4px;">지휘의 기술적인 기법(부분)과 완성된 예술 작품(전체)의 대조로, 관객이 집중해야 할 대상은 후자임을 강조한다.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">05</div><h2>소재와 주제문</h2></div>
+      <div class="card no-break" style="border-top-color: #f59e0b;">
+        <div class="line-item" style="margin-bottom: 12px;"><strong>핵심 소재:</strong> 음악 감독(지휘자)의 존재감과 관객의 미적 감상</div>
+        <div class="mini-divider"></div>
+        <div class="label" style="margin-top: 8px;">주제문 (문장 4)</div>
+        <div class="sentence-en" style="margin-bottom: 8px;">They need not be aware to fulfill their experience; indeed, the unnecessarily conspicuous presence of a musical leader will detract from it.</div>
+        <div class="label" style="margin-top: 8px;">주제문 (문장 5)</div>
+        <div class="sentence-en" style="margin-bottom: 0;">An audience is better off, for the most part, taking in the whole of a stage work rather than being party to the techniques that go into realizing it.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">06</div><h2>지문의 요약 및 패러프레이징</h2></div>
+      <div class="card no-break">
+        <div class="summary-pair">
+          <div class="label">요약 / Summary</div>
+          <div class="sentence-en">Although musical leaders play a vital role in shaping a performance, their presence should not be conspicuous, as audiences enjoy the aesthetic experience best when they focus on the complete artwork rather than the directing techniques.</div>
+          <div class="sentence-ko">음악 리더가 공연을 형성하는 데 중요한 역할을 하지만, 관객은 지휘 기술보다는 완성된 예술 작품에 집중할 때 미적 경험을 가장 잘 즐기기 때문에 그들의 존재가 눈에 띄어서는 안 된다.</div>
+        </div>
+        <div class="divider"></div>
+        <div class="summary-pair">
+          <div class="label">패러프레이징 / Paraphrasing</div>
+          <div class="sentence-en">For an audience to fully immerse themselves in the aesthetic beauty of a stage production, the mechanisms of musical direction should remain largely invisible, preventing the conductor from distracting from the overarching artistic experience.</div>
+          <div class="sentence-ko">관객이 무대 작품의 미적 아름다움에 완전히 몰입하기 위해서는 음악 감독의 메커니즘이 대체로 보이지 않는 상태로 유지되어야 하며, 지휘자가 전반적인 예술적 경험을 산만하게 하는 것을 막아야 한다.</div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">07</div><h2>도움이 되는 배경지식</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>1. 극장의 보이지 않는 손:</strong><br> 오페라나 뮤지컬 극장에서 오케스트라가 연주하는 구역인 오케스트라 피트(Orchestra Pit)는 무대 바로 앞 아래쪽에 움푹 파여 있어 객석에서 지휘자와 연주자들이 잘 보이지 않도록 설계되어 있다. 이는 본문이 주장하듯 관객의 눈이 '지휘자'가 아닌 '무대 위(배우의 연기)'로 향하게 하기 위한 미학적 장치다.</div>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- 지문 구분선 (인쇄 시 여기서 페이지가 나뉨) -->
+    <!-- ========================================== -->
+    <hr class="passage-separator" />
+
+    <!-- ========================================== -->
+    <!-- [지문 5] 15강 1번                          -->
+    <!-- ========================================== -->
+    <div class="passage-container">
+      <div class="header-container">
+        <div class="hero-title">15강 1번 지문분석</div>
+        <div class="subtitle">Lio T 내신대비 지문분석서</div>
+      </div>
+
+      <div class="section-title no-break section-00"><div class="page-no">00</div><h2>영어 본문 및 전체 해석</h2></div>
+      <div class="card no-break">
+        <div class="text-block-title">영어 본문</div>
+        <div class="eng-body">
+          The use of emotion may be important in exercise, particularly among exercise instructors. It has been established that exercise enjoyment is associated with increased exercise adherence. An instructor might aim to foster enjoyment in his participants as a means of increasing their program adherence. An instructor also might use emotion to elicit greater effort from her students. Cuing participants to feelings of anger and frustration during a cardio kickboxing class might lead to more effortful punches and stronger kicks. Conversely, a yoga instructor could use positive emotions or emotion-related states such as compassion to get her students in the proper mindset for their practice. Evidently, there are a number of ways emotions could be used to enhance performance in sport and exercise.
+        </div>
+        <div class="divider"></div>
+        <div class="text-block-title">전체 해석</div>
+        <div class="kor-body">
+          감정의 사용은 운동, 특히 운동 강사들 사이에서 중요할 수 있다. 운동의 즐거움이 향상된 운동 지속성과 연관되어 있다는 것은 확립된 사실이다. 강사는 프로그램 지속성을 높이는 수단으로 참가자들의 즐거움을 기르는 것을 목표로 할 수 있다. 강사는 또한 학생들로부터 더 큰 노력을 이끌어내기 위해 감정을 사용할 수도 있다. 유산소 킥복싱 수업 중에 참가자들에게 분노와 좌절의 감정을 주입하는(신호를 주는) 것은 더 많은 노력이 들어간 펀치와 더 강한 발차기로 이어질 수 있다. 반대로, 요가 강사는 학생들이 수련을 위한 적절한 마음가짐을 갖도록 긍정적인 감정이나 연민과 같은 감정 관련 상태를 사용할 수 있다. 분명히, 스포츠와 운동에서 성과를 향상하기 위해 감정이 사용될 수 있는 방법은 많다.
+        </div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">01</div><h2>직독직해 및 어휘 정리</h2></div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 1</div>
+        <div class="sentence-en">The use of emotion / may be important / in exercise, / particularly among exercise instructors.</div>
+        <div class="sentence-ko">감정의 사용은 / 중요할 수 있다 / 운동에서, / 특히 운동 강사들 사이에서.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> particularly - 특히, instructor - 강사, 지도자</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 2</div>
+        <div class="sentence-en">It / has been established / that / exercise enjoyment / is associated with / increased exercise adherence.</div>
+        <div class="sentence-ko">(~은) / 확립되었다(기정사실화되었다) / ~라는 것은 / 운동의 즐거움이 / ~와 연관되어 있다(는 것은) / 향상된 운동 지속성과.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> establish - 확립하다, 규명하다, be associated with - ~와 연관되다, adherence - 지속성, 고수, 집착</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 3</div>
+        <div class="sentence-en">An instructor / might aim / to foster enjoyment / in his participants / as a means / of increasing / their program adherence.</div>
+        <div class="sentence-ko">강사는 / 목표로 할 수 있다 / 즐거움을 기르는 것을 / 그의 참가자들에게 / 수단으로서 / 높이는 것의 / 그들의 프로그램 지속성을.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> aim to - ~하는 것을 목표로 하다, foster - 기르다, 촉진하다, means - 수단</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 4</div>
+        <div class="sentence-en">An instructor / also might use / emotion / to elicit greater effort / from her students.</div>
+        <div class="sentence-ko">강사는 / 또한 사용할지도 모른다 / 감정을 / 더 큰 노력을 이끌어내기 위해 / 그녀의 학생들로부터.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> elicit - 이끌어 내다, 도출하다</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 5</div>
+        <div class="sentence-en">Cuing participants / to feelings / of anger and frustration / during a cardio kickboxing class / might lead to / more effortful punches / and stronger kicks.</div>
+        <div class="sentence-ko">참가자들에게 신호를 주는(주입하는) 것은 / 감정으로 / 분노와 좌절의 / 유산소 킥복싱 수업 중에 / 이어질 수 있다 / 더 많은 노력이 들어간 펀치로 / 그리고 더 강한 발차기로.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> cue - 신호를 주다, 유도하다, frustration - 좌절, cardio - 유산소 운동, effortful - 노력이 들어간, 고군분투하는</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 6</div>
+        <div class="sentence-en">Conversely, / a yoga instructor / could use / positive emotions / or emotion-related states / such as compassion / to get her students / in the proper mindset / for their practice.</div>
+        <div class="sentence-ko">반대로, / 요가 강사는 / 사용할 수 있다 / 긍정적인 감정을 / 혹은 감정 관련 상태를 / 연민과 같은 / 학생들이 갖게 하기 위해 / 적절한 마음가짐을 / 그들의 수련을 위한.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> conversely - 반대로, compassion - 연민, 동정심, proper - 적절한, mindset - 마음가짐, 사고방식</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 7</div>
+        <div class="sentence-en">Evidently, / there are / a number of ways / emotions could be used / to enhance performance / in sport and exercise.</div>
+        <div class="sentence-ko">분명히, / 있다 / 많은 방법들이 / 감정이 사용될 수 있는 / 성과를 향상하기 위해 / 스포츠와 운동에서.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> evidently - 분명히, 눈에 띄게, a number of - 많은, enhance - 향상하다</div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">02</div><h2>어법 및 구문 포인트</h2></div>
+      <div class="card no-break">
+        <div class="point-block">
+          <div class="sentence-id">문장 2</div>
+          <div class="line-item"><strong>[It has been established that ...]</strong> `It`은 가주어, `that` 이하 명사절이 진주어로 쓰인 구문이다. 주어 자리에 쓰인 명사절 내부는 `exercise enjoyment`(주어) + `is associated`(동사)의 완전한 구조를 갖추고 있다. `has been established`는 현재완료 수동태다.</div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 5</div>
+          <div class="line-item"><strong>[Cuing participants to feelings ... might lead to ...]</strong> 동명사 `Cuing`이 이끄는 구가 문장의 주어이며, 동사는 조동사 `might lead to`로 이어진다. `lead to`의 `to`는 전치사이므로 뒤에 명사구가 온다.</div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 6</div>
+          <div class="line-item"><strong>[to get her students in the proper mindset]</strong> 5형식 형태의 의미를 내포한 `get + 목적어 + 전치사구` 구조로, 목적어가 특정한 상태(mindset)에 '있게 하다'라는 뜻으로 쓰였다.</div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 7</div>
+          <div class="line-item"><strong>[a number of ways emotions could be used to enhance...]</strong> 선행사 `ways` 뒤에 관계부사 `how`가 생략되어 있다(`ways`와 `how`는 함께 쓰지 않음). `could be used to enhance`는 '향상하기 위해 사용되다'라는 뜻의 수동태 + 부사적 용법의 투부정사다.</div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul><li>`be used to ~ing`(~하는 데 익숙하다)와 혼동하여 `to enhancing`으로 쓰지 않도록 조심하라. 여기서 `to enhance`는 목적(~하기 위해)을 나타낸다.</li></ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">03</div><h2>문장 단위 내용 흐름 정리</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>[(1) 주제 제시] :</strong> 스포츠와 운동 분야, 특히 강사들에게 있어 참가자의 '감정'을 다루고 활용하는 것은 매우 중요하다.</div>
+        <div class="line-item"><strong>[(2)-(3) 감정 활용 1 (즐거움)] :</strong> 운동에서 '즐거움'이라는 감정은 사람들이 운동을 중도에 포기하지 않고 끈기 있게(지속성) 하도록 만드는 핵심 요소다.</div>
+        <div class="line-item"><strong>[(4) 감정 활용 2 (노력 도출)] :</strong> 강사는 또한 학생들의 더 큰 노력을 끌어내기 위해 특정 감정을 전략적으로 이용할 수 있다.</div>
+        <div class="line-item"><strong>[(5) 예시 A (부정적 감정)] :</strong> 킥복싱 수업에서는 분노나 좌절 같은 폭발적인 감정을 자극하여 펀치와 발차기의 파괴력을 높인다.</div>
+        <div class="line-item"><strong>[(6) 예시 B (긍정적 감정)] :</strong> 반면 요가 수업에서는 연민 등 긍정적이고 차분한 감정을 유도하여 수련에 적합한 마음가짐을 갖추게 한다.</div>
+        <div class="line-item"><strong>[(7) 결론] :</strong> 이처럼 운동의 성과와 지속성을 높이기 위해 감정을 도구로 사용하는 방식은 종목에 따라 다양하며 매우 효과적이다.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">04</div><h2>표현들의 연관성 정리</h2></div>
+      <div class="card no-break">
+        <h3>주요 소재</h3>
+        <div class="chip-row">
+          <span class="chip">Use of emotion</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 20px;">지문을 관통하는 핵심 소재로, 강사가 수강생의 운동 효율을 높이기 위해 감정을 통제하고 유발하는 행위를 뜻한다.</div>
+
+        <h3>감정 활용의 결과</h3>
+        <div class="chip-row">
+          <span class="chip">Exercise adherence</span> <span class="arrow">=</span> <span class="chip">greater effort</span> <span class="arrow">=</span> <span class="chip">enhance performance</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 20px;">감정을 성공적으로 자극했을 때 수강생에게서 얻을 수 있는 운동의 긍정적인 결과물들이다.</div>
+
+        <h3>감정 전략의 대조</h3>
+        <div class="chip-row">
+          <span class="chip">Anger and frustration (kickboxing)</span> <span class="arrow">↔</span> <span class="chip">Positive emotions / compassion (yoga)</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 4px;">운동 종목의 성격에 따라 180도 다르게 적용되는 감정 유도 전략의 대조 사례다.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">05</div><h2>소재와 주제문</h2></div>
+      <div class="card no-break" style="border-top-color: #f59e0b;">
+        <div class="line-item" style="margin-bottom: 12px;"><strong>핵심 소재:</strong> 운동 강사가 성과 및 지속성 향상을 위해 감정을 활용하는 방법</div>
+        <div class="mini-divider"></div>
+        <div class="label" style="margin-top: 8px;">주제문 (문장 1)</div>
+        <div class="sentence-en" style="margin-bottom: 8px;">The use of emotion may be important in exercise, particularly among exercise instructors.</div>
+        <div class="label" style="margin-top: 8px;">주제문 (문장 7)</div>
+        <div class="sentence-en" style="margin-bottom: 0;">Evidently, there are a number of ways emotions could be used to enhance performance in sport and exercise.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">06</div><h2>지문의 요약 및 패러프레이징</h2></div>
+      <div class="card no-break">
+        <div class="summary-pair">
+          <div class="label">요약 / Summary</div>
+          <div class="sentence-en">Exercise instructors strategically utilize participants' emotions, ranging from enjoyment to anger or compassion, as an effective tool to increase program adherence and enhance physical performance.</div>
+          <div class="sentence-ko">운동 강사들은 프로그램 지속성을 높이고 신체적 성과를 향상하기 위한 효과적인 도구로서 즐거움부터 분노나 연민에 이르는 참가자들의 감정을 전략적으로 활용한다.</div>
+        </div>
+        <div class="divider"></div>
+        <div class="summary-pair">
+          <div class="label">패러프레이징 / Paraphrasing</div>
+          <div class="sentence-en">In the realm of sports and fitness, manipulating emotional states is a key pedagogical strategy; eliciting specific feelings like frustration for kickboxing or peace for yoga significantly boosts participants' effort and long-term commitment.</div>
+          <div class="sentence-ko">스포츠와 피트니스 영역에서 감정 상태를 조작하는 것은 핵심적인 교육 전략이다. 킥복싱을 위한 좌절감이나 요가를 위한 평화로움과 같은 특정한 감정을 이끌어내는 것은 참가자들의 노력과 장기적인 헌신을 크게 증진시킨다.</div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">07</div><h2>도움이 되는 배경지식</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>1. 스포츠 심리학(Sports Psychology):</strong><br> 운동선수나 일반인의 스포츠 참여 시 나타나는 심리적 요인을 연구하는 학문이다. 신체 능력 못지않게 동기 부여, 감정 통제(각성 수준 조절)가 운동 수행 능력(performance)에 결정적 영향을 미친다는 것을 다룬다.</div>
+        <div class="divider"></div>
+        <div class="line-item"><strong>2. 적정 각성 수준(Optimal Arousal Level):</strong><br> 과제를 수행할 때 가장 좋은 성과를 낼 수 있는 적절한 긴장이나 흥분 상태를 뜻한다. 종목마다 달라서 킥복싱 같은 격투기는 높은 각성(분노)이, 요가나 양궁은 낮은 각성(차분함)이 필요하다.</div>
+      </div>
+    </div>
+
+
+    <!-- ========================================== -->
+    <!-- 지문 구분선 (인쇄 시 여기서 페이지가 나뉨) -->
+    <!-- ========================================== -->
+    <hr class="passage-separator" />
+
+    <!-- ========================================== -->
+    <!-- [지문 6] 15강 3번                          -->
+    <!-- ========================================== -->
+    <div class="passage-container">
+      <div class="header-container">
+        <div class="hero-title">15강 3번 지문분석</div>
+        <div class="subtitle">Lio T 내신대비 지문분석서</div>
+      </div>
+
+      <div class="section-title no-break section-00"><div class="page-no">00</div><h2>영어 본문 및 전체 해석</h2></div>
+      <div class="card no-break">
+        <div class="text-block-title">영어 본문</div>
+        <div class="eng-body">
+          The standard school mathematics curriculum doesn't stress enough that mathematics is all about abstraction. Mathematicians study specific objects but, usually, they aim to cluster them together and study them all at the same time. This saves huge amounts of time and effort because they must prove properties only once, for the whole class of objects, instead of studying each object individually. Even more importantly, this guarantees that every object within a class has a particular property, even the objects that haven't been defined yet. Often, when mathematicians want to prove that an important object behaves in a particular way, they prove instead that it belongs to a class already known to have this property. We reason similarly in everyday life: since all fruits have seeds, and an apple is a fruit, then an apple must have seeds.
+        </div>
+        <div class="divider"></div>
+        <div class="text-block-title">전체 해석</div>
+        <div class="kor-body">
+          표준 학교 수학 교육과정은 수학이 전적으로 추상화에 관한 것이라는 점을 충분히 강조하지 않는다. 수학자들은 특정 대상을 연구하지만, 대개 그들은 그것들을 함께 묶어 한 번에 모두 연구하는 것을 목표로 한다. 이것은 각 대상을 개별적으로 연구하는 대신 대상의 전체 부류에 대해 한 번만 속성을 증명하면 되기 때문에 막대한 양의 시간과 노력을 절약해 준다. 훨씬 더 중요한 것은, 이것이 아직 정의되지 않은 대상들까지 포함하여 한 부류 내의 모든 대상이 특정한 속성을 갖는다는 것을 보장한다는 것이다. 종종, 수학자들은 중요한 대상이 특정 방식으로 행동한다는 것을 증명하고 싶을 때, 대신 그것이 이미 이 속성을 가지고 있다고 알려진 부류에 속한다는 것을 증명한다. 우리는 일상생활에서도 유사하게 추론한다. 모든 과일에는 씨앗이 있고 사과는 과일이므로, 사과에는 씨앗이 있어야 한다는 것이다.
+        </div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">01</div><h2>직독직해 및 어휘 정리</h2></div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 1</div>
+        <div class="sentence-en">The standard school mathematics curriculum / doesn't stress / enough / that / mathematics / is all about abstraction.</div>
+        <div class="sentence-ko">표준 학교 수학 교육과정은 / 강조하지 않는다 / 충분히 / ~라는 점을 / 수학이 / 전적으로 추상화에 관한 것이라는 (점).</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> standard - 표준의, curriculum - 교육과정, stress - 강조하다, be all about - 전적으로 ~에 관한 것이다, abstraction - 추상화</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 2</div>
+        <div class="sentence-en">Mathematicians / study / specific objects / but, / usually, / they aim / to cluster them together / and study them / all at the same time.</div>
+        <div class="sentence-ko">수학자들은 / 연구한다 / 특정 대상을 / 하지만, / 대개, / 그들은 목표로 한다 / 그것들을 함께 묶는 것을 / 그리고 그것들을 연구하는 것을 / 한 번에 모두.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> mathematician - 수학자, specific - 특정한, aim to - ~하는 것을 목표로 하다, cluster - 무리 짓다, 묶다</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 3</div>
+        <div class="sentence-en">This / saves / huge amounts of time and effort / because / they / must prove properties / only once, / for the whole class of objects, / instead of studying / each object / individually.</div>
+        <div class="sentence-ko">이것은 / 절약해 준다 / 막대한 양의 시간과 노력을 / 왜냐하면 / 그들이 / 속성을 증명해야 하기 때문이다 / 단 한 번만, / 대상의 전체 부류에 대해서, / 연구하는 대신 / 각 대상을 / 개별적으로.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> huge - 막대한, 거대한, prove - 증명하다, property - 속성, 특성, class - 부류, 집단, instead of ~ing - ~하는 대신에, individually - 개별적으로</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 4</div>
+        <div class="sentence-en">Even more importantly, / this / guarantees / that / every object / within a class / has / a particular property, / even the objects / that / haven't been defined / yet.</div>
+        <div class="sentence-ko">훨씬 더 중요한 것은, / 이것이 / 보장한다는 것이다 / ~를 / 모든 대상이 / 한 부류 내의 / 갖는다는 것을 / 특정한 속성을, / 심지어 대상들조차도 / (~한) / 정의되지 않은 / 아직.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> guarantee - 보장하다, particular - 특정한, define - 정의하다, 규정하다</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 5</div>
+        <div class="sentence-en">Often, / when mathematicians want / to prove / that / an important object / behaves / in a particular way, / they / prove / instead / that / it / belongs to a class / already known / to have this property.</div>
+        <div class="sentence-ko">종종, / 수학자들이 원할 때 / 증명하기를 / ~를 / 어떤 중요한 대상이 / 행동한다고 / 특정 방식으로, / 그들은 / 증명한다 / 대신에 / ~를 / 그것이 / 부류에 속한다는 것을 / 이미 알려진 / 이 속성을 가지고 있다고.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> behave - 행동하다, 작용하다, belong to - ~에 속하다</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 6</div>
+        <div class="sentence-en">We / reason / similarly / in everyday life: / since / all fruits / have seeds, / and an apple / is a fruit, / then / an apple / must have seeds.</div>
+        <div class="sentence-ko">우리는 / 추론한다 / 유사하게 / 일상생활에서: / ~이므로 / 모든 과일이 / 씨앗을 가지고 있고, / 사과가 / 과일(이므로), / 그러면 / 사과는 / 틀림없이 씨앗을 가지고 있다.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> reason - 추론하다, 사고하다, similarly - 유사하게, since - ~이므로, ~때문에</div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">02</div><h2>어법 및 구문 포인트</h2></div>
+      <div class="card no-break">
+        <div class="point-block">
+          <div class="sentence-id">문장 1</div>
+          <div class="line-item"><strong>[stress enough that ...]</strong> `that`은 타동사 `stress`의 목적어 역할을 하는 명사절을 이끈다. `enough`는 동사 `stress`를 수식하는 부사로 쓰였다.</div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 2</div>
+          <div class="line-item"><strong>[aim to cluster ... and (to) study ...]</strong> `aim`의 목적어인 투부정사 구문에서 동사원형 `cluster`와 `study`가 `and`로 병렬 연결되었다.</div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 4</div>
+          <div class="line-item"><strong>[even the objects that haven't been defined yet]</strong> `that`은 주격 관계대명사로 선행사 `the objects`를 수식한다. 대상이 '정의되는' 수동의 관계이자 과거부터 지금까지 완료되지 않음을 나타내기 위해 현재완료 수동태 `haven't been defined`가 쓰였다.</div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul><li>수동태의 형태와 수 일치(`haven't`)에 주의해야 한다. 능동형 `haven't defined`로 쓰면 오답이다.</li></ul>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 5</div>
+          <div class="line-item"><strong>[a class already known to have this property]</strong> 명사 `a class` 뒤에 주격 관계대명사와 be동사(`which is`)가 생략되고 과거분사 `known`이 이끄는 구가 후치 수식하는 구조다. '이 속성을 가졌다고 이미 알려진 부류'라는 뜻이다.</div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">03</div><h2>문장 단위 내용 흐름 정리</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>[(1) 문제 제기 및 핵심 개념 도출] :</strong> 학교 수학은 수학의 본질이 곧 '추상화(abstraction)'에 있다는 사실을 제대로 가르치지 않는다.</div>
+        <div class="line-item"><strong>[(2)-(3) 수학적 추상화의 효율성] :</strong> 수학자들은 개별 대상 하나하나를 따로 연구하지 않고, 공통된 특징을 가진 대상들을 하나의 집단(class)으로 묶어 한 번에 연구하여 시간과 노력을 크게 절약한다.</div>
+        <div class="line-item"><strong>[(4) 추상화의 강력한 논리성] :</strong> 이렇게 집단으로 묶어 증명하면, 그 집단에 속한 아직 발견되지 않은 미지의 대상들도 동일한 속성을 가짐을 완벽하게 보장할 수 있다.</div>
+        <div class="line-item"><strong>[(5)-(6) 연역적 추론의 원리] :</strong> 따라서 어떤 개별 대상의 속성을 증명할 때, 그것이 '이미 속성이 입증된 큰 부류'에 속한다는 사실만 보여주면 된다. 이는 일상생활에서 '모든 과일은 씨가 있다 -> 사과는 과일이다 -> 사과도 씨가 있다'라고 추론하는 삼단논법(연역법)과 동일한 원리다.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">04</div><h2>표현들의 연관성 정리</h2></div>
+      <div class="card no-break">
+        <h3>일반화 과정</h3>
+        <div class="chip-row">
+          <span class="chip">Abstraction</span> <span class="arrow">=</span> <span class="chip">cluster them together</span> <span class="arrow">=</span> <span class="chip">the whole class of objects</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 20px;">개별적인 사물들의 세부 사항을 버리고 공통된 본질적 속성만을 추출하여 커다란 범주나 개념으로 묶어내는 행위(추상화)를 뜻한다.</div>
+
+        <h3>개별과 전체의 대조</h3>
+        <div class="chip-row">
+          <span class="chip">Specific objects / each object individually</span> <span class="arrow">↔</span> <span class="chip">The whole class of objects</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 20px;">추상화가 이루어지기 전의 파편화된 개별 존재들과, 추상화 과정을 통해 묶인 보편적 범주를 대조한다.</div>
+
+        <h3>연역적 논리의 근거</h3>
+        <div class="chip-row">
+          <span class="chip">A class already known to have this property</span> <span class="arrow">=</span> <span class="chip">all fruits have seeds</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 4px;">개별 대상(an apple)을 설명하기 위해 끌어오는, 이미 속성이 증명된 더 큰 추상적 범주를 의미한다.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">05</div><h2>소재와 주제문</h2></div>
+      <div class="card no-break" style="border-top-color: #f59e0b;">
+        <div class="line-item" style="margin-bottom: 12px;"><strong>핵심 소재:</strong> 수학의 본질인 추상화(abstraction)와 연역적 추론의 효율성</div>
+        <div class="mini-divider"></div>
+        <div class="label" style="margin-top: 8px;">주제문 (문장 1)</div>
+        <div class="sentence-en" style="margin-bottom: 8px;">The standard school mathematics curriculum doesn't stress enough that mathematics is all about abstraction.</div>
+        <div class="label" style="margin-top: 8px;">주제문 (문장 2)</div>
+        <div class="sentence-en" style="margin-bottom: 0;">Mathematicians study specific objects but, usually, they aim to cluster them together and study them all at the same time.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">06</div><h2>지문의 요약 및 패러프레이징</h2></div>
+      <div class="card no-break">
+        <div class="summary-pair">
+          <div class="label">요약 / Summary</div>
+          <div class="sentence-en">Mathematics relies heavily on abstraction, a highly efficient process of clustering individual objects into broad classes to prove properties that apply universally to all members.</div>
+          <div class="sentence-ko">수학은 모든 구성원에게 보편적으로 적용되는 속성을 증명하기 위해 개별 대상을 광범위한 부류로 묶는 매우 효율적인 과정인 추상화에 크게 의존한다.</div>
+        </div>
+        <div class="divider"></div>
+        <div class="summary-pair">
+          <div class="label">패러프레이징 / Paraphrasing</div>
+          <div class="sentence-en">The core power of mathematics lies in generalization; instead of analyzing isolated items, mathematicians group them into categories, allowing them to establish rules that predictably govern both known and yet-to-be-discovered entities.</div>
+          <div class="sentence-ko">수학의 핵심 힘은 일반화에 있다. 고립된 항목을 분석하는 대신, 수학자들은 그것들을 범주로 묶어, 알려진 독립체와 아직 발견되지 않은 독립체 모두를 예측 가능하게 지배하는 규칙을 확립할 수 있게 한다.</div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">07</div><h2>도움이 되는 배경지식</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>1. 추상화(Abstraction):</strong><br> 여러 가지 사물이나 개념에서 구체적이고 개별적인 특징은 지워버리고, 공통된 본질적 속성만을 뽑아내어 파악하는 사고 과정이다. 수학은 숫자, 기호, 집합 등을 통해 현실 세계를 완벽하게 추상화한 학문이다.</div>
+        <div class="divider"></div>
+        <div class="line-item"><strong>2. 연역법(Deduction)과 삼단논법:</strong><br> 일반적인 원리나 진리(대전제: 모든 과일은 씨가 있다)를 바탕으로 특수한 사실(소전제: 사과는 과일이다)을 통해 결론(사과는 씨가 있다)을 이끌어 내는 논리적 추론 방식. 수학자들의 증명 방식이 바로 이 연역적 구조를 띤다.</div>
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>

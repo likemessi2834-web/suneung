@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>04강 전체 지문분석 - Lio T</title>
+  <style>
+    /* 디자인 시스템 변수 설정 */
+    :root {
+      --bg-color: #f4f7fb;
+      --text-main: #0f172a;
+      --text-sub: #334155;
+      --text-muted: #64748b;
+      --primary: #4f46e5;
+      --primary-light: #e0e7ff;
+      --secondary: #3b82f6;
+      --border-light: #e2e8f0;
+      --card-bg: #ffffff;
+      --radius: 12px;
+    }
+
+    /* 페이지 기본 설정 (세로 모드) */
+    @page {
+      size: A4 portrait;
+      margin: 15mm; 
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg-color);
+      color: var(--text-main);
+      font-family: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+      letter-spacing: -0.02em; 
+    }
+
+    body {
+      padding: 10px; 
+      display: flex;
+      justify-content: center;
+    }
+
+    .doc {
+      width: 100%;
+      max-width: 210mm; 
+    }
+
+    /* =========================================
+       지문 간 구분선 (화면용 vs 인쇄용)
+       ========================================= */
+    .passage-separator {
+      height: 4px;
+      background-image: repeating-linear-gradient(to right, #cbd5e1 0, #cbd5e1 10px, transparent 10px, transparent 20px);
+      margin: 80px 0;
+      border: none;
+      position: relative;
+    }
+    .passage-separator::after {
+      content: '▼ 다음 지문 (인쇄 시 무조건 새 페이지에서 시작됩니다) ▼';
+      position: absolute;
+      top: -26px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--bg-color);
+      padding: 0 16px;
+      color: #94a3b8;
+      font-weight: 700;
+      font-size: 10pt;
+    }
+
+    /* 공통 레이아웃 제어 */
+    .no-break { page-break-inside: avoid; break-inside: avoid; }
+    
+    .header-container { margin-bottom: 30px; text-align: center; }
+    .hero-title {
+      display: inline-block; margin: 0 0 10px 0; padding: 8px 24px; font-size: 22pt; font-weight: 800;
+      color: #ffffff; background: linear-gradient(135deg, var(--primary), var(--secondary));
+      border-radius: 999px; box-shadow: 0 4px 14px rgba(79, 70, 229, 0.25);
+    }
+    .subtitle { font-size: 13pt; font-weight: 600; color: var(--text-muted); }
+
+    .section-title {
+      display: flex; align-items: center; gap: 12px; margin: 30px 0 16px 0;
+      border-bottom: 2px solid var(--border-light); padding-bottom: 4px;
+      page-break-after: avoid; break-after: avoid;
+    }
+    .page-no {
+      width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+      background: var(--primary); color: white; font-weight: 700; font-size: 12pt; border-radius: 8px;
+    }
+    h2 { margin: 0; font-size: 16pt; font-weight: 700; color: var(--text-main); }
+
+    .card {
+      background: var(--card-bg); border: 1px solid var(--border-light); border-top: 4px solid var(--primary);
+      border-radius: var(--radius); padding: 8px 16px; margin-bottom: 16px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    }
+    
+    .text-block-title { font-size: 12pt; font-weight: 700; color: var(--primary); margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+    .text-block-title::before { content: ''; display: block; width: 6px; height: 6px; border-radius: 50%; background: var(--primary); }
+    .eng-body { font-size: 12pt; line-height: 1.7; font-weight: 500; color: var(--text-main); margin-bottom: 20px; text-align: justify; }
+    .divider { height: 1px; background: var(--border-light); margin: 20px 0; }
+    .mini-divider { height: 1px; background: var(--border-light); margin: 8px 0; }
+    .kor-body { font-size: 11.5pt; line-height: 1.7; color: var(--text-sub); text-align: justify; word-break: keep-all; }
+
+    .sentence-card {
+      background: var(--card-bg); border: 1px solid var(--border-light); border-left: 4px solid var(--secondary);
+      border-radius: 8px; padding: 8px 16px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    }
+    .sentence-id { display: inline-block; margin-bottom: 8px; padding: 2px 8px; border-radius: 6px; background: var(--primary-light); color: var(--primary); font-size: 9pt; font-weight: 700; }
+    .sentence-en { font-size: 12.5pt; font-weight: 600; line-height: 1.6; color: var(--text-main); margin-bottom: 4px; }
+    .sentence-ko { font-size: 9pt; line-height: 1.6; color: var(--text-sub); margin-bottom: 4px; word-break: keep-all; }
+    .vocab-box { display: inline-block; padding: 4px 8px; border-radius: 6px; background: #f8fafc; border: 1px dashed #cbd5e1; font-size: 9pt; color: var(--text-muted); }
+
+    .point-block { margin-bottom: 16px; }
+    .point-block:last-child { margin-bottom: 0; }
+    .line-item { font-size: 11.5pt; line-height: 1.7; margin: 0 0 8px 0; word-break: keep-all; }
+    .exam-note { margin-top: 8px; padding: 8px 12px; background: #fffbeb; border-left: 3px solid #f59e0b; border-radius: 0 6px 6px 0; font-size: 10.5pt; line-height: 1.6; color: #92400e; }
+    .exam-note ul { margin: 4px 0 0 0; padding-left: 20px; }
+    .exam-note li { margin-bottom: 4px; }
+    .exam-note li:last-child { margin-bottom: 0; }
+
+    .chip-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 8px 0 20px 0; }
+    .chip { padding: 4px 10px; border-radius: 999px; background: var(--primary-light); color: var(--primary); font-size: 10pt; font-weight: 600; }
+    .arrow { color: var(--text-muted); font-weight: 700; }
+    h3 { font-size: 12pt; margin: 0 0 8px 0; color: var(--text-main); }
+    .label { display: inline-block; font-size: 9.5pt; font-weight: 700; color: var(--secondary); background: #eff6ff; padding: 2px 6px; border-radius: 4px; margin-bottom: 6px; }
+    .summary-pair { margin-bottom: 20px; }
+    .summary-pair:last-child { margin-bottom: 0; }
+
+    /* =========================================
+       인쇄(Print) 전용 스타일 - 다중 지문 분할 처리
+       ========================================= */
+    @media print {
+      html, body { background: #ffffff !important; padding: 0; }
+      .doc { max-width: 100%; }
+
+      /* 지문 구분선을 강제 페이지 넘김으로 변환 */
+      .passage-separator {
+        page-break-before: always !important;
+        break-before: page !important;
+        margin: 0 !important;
+        height: 0 !important;
+        border: none !important;
+        background: none !important;
+      }
+      .passage-separator::after { display: none !important; }
+
+      .page-break { page-break-before: always !important; break-before: page !important; }
+      .card, .sentence-card { box-shadow: none !important; border: 1px solid #cbd5e1 !important; page-break-inside: avoid !important; break-inside: avoid !important; }
+      .section-title { page-break-after: avoid !important; break-after: avoid !important; }
+
+      .hero-title { background: #0f172a !important; color: white !important; }
+      .page-no { background: #0f172a !important; }
+      .sentence-id, .chip, .label { border: 1px solid #cbd5e1 !important; background: #f8fafc !important; color: #0f172a !important; }
+      .exam-note { background: #f8fafc !important; border-left-color: #94a3b8 !important; color: #334155 !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="doc">
+
+    <!-- ========================================== -->
+    <!-- [지문 2] 04강 01번                         -->
+    <!-- ========================================== -->
+    
+    <div class="passage-container">
+      <div class="header-container">
+        <div class="hero-title">04강 01번 지문분석</div>
+        <div class="subtitle">Lio T 내신대비 지문분석서</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">00</div><h2>영어 본문 및 전체 해석</h2></div>
+      <div class="card no-break">
+        <div class="text-block-title">영어 본문</div>
+        <div class="eng-body">
+          There's a saying that "you can't eat information." That may be so, but the food we eat today is the fruit of thousands of years of increasingly high-quality information - the knowledge of how to farm what seeds, what tools and how to use them, what times of year, what irrigation, what sequence of one crop after another on the same land. What we eat is solar energy, filtered, concentrated, and distilled through the lens of human knowledge. The energy the Earth receives from the sun each year has remained more or less constant through all of human civilization. What's allowed us to flourish is our increasingly sophisticated knowledge of how to capture an ever-growing but still tiny fraction of that energy in a form that can fuel our bodies. Every step in the advancement of our knowledge has brought with it an increase in the amount of energy we can tap into.
+        </div>
+        <div class="divider"></div>
+        <div class="text-block-title">전체 해석</div>
+        <div class="kor-body">
+          "정보를 먹을 수는 없다."라는 속담이 있다. 그럴지도 모르지만, 오늘날 우리가 먹는 음식은 점점 더 고품질이 되어가는 수천 년 정보의 결실이다. 즉, 어떤 씨앗을 어떻게 재배할지, 어떤 도구를 어떻게 사용할지, 일 년 중 어느 시기에 할지, 어떤 관개를 할지, 동일한 땅에서 한 작물 뒤에 다른 작물을 어떤 순서로 심을지에 대한 지식의 결실이다. 우리가 먹는 것은 인류 지식의 렌즈를 통해 걸러지고, 농축되고, 증류된 태양 에너지이다. 지구가 매년 태양으로부터 받는 에너지는 인류 문명 전체를 통틀어 다소 일정하게 유지되어 왔다. 우리가 번영할 수 있게 해 준 것은 그 에너지의 늘어나고는 있지만 여전히 아주 작은 일부를 우리 몸에 연료를 공급할 수 있는 형태로 포착하는 방법에 대한 우리의 점점 더 정교해지는 지식이다. 우리 지식 발전의 모든 단계는 우리가 활용할 수 있는 에너지양의 증가를 수반했다.
+        </div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">01</div><h2>직독직해 및 어휘 정리</h2></div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 1</div>
+        <div class="sentence-en">There's a saying / that / "you can't eat information."</div>
+        <div class="sentence-ko">속담이 있다 / ~라는 / "정보를 먹을 수는 없다."라는.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> saying - 속담, 격언</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 2</div>
+        <div class="sentence-en">That / may be so, / but / the food / we eat today / is / the fruit / of thousands of years / of increasingly high-quality information / - the knowledge / of how to farm / what seeds, / what tools / and how to use them, / what times of year, / what irrigation, / what sequence / of one crop after another / on the same land.</div>
+        <div class="sentence-ko">그것이 / 그럴지도 모른다, / 하지만 / 음식은 / 우리가 오늘날 먹는 / ~이다 / 결실 / 수천 년의 / 점점 더 높은 품질의 정보의 / 즉 지식(의 결실) / 재배하는 방법에 대한 / 어떤 씨앗을, / 어떤 도구를 / 그리고 어떻게 그것들을 사용할지를, / 연중 어느 시기에 (할지), / 어떤 관개를 (할지), / 어떤 순서로 (할지) / 하나의 작물 뒤에 또 다른 작물을 / 같은 땅에서.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> fruit - 결실, 열매, increasingly - 점점 더, irrigation - 관개, sequence - 순서</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 3</div>
+        <div class="sentence-en">What we eat / is / solar energy, / filtered, concentrated, and distilled / through the lens / of human knowledge.</div>
+        <div class="sentence-ko">우리가 먹는 것은 / ~이다 / 태양 에너지 / 걸러지고, 농축되고, 그리고 증류된 / 렌즈를 통해 / 인류 지식의.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> solar - 태양의, filter - 거르다, 여과하다, concentrate - 농축하다, 집중하다, distill - 증류하다</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 4</div>
+        <div class="sentence-en">The energy / the Earth receives / from the sun / each year / has remained / more or less constant / through all of human civilization.</div>
+        <div class="sentence-ko">에너지는 / 지구가 받는 / 태양으로부터 / 매년 / 유지되어 왔다 / 다소 일정하게 / 인류 문명 전체를 통틀어.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> constant - 일정한, civilization - 문명</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 5</div>
+        <div class="sentence-en">What's allowed us / to flourish / is / our increasingly sophisticated knowledge / of how to capture / an ever-growing but still tiny fraction / of that energy / in a form / that / can fuel / our bodies.</div>
+        <div class="sentence-ko">우리를 해 준 것은 / 번영하도록 / ~이다 / 우리의 점점 더 정교해지는 지식 / 포착하는 방법에 대한 / 늘어나고는 있지만 여전히 아주 작은 일부를 / 그 에너지의 / 형태로 / (~하는) / 연료를 공급할 수 있는 / 우리 몸에.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> flourish - 번영하다, sophisticated - 정교한, 복잡한, capture - 포착하다, fraction - 일부, 부분, fuel - 연료를 공급하다</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 6</div>
+        <div class="sentence-en">Every step / in the advancement / of our knowledge / has brought / with it / an increase / in the amount of energy / we can tap into.</div>
+        <div class="sentence-ko">모든 단계는 / 발전에서의 / 우리 지식의 / 가져왔다 / 그것(발전)과 함께 / 증가를 / 에너지양의 / 우리가 활용할 수 있는.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> advancement - 발전, 진보, tap into - 활용하다, 이용하다</div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">02</div><h2>어법 및 구문 포인트</h2></div>
+      <div class="card no-break">
+        <div class="point-block">
+          <div class="sentence-id">문장 1</div>
+          <div class="line-item"><strong>[a saying that "you..."]</strong> `that`은 앞의 명사 `a saying`과 그 뒤의 완전한 절을 동격으로 연결하는 접속사다.</div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul><li>동격의 `that` 자리에는 관계대명사 `which`나 `what`을 쓰지 않문을 명심해야 한다.</li></ul>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 3</div>
+          <div class="line-item"><strong>[What we eat is solar energy, filtered, concentrated, and distilled]</strong> `What we eat`은 관계대명사 `what`이 이끄는 명사절로 주어 역할을 한다. `filtered`, `concentrated`, `distilled`는 과거분사 병렬 구조로 앞에 있는 `solar energy`를 수식한다.</div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul><li>분사들이 태양 에너지가 '여과되고 농축되는' 수동의 의미를 나타내므로 현재분사형으로 쓰이지 않도록 주의해야 한다.</li></ul>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 5</div>
+          <div class="line-item"><strong>[What's allowed us to flourish is ...]</strong> `What's`는 `What has`의 축약형이다. 관계대명사 `What`이 이끄는 절이 전체 문장의 주어이며, 동사는 `is`이다. `allow + 목적어 + to부정사` 구조가 쓰였다.</div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul>
+              <li>주어 자리에 `That`을 쓰면 뒤 문장이 불완전하므로 틀린다.</li>
+              <li>`to flourish` 자리에 원형 부정사 `flourish`를 쓰지 않아야 한다.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">03</div><h2>문장 단위 내용 흐름 정리</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>[(1)-(2) 도입 및 역설 제시] :</strong> 정보 자체를 먹을 순 없지만, 오늘날 우리가 먹는 식량은 결국 수천 년간 축적된 농업 지식(정보)의 산물임을 밝힌다.</div>
+        <div class="line-item"><strong>[(3) 은유적 표현] :</strong> 우리가 먹는 음식은 곧 인간의 지식을 통해 가공된 '태양 에너지'다.</div>
+        <div class="line-item"><strong>[(4) 변하지 않는 요소] :</strong> 지구에 도달하는 태양 에너지의 총량은 인류 역사 내내 일정했다.</div>
+        <div class="line-item"><strong>[(5) 변화를 만든 요소 (요지)] :</strong> 일정한 태양 에너지 속에서 인류를 번영하게 한 핵심은 그 에너지를 식량 형태로 포착해내는 '정교해진 지식'이다.</div>
+        <div class="line-item"><strong>[(6) 결론] :</strong> 인류 지식의 발전은 곧 우리가 활용 가능한 에너지(식량)의 증가를 의미한다.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">04</div><h2>표현들의 연관성 정리</h2></div>
+      <div class="card no-break">
+        <h3>지식의 은유</h3>
+        <div class="chip-row">
+          <span class="chip">Information</span> <span class="arrow">=</span> <span class="chip">knowledge</span> <span class="arrow">=</span> <span class="chip">lens of human knowledge</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 20px;">농업 기술, 시기, 도구 등 자연 자원을 활용하는 인류의 무형적 자산을 의미한다.</div>
+
+        <h3>식량의 은유</h3>
+        <div class="chip-row">
+          <span class="chip">Food</span> <span class="arrow">=</span> <span class="chip">solar energy</span> <span class="arrow">=</span> <span class="chip">fuel</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 20px;">우리가 생존하기 위해 섭취하는 물질적 자원이며, 이는 결국 태양 에너지가 지식에 의해 가공된 형태다.</div>
+
+        <h3>자연과 지식의 대조</h3>
+        <div class="chip-row">
+          <span class="chip">Constant</span> <span class="arrow">↔</span> <span class="chip">Increasingly sophisticated</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 4px;">자연이 주는 태양 에너지는 '일정'하지만, 그것을 활용하는 인간의 지식은 '점점 정교'해짐을 대조하여 지식의 중요성을 부각한다.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">05</div><h2>소재와 주제문</h2></div>
+      <div class="card no-break" style="border-top-color: #f59e0b;">
+        <div class="line-item" style="margin-bottom: 12px;"><strong>핵심 소재:</strong> 에너지 활용에 관한 인류 지식의 축적과 번영</div>
+        <div class="mini-divider"></div>
+        <div class="label" style="margin-top: 8px;">주제문 (문장 5)</div>
+        <div class="sentence-en" style="margin-bottom: 0;">What's allowed us to flourish is our increasingly sophisticated knowledge of how to capture an ever-growing but still tiny fraction of that energy in a form that can fuel our bodies.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">06</div><h2>지문의 요약 및 패러프레이징</h2></div>
+      <div class="card no-break">
+        <div class="summary-pair">
+          <div class="label">요약 / Summary</div>
+          <div class="sentence-en">While the total amount of solar energy remains constant, humanity has flourished by accumulating sophisticated agricultural knowledge to effectively harness that energy into food.</div>
+          <div class="sentence-ko">태양 에너지의 총량은 일정하게 유지되지만, 인류는 그 에너지를 식량으로 효과적으로 활용하기 위해 정교한 농업 지식을 축적함으로써 번영해 왔다.</div>
+        </div>
+        <div class="divider"></div>
+        <div class="summary-pair">
+          <div class="label">패러프레이징 / Paraphrasing</div>
+          <div class="sentence-en">The advancement of human civilization and our food supply rely not on an increase in raw solar power, but on the continuous evolution of our knowledge to capture and transform it into vital nourishment.</div>
+          <div class="sentence-ko">인류 문명의 발전과 우리의 식량 공급은 원시적인 태양열의 증가가 아니라, 그것을 포착하여 필수적인 영양분으로 변환시키는 우리 지식의 지속적인 진화에 의존한다.</div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">07</div><h2>도움이 되는 배경지식</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>1. 농업 혁명(Agricultural Revolution):</strong><br> 인간이 수렵 채집 생활에서 벗어나 작물을 재배하고 가축을 기르기 시작한 인류 역사의 거대한 전환점. 이는 단순히 식량을 얻는 방식을 넘어 자연(태양 에너지)을 통제하고 활용하는 지식의 비약적인 발전을 의미한다.</div>
+        <div class="divider"></div>
+        <div class="line-item"><strong>2. 에너지 전환(Energy Transformation):</strong><br> 식물은 광합성을 통해 태양 에너지를 화학 에너지로 변환(음식)한다. 지문은 인간의 '지식'이 어떤 씨앗을 언제 어떻게 심을지 결정함으로써 이 광합성(에너지 변환)의 효율을 극대화했다고 설명한다.</div>
+      </div>
+    </div>
+
+
+    <!-- ========================================== -->
+    <!-- [지문 4] 04강 03번                         -->
+    <!-- ========================================== -->
+    <hr class="passage-separator" />
+    
+    <div class="passage-container">
+      <div class="header-container">
+        <div class="hero-title">04강 03번 지문분석</div>
+        <div class="subtitle">Lio T 내신대비 지문분석서</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">00</div><h2>영어 본문 및 전체 해석</h2></div>
+      <div class="card no-break">
+        <div class="text-block-title">영어 본문</div>
+        <div class="eng-body">
+          It is a myth that all ideas are equally valid, even those with little or no objective proof. The existence of science is the commitment to objective truth. After all, science is true: fire is hot, the wheel is efficient, birds and planes can fly, we've landed on a comet and traveled to the Moon, antibiotics treat illness, and immunizations keep us from getting sick. These accomplishments are made possible by objective truths. A plausible theory can, and frequently does, push science forward. However, an intuition must be followed with testing that confirms or disproves its veracity. If a theory is disproved, one should consider it as a reason to reject or alter the hypothesis, not a justification to just keep firmly holding to the hypothesis because you are instinctively wedded to it. Critical thinking is an absolute must, and we must respect evidence. It's the only reason for anyone to trust anything about reality. Without testing and evidence, intuition is useful, but it is never the ultimate word.
+        </div>
+        <div class="divider"></div>
+        <div class="text-block-title">전체 해석</div>
+        <div class="kor-body">
+          객관적인 증거가 거의 없거나 전혀 없는 것들조차도 모든 아이디어가 똑같이 타당하다는 것은 근거 없는 믿음(오해)이다. 과학의 존재는 객관적 진실에 대한 헌신이다. 어쨌든, 과학은 사실이다. 불은 뜨겁고, 바퀴는 효율적이며, 새와 비행기는 날 수 있고, 우리는 혜성에 착륙하고 달에 여행했으며, 항생제는 질병을 치료하고, 예방 접종은 우리가 병에 걸리지 않게 해 준다. 이러한 성취들은 객관적 진실에 의해 가능해진다. 그럴듯한 이론은 과학을 앞으로 밀고 나갈 수 있으며 자주 그렇게 한다. 그러나 직관은 그것의 진실성을 확인하거나 반증하는 테스트가 뒤따라야만 한다. 만약 어떤 이론이 반증된다면, 그것을 가설을 거부하거나 변경할 이유로 간주해야지, 단지 본능적으로 그 가설에 집착하고 있다는 이유로 가설을 굳게 고수하는 정당화로 간주해서는 안 된다. 비판적 사고는 절대적인 필수 요건이며, 우리는 증거를 존중해야 한다. 그것이 누군가가 현실에 대해 어떤 것이든 신뢰할 수 있는 유일한 이유이다. 테스트와 증거가 없다면 직관은 유용하지만, 결코 최종적인 결론(궁극적인 진리)이 될 수 없다.
+        </div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">01</div><h2>직독직해 및 어휘 정리</h2></div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 1</div>
+        <div class="sentence-en">It / is a myth / that / all ideas / are equally valid, / even those / with little or no objective proof.</div>
+        <div class="sentence-ko">그것은 / 근거 없는 믿음이다 / ~라는 것은 / 모든 아이디어가 / 똑같이 타당하다, / 심지어 그것들조차도 / 객관적인 증거가 거의 혹은 전혀 없는.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> myth - 근거 없는 믿음, 신화, valid - 타당한, 유효한, objective - 객관적인, proof - 증거</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 2</div>
+        <div class="sentence-en">The existence / of science / is / the commitment / to objective truth.</div>
+        <div class="sentence-ko">존재는 / 과학의 / ~이다 / 헌신 / 객관적 진실에 대한.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> existence - 존재, commitment - 헌신, 약속</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 3</div>
+        <div class="sentence-en">After all, / science / is true: / fire / is hot, / the wheel / is efficient, / birds and planes / can fly, / we / 've landed / on a comet / and traveled / to the Moon, / antibiotics / treat illness, / and immunizations / keep us / from getting sick.</div>
+        <div class="sentence-ko">어쨌든(결국), / 과학은 / 사실이다: / 불은 / 뜨겁고, / 바퀴는 / 효율적이며, / 새와 비행기는 / 날 수 있고, / 우리는 / 착륙했다 / 혜성에 / 그리고 여행했다 / 달로, / 항생제는 / 질병을 치료하고, / 예방 접종은 / 우리가 (~하지) 않게 막는다 / 병에 걸리지 (않게).</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> comet - 혜성, antibiotic - 항생제, immunization - 예방 접종</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 4</div>
+        <div class="sentence-en">These accomplishments / are made / possible / by objective truths.</div>
+        <div class="sentence-ko">이러한 성취들은 / 만들어진다 / 가능하게 / 객관적 진실에 의해.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> accomplishment - 성취, 업적</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 5</div>
+        <div class="sentence-en">A plausible theory / can, / and frequently does, / push / science / forward.</div>
+        <div class="sentence-ko">그럴듯한 이론은 / 할 수 있고, / 그리고 자주 그렇게 한다, / 밀고 나가는 것을 / 과학을 / 앞으로.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> plausible - 그럴듯한, 타당해 보이는, frequently - 자주, 빈번하게</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 6</div>
+        <div class="sentence-en">However, / an intuition / must be followed / with testing / that / confirms / or disproves / its veracity.</div>
+        <div class="sentence-ko">그러나 / 직관은 / 반드시 뒤따라야 한다 / 테스트와 함께 / (~하는) / 확인하는 / 혹은 반증하는 / 그것의 진실성을.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> intuition - 직관, disprove - 반증하다, 논박하다, veracity - 진실성</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 7</div>
+        <div class="sentence-en">If a theory / is disproved, / one / should consider / it / as a reason / to reject / or alter / the hypothesis, / not a justification / to just keep / firmly holding / to the hypothesis / because / you / are instinctively wedded / to it.</div>
+        <div class="sentence-ko">만약 어떤 이론이 / 반증된다면, / 사람은 / 간주해야 한다 / 그것을 / 이유로 / 거부할 / 혹은 변경할 / 그 가설을, / 정당화가 아니라 / 단지 계속하는 / 굳건히 고수하는 것을 / 그 가설에 / 왜냐하면 / 당신이 / 본능적으로 집착하기(밀착되어 있기) / 그것에.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> alter - 바꾸다, 변경하다, hypothesis - 가설, justification - 정당화, instinctively - 본능적으로, be wedded to - ~에 집착하다</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 8</div>
+        <div class="sentence-en">Critical thinking / is / an absolute must, / and / we / must respect / evidence.</div>
+        <div class="sentence-ko">비판적 사고는 / ~이다 / 절대적인 필수 요건, / 그리고 / 우리는 / 존중해야 한다 / 증거를.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> absolute - 절대적인</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 9</div>
+        <div class="sentence-en">It / 's the only reason / for anyone / to trust / anything / about reality.</div>
+        <div class="sentence-ko">그것은 / 유일한 이유이다 / 누군가가 / 신뢰할 수 있는 / 어떤 것이든 / 현실에 대해.</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 10</div>
+        <div class="sentence-en">Without testing and evidence, / intuition / is useful, / but / it / is never / the ultimate word.</div>
+        <div class="sentence-ko">테스트와 증거가 없다면, / 직관은 / 유용하다, / 하지만 / 그것은 / 결코 아니다 / 최종적인 결론(궁극적 진리)이.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> ultimate - 궁극적인, 최종적인</div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">02</div><h2>어법 및 구문 포인트</h2></div>
+      <div class="card no-break">
+        <div class="point-block">
+          <div class="sentence-id">문장 1</div>
+          <div class="line-item"><strong>[It is a myth that all ideas are equally valid...]</strong> `It`은 가주어, `that` 이하 절이 진주어인 구문이다.</div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul><li>진주어를 이끄는 접속사 `that` 자리에 관계대명사 `what`을 쓰지 않도록 주의하라. 뒷문장이 완전한 형태를 취하고 있다.</li></ul>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 3</div>
+          <div class="line-item"><strong>[keep us from getting sick]</strong> `keep + 목적어 + from -ing` 구문으로 '목적어가 ~하는 것을 막다/예방하다'의 의미를 지닌다. `prevent`, `stop`, `prohibit` 등과 교체할 수 있다.</div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul><li>전치사 `from`이 누락된 채 `keep us getting sick`으로 쓰이면 '우리가 계속 아프게 하다'라는 완전히 반대의 뜻이 되므로 `from`의 유무를 반드시 확인해야 한다.</li></ul>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 6</div>
+          <div class="line-item"><strong>[an intuition must be followed with testing]</strong> 수동태 구문으로 직역하면 '직관은 테스트와 함께 뒤따라져야 한다' 즉, '직관 뒤에는 반드시 테스트가 뒤따라야 한다'는 뜻이다. `that`은 주격 관계대명사로 선행사 `testing`을 수식하며 동사 `confirms`와 `disproves`가 병렬 연결되었다.</div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul><li>`confirms`와 `disproves`는 단수 선행사 `testing`에 맞춰 모두 단수형(`-s`)을 띠어야 한다.</li></ul>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 7</div>
+          <div class="line-item"><strong>[consider it as a reason ... not a justification]</strong> `consider A as B` (A를 B로 간주하다) 구문이 쓰였으며, `a reason`과 `a justification`이 대조의 형태로 나열되었다.</div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul><li>`keep firmly holding`에서 동명사 `holding`을 목적어로 취하는 `keep`의 쓰임에 유의하라.</li></ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">03</div><h2>문장 단위 내용 흐름 정리</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>[(1)-(4) 진실과 증거의 중요성] :</strong> 객관적 증거가 없는 아이디어를 사실로 믿는 것은 오해이며, 과학의 본질은 증명 가능한 객관적 사실(비행기, 항생제 등)에 있음을 강조함.</div>
+        <div class="line-item"><strong>[(5)-(6) 이론과 직관의 한계] :</strong> 그럴듯한 이론과 직관이 과학 발전에 기여할 수는 있지만, 반드시 그것의 진실을 확인하는 테스트(검증)가 수반되어야 함.</div>
+        <div class="line-item"><strong>[(7) 반증 시 태도] :</strong> 이론이 틀렸다고 증명되면 고집부리지 말고 가설을 수정하거나 폐기해야 함.</div>
+        <div class="line-item"><strong>[(8)-(10) 결론] :</strong> 과학과 현실 이해에 있어서 객관적 증거와 비판적 사고는 절대적으로 필수적이며, 검증 없는 직관은 결코 최종 진리가 될 수 없음을 주장함.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">04</div><h2>표현들의 연관성 정리</h2></div>
+      <div class="card no-break">
+        <h3>객관적 기준</h3>
+        <div class="chip-row">
+          <span class="chip">Objective proof</span> <span class="arrow">=</span> <span class="chip">testing</span> <span class="arrow">=</span> <span class="chip">evidence</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 20px;">본문에서 과학을 지탱하고 직관을 검증하기 위해 필자가 가장 강조하는 객관적이고 과학적인 기준을 뜻한다.</div>
+
+        <h3>불확실한 아이디어</h3>
+        <div class="chip-row">
+          <span class="chip">A plausible theory</span> <span class="arrow">=</span> <span class="chip">intuition</span> <span class="arrow">=</span> <span class="chip">hypothesis</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 20px;">아직 과학적으로 완벽하게 검증되지 않은 추론이나 아이디어를 의미한다.</div>
+
+        <h3>검증의 결과</h3>
+        <div class="chip-row">
+          <span class="chip">Disproved</span> <span class="arrow">↔</span> <span class="chip">Confirms</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 20px;">테스트를 통해 가설이 틀렸음이 밝혀지는 것과 맞음이 증명되는 것을 대조한다.</div>
+
+        <h3>과학적 태도의 대조</h3>
+        <div class="chip-row">
+          <span class="chip">Alter the hypothesis</span> <span class="arrow">↔</span> <span class="chip">Keep firmly holding</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 4px;">가설이 반증되었을 때 취해야 할 올바른 과학적 태도와 잘못된 태도의 대조다.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">05</div><h2>소재와 주제문</h2></div>
+      <div class="card no-break" style="border-top-color: #f59e0b;">
+        <div class="line-item" style="margin-bottom: 12px;"><strong>핵심 소재:</strong> 직관에 대한 과학적 검증과 객관적 증거의 중요성</div>
+        <div class="mini-divider"></div>
+        <div class="label" style="margin-top: 8px;">주제문 (문장 6)</div>
+        <div class="sentence-en" style="margin-bottom: 8px;">However, an intuition must be followed with testing that confirms or disproves its veracity.</div>
+        <div class="label" style="margin-top: 8px;">주제문 (문장 10)</div>
+        <div class="sentence-en" style="margin-bottom: 0;">Without testing and evidence, intuition is useful, but it is never the ultimate word.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">06</div><h2>지문의 요약 및 패러프레이징</h2></div>
+      <div class="card no-break">
+        <div class="summary-pair">
+          <div class="label">요약 / Summary</div>
+          <div class="sentence-en">While intuition and plausible theories can advance science, they must be validated through rigorous testing and objective evidence to be accepted as truth.</div>
+          <div class="sentence-ko">직관과 그럴듯한 이론이 과학을 발전시킬 수는 있지만, 그것들이 진실로 받아들여지기 위해서는 엄격한 테스트와 객관적인 증거를 통해 검증되어야만 한다.</div>
+        </div>
+        <div class="divider"></div>
+        <div class="summary-pair">
+          <div class="label">패러프레이징 / Paraphrasing</div>
+          <div class="sentence-en">A scientific hypothesis or intuition is not absolute truth unless it survives critical evaluation and objective proof; without such evidence, any theory should be open to revision.</div>
+          <div class="sentence-ko">과학적 가설이나 직관은 비판적인 평가와 객관적인 증명을 통과하지 않는 한 절대적인 진실이 아니다. 그러한 증거가 없다면, 어떤 이론이든 수정될 가능성을 열어두어야 한다.</div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">07</div><h2>도움이 되는 배경지식</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>1. 반증 가능성(Falsifiability):</strong><br> 철학자 칼 포퍼가 제시한 과학의 기준. 어떤 이론이 과학적이려면 경험적 테스트에 의해 틀렸음을 증명할 수 있는 성질, 즉 반증될 가능성이 열려 있어야 한다는 개념이다. 지문에서 '반증되면 가설을 수정해야 한다'는 내용은 이 철학에 맞닿아 있다.</div>
+        <div class="divider"></div>
+        <div class="line-item"><strong>2. 객관주의(Objectivism):</strong><br> 개인의 직관이나 감정에 의존하지 않고, 관찰 가능하고 측정 가능한 증거에 기반하여 진리를 탐구하는 태도. 본 지문은 이 객관주의적 태도의 중요성을 역설하고 있다.</div>
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>

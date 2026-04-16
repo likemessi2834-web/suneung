@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>19강 지문분석 - Lio T</title>
+  <style>
+    /* 디자인 시스템 변수 설정 */
+    :root {
+      --bg-color: #f4f7fb;
+      --text-main: #0f172a;
+      --text-sub: #334155;
+      --text-muted: #64748b;
+      --primary: #4f46e5;
+      --primary-light: #e0e7ff;
+      --secondary: #3b82f6;
+      --border-light: #e2e8f0;
+      --card-bg: #ffffff;
+      --radius: 12px;
+    }
+
+    /* 페이지 기본 설정 (세로 모드) */
+    @page {
+      size: A4 portrait;
+      margin: 15mm; 
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg-color);
+      color: var(--text-main);
+      font-family: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+      letter-spacing: -0.02em; 
+    }
+
+    body {
+      padding: 10px; 
+      display: flex;
+      justify-content: center;
+    }
+
+    .doc {
+      width: 100%;
+      max-width: 210mm; 
+    }
+
+    /* =========================================
+       지문 간 구분선 (화면용 vs 인쇄용)
+       ========================================= */
+    .passage-separator {
+      height: 4px;
+      background-image: repeating-linear-gradient(to right, #cbd5e1 0, #cbd5e1 10px, transparent 10px, transparent 20px);
+      margin: 80px 0;
+      border: none;
+      position: relative;
+    }
+    .passage-separator::after {
+      content: '▼ 다음 지문 (인쇄 시 무조건 새 페이지에서 시작됩니다) ▼';
+      position: absolute;
+      top: -26px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--bg-color);
+      padding: 0 16px;
+      color: #94a3b8;
+      font-weight: 700;
+      font-size: 10pt;
+    }
+
+    /* 공통 레이아웃 제어 */
+    .no-break { page-break-inside: avoid; break-inside: avoid; }
+    
+    .header-container { margin-bottom: 30px; text-align: center; }
+    .hero-title {
+      display: inline-block; margin: 0 0 10px 0; padding: 8px 24px; font-size: 22pt; font-weight: 800;
+      color: #ffffff; background: linear-gradient(135deg, var(--primary), var(--secondary));
+      border-radius: 999px; box-shadow: 0 4px 14px rgba(79, 70, 229, 0.25);
+    }
+    .subtitle { font-size: 13pt; font-weight: 600; color: var(--text-muted); }
+
+    .section-title {
+      display: flex; align-items: center; gap: 12px; margin: 30px 0 16px 0;
+      border-bottom: 2px solid var(--border-light); padding-bottom: 4px;
+      page-break-after: avoid; break-after: avoid;
+    }
+    .page-no {
+      width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+      background: var(--primary); color: white; font-weight: 700; font-size: 12pt; border-radius: 8px;
+    }
+    h2 { margin: 0; font-size: 16pt; font-weight: 700; color: var(--text-main); }
+
+    .card {
+      background: var(--card-bg); border: 1px solid var(--border-light); border-top: 4px solid var(--primary);
+      border-radius: var(--radius); padding: 8px 16px; margin-bottom: 16px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    }
+    
+    /* 본문 영역 - 화면 크기에 맞춰 반응형으로 조절 (최소크기, 유동크기, 최대크기) */
+    .text-block-title { font-size: clamp(10pt, 2.5vw, 12pt); font-weight: 700; color: var(--primary); margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+    .text-block-title::before { content: ''; display: block; width: 6px; height: 6px; border-radius: 50%; background: var(--primary); }
+    .eng-body { font-size: clamp(10pt, 2.5vw, 12pt); line-height: 1.7; font-weight: 500; color: var(--text-main); margin-bottom: 20px; text-align: justify; }
+    .divider { height: 1px; background: var(--border-light); margin: 20px 0; }
+    .mini-divider { height: 1px; background: var(--border-light); margin: 8px 0; }
+    .kor-body { font-size: clamp(9.5pt, 2.3vw, 11.5pt); line-height: 1.7; color: var(--text-sub); text-align: justify; word-break: keep-all; }
+
+    .sentence-card {
+      background: var(--card-bg); border: 1px solid var(--border-light); border-left: 4px solid var(--secondary);
+      border-radius: 8px; padding: 8px 16px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    }
+    .sentence-id { display: inline-block; margin-bottom: 8px; padding: 2px 8px; border-radius: 6px; background: var(--primary-light); color: var(--primary); font-size: 9pt; font-weight: 700; }
+    .sentence-en { font-size: 12.5pt; font-weight: 600; line-height: 1.6; color: var(--text-main); margin-bottom: 4px; }
+    .sentence-ko { font-size: 9pt; line-height: 1.6; color: var(--text-sub); margin-bottom: 4px; word-break: keep-all; }
+    .vocab-box { display: inline-block; padding: 4px 8px; border-radius: 6px; background: #f8fafc; border: 1px dashed #cbd5e1; font-size: 9pt; color: var(--text-muted); }
+
+    .point-block { margin-bottom: 16px; }
+    .point-block:last-child { margin-bottom: 0; }
+    .line-item { font-size: 11.5pt; line-height: 1.7; margin: 0 0 8px 0; word-break: keep-all; }
+    .exam-note { margin-top: 8px; padding: 8px 12px; background: #fffbeb; border-left: 3px solid #f59e0b; border-radius: 0 6px 6px 0; font-size: 10.5pt; line-height: 1.6; color: #92400e; }
+    .exam-note ul { margin: 4px 0 0 0; padding-left: 20px; }
+    .exam-note li { margin-bottom: 4px; }
+    .exam-note li:last-child { margin-bottom: 0; }
+
+    .chip-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 8px 0 20px 0; }
+    .chip { padding: 4px 10px; border-radius: 999px; background: var(--primary-light); color: var(--primary); font-size: 10pt; font-weight: 600; }
+    .arrow { color: var(--text-muted); font-weight: 700; }
+    h3 { font-size: 12pt; margin: 0 0 8px 0; color: var(--text-main); }
+    .label { display: inline-block; font-size: 9.5pt; font-weight: 700; color: var(--secondary); background: #eff6ff; padding: 2px 6px; border-radius: 4px; margin-bottom: 6px; }
+    .summary-pair { margin-bottom: 20px; }
+    .summary-pair:last-child { margin-bottom: 0; }
+
+    /* 요약/역할 및 흐름 정리용 Flexbox */
+    .flex-row-item { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 6px; }
+    .flex-row-item:last-child { margin-bottom: 0; }
+    .flex-label { font-size: 10.5pt; color: var(--text-main); font-weight: 600; flex-shrink: 0; width: 40px; }
+    .flex-desc { font-size: 10.5pt; color: var(--text-muted); word-break: keep-all; line-height: 1.6; }
+    
+    .flow-label { font-size: 11.5pt; font-weight: 700; color: var(--text-main); flex-shrink: 0; width: 140px; white-space: nowrap; margin-right: 4px; }
+    .flow-label .sentence-id { margin-bottom: 0; margin-right: 4px; padding: 2px 6px; }
+    .flow-desc { font-size: 11.5pt; color: var(--text-sub); word-break: keep-all; line-height: 1.7; }
+
+    /* =========================================
+       인쇄(Print) 전용 스타일 - 25% 축소 (원본 75% 유지) 및 특정 영역 Undo
+       ========================================= */
+    @media print {
+      html, body { background: #ffffff !important; padding: 0; }
+      .doc { max-width: 100%; }
+
+      /* 지문 구분선을 강제 페이지 넘김으로 변환 */
+      .passage-separator {
+        page-break-before: always !important;
+        break-before: page !important;
+        margin: 0 !important;
+        height: 0 !important;
+        border: none !important;
+        background: none !important;
+      }
+      .passage-separator::after { display: none !important; }
+
+      .page-break { page-break-before: always !important; break-before: page !important; }
+      .card, .sentence-card { box-shadow: none !important; border: 1px solid #cbd5e1 !important; page-break-inside: avoid !important; break-inside: avoid !important; }
+      .section-title { page-break-after: avoid !important; break-after: avoid !important; }
+
+      .hero-title { background: #0f172a !important; color: white !important; }
+      .page-no { background: #0f172a !important; }
+      .sentence-id, .chip, .label { border: 1px solid #cbd5e1 !important; background: #f8fafc !important; color: #0f172a !important; }
+      .exam-note { background: #f8fafc !important; border-left-color: #94a3b8 !important; color: #334155 !important; }
+
+      /* 글자 크기 원본 대비 25% 축소 (75% 크기 유지) */
+      .page-no { font-size: 9pt !important; width: 24px !important; height: 24px !important; }
+      .sentence-id { font-size: 6.75pt !important; padding: 1.5px 6px !important; }
+      .sentence-en { font-size: 9.4pt !important; }
+      .sentence-ko { font-size: 6.75pt !important; }
+      .vocab-box { font-size: 6.75pt !important; padding: 3px 6px !important; }
+      .line-item { font-size: 8.6pt !important; }
+      .exam-note { font-size: 7.9pt !important; padding: 6px 9px !important; }
+      .chip { font-size: 7.5pt !important; padding: 3px 7.5px !important; }
+      h3 { font-size: 9pt !important; }
+      .label { font-size: 7.1pt !important; padding: 1.5px 4.5px !important; }
+      .flex-label { font-size: 7.9pt !important; }
+      .flex-desc { font-size: 7.9pt !important; }
+      .flow-label { font-size: 8.6pt !important; }
+      .flow-desc { font-size: 8.6pt !important; }
+      
+      /* 원래 크기로 복구 (Undo) 된 특정 태그들 (헤더, 본문타이틀, 00번 페이지 번호) */
+      .hero-title { font-size: 22pt !important; padding: 8px 24px !important; } 
+      .subtitle { font-size: 13pt !important; } 
+      .section-00 .page-no { font-size: 12pt !important; width: 32px !important; height: 32px !important; }
+      h2 { font-size: 16pt !important; } 
+      
+      /* 본문, 해석 영역 인쇄/화면 크기에 맞춰 유동적으로 조절 보장 */
+      .text-block-title { font-size: clamp(10pt, 2.5vw, 12pt) !important; } 
+      .eng-body { font-size: clamp(10pt, 2.5vw, 12pt) !important; } 
+      .kor-body { font-size: clamp(9.5pt, 2.3vw, 11.5pt) !important; } 
+    }
+  </style>
+</head>
+<body>
+  <div class="doc">
+
+    <!-- ========================================== -->
+    <!-- [지문 1] 19강 1~2번                        -->
+    <!-- ========================================== -->
+    <div class="passage-container">
+      <div class="header-container">
+        <div class="hero-title">19강 1~2번 지문분석</div>
+        <div class="subtitle">Lio T 내신대비 지문분석서</div>
+      </div>
+
+      <div class="section-title no-break section-00"><div class="page-no">00</div><h2>영어 본문 및 전체 해석</h2></div>
+      <div class="card no-break">
+        <div class="text-block-title">영어 본문</div>
+        <div class="eng-body">
+          Women’s dresses from the eighteenth century offered a great opportunity for repurposing, as they were frequently fashioned from long, uncut lengths of fabric. Textiles were significantly more costly than the labor it took to alter them, and as a result, most garments were modified numerous times to keep up with changes in fashion. “Even the wealthy saved fabrics, remodeled clothes, and sold unwanted items in the secondhand market,” observes fashion scholar Linda Welters. “Sustainability was a way of life.” Indeed, although change is inherent to fashion, the remodeling of the existing clothing, rather than buying new, was a widespread practice. It is rare, in fact, to find an eighteenth-century dress that does not show some sign of alteration. The cost of having a gown made, or remade, was only about half the cost of the textile itself and could be significantly less, depending on the type of fabric. In addition to updated dress silhouettes, accessories and trimmings played an important role in refreshing old clothing styles. For example, the addition of a row of lace on an upper part of a gown was an economical alternative to the full replacement of the gown. Many eighteenth-century dresses, particularly those from the first half of the century, were constructed with relatively crude stitches, indicating that the effortless preservation of the original gown was a consideration. Because fabrics retained value even when they were not in fashion, hand-woven silks, cherished for their quality and beauty, were sometimes passed down through generations.
+        </div>
+        <div class="divider"></div>
+        <div class="text-block-title">전체 해석</div>
+        <div class="kor-body">
+          18세기의 여성용 드레스는 자르지 않은 긴 길이의 원단으로 만들어지는 경우가 많았기 때문에 용도를 변경할 좋은 기회를 제공했다. 직물은 그것을 수선하는 데 드는 노동력보다 훨씬 더 비쌌으며, 그 결과 대부분의 의복은 유행의 변화를 따라잡기 위해 수없이 많이 수정되었다. "심지어 부유한 사람들도 원단을 아끼고, 옷을 개조하고, 원하지 않는 물건들을 중고 시장에 팔았습니다."라고 패션 학자 린다 웰터스는 관찰한다. "지속 가능성은 삶의 방식이었습니다." 실제로 변화가 패션에 내재되어 있긴 하지만, 새것을 사기보다는 기존의 옷을 개조하는 것이 널리 퍼진 관행이었다. 사실, 약간의 수선 흔적을 보여주지 않는 18세기 드레스를 찾기란 드문 일이다. 가운을 만들거나 다시 만드는 데 드는 비용은 직물 그 자체 비용의 대략 절반에 불과했으며, 원단의 종류에 따라 훨씬 더 적을 수도 있었다. 최신식의 드레스 실루엣에 더하여, 액세서리와 장식은 오래된 옷 스타일을 새롭게 하는 데 중요한 역할을 했다. 예를 들어, 가운의 윗부분에 레이스를 한 줄 추가하는 것은 가운 전체를 교체하는 것에 대한 경제적인 대안이었다. 많은 18세기 드레스들, 특히 그 세기의 전반부에서 나온 것들은 비교적 엉성한 땀으로 바느질되었는데, 이는 원래 가운의 손쉬운 보존(문맥상 개조/수선이 되어야 맞음)이 고려 사항이었음을 보여준다. 원단은 유행이 지났을 때도 가치를 유지했기 때문에, 품질과 아름다움으로 소중히 여겨진 손으로 짠 실크는 때때로 세대를 거쳐 물려졌다.
+        </div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">01</div><h2>직독직해 및 어휘 정리</h2></div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 1</div>
+        <div class="sentence-en">Women’s dresses / from the eighteenth century / offered / a great opportunity / for repurposing, / as / they / were frequently fashioned / from long, uncut lengths / of fabric.</div>
+        <div class="sentence-ko">여성용 드레스는 / 18세기의 / 제공했다 / 좋은 기회를 / 용도를 변경할, / ~기 때문에 / 그것들이 / 흔히 만들어졌기 / 자르지 않은 긴 길이로 / 원단의.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> repurpose - 다른 용도에 맞게 고치다, 용도를 변경하다, fashion - 만들다 빚어내다, uncut - 자르지 않은, fabric - 원단, 직물</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 2</div>
+        <div class="sentence-en">Textiles / were / significantly more costly / than the labor / it / took / to alter / them, / and / as a result, / most garments / were modified / numerous times / to keep up with / changes / in fashion.</div>
+        <div class="sentence-ko">직물은 / ~였다 / 훨씬 더 비싼 / 노동력보다 / (그것이) / 필요로 하는 / 수선하는 데 / 그것들을, / 그리고 / 그 결과, / 대부분의 의복은 / 수정(개조)되었다 / 수없이 여러 번 / 따라잡기 위해 / 변화를 / 패션에서의.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> textile - 직물, costly - 비용이 많이 드는, 비싼, alter - 바꾸다, 수선하다, modify - 수정하다, 변경하다, numerous - 수많은, keep up with - ~을 따라잡다</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 3</div>
+        <div class="sentence-en">“Even the wealthy / saved / fabrics, / remodeled / clothes, / and sold / unwanted items / in the secondhand market,” / observes / fashion scholar Linda Welters.</div>
+        <div class="sentence-ko">"심지어 부유한 사람들도 / 아꼈고 / 원단을, / 개조했고 / 옷을, / 그리고 팔았습니다 / 원하지 않는 물건들을 / 중고 시장에서," / (라고) 관찰한다(말한다) / 패션 학자 린다 웰터스는.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> the wealthy - 부유한 사람들, remodel - 개조하다, secondhand - 중고의, observe - 관찰하다, 말하다</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 4</div>
+        <div class="sentence-en">“Sustainability / was / a way / of life.”</div>
+        <div class="sentence-ko">"지속 가능성은 / ~였습니다 / 방식 / 삶의."</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> sustainability - 지속 가능성</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 5</div>
+        <div class="sentence-en">Indeed, / although / change / is / inherent / to fashion, / the remodeling / of the existing clothing, / rather than buying / new, / was / a widespread practice.</div>
+        <div class="sentence-ko">실제로, / 비록 / 변화가 / ~일지라도 / 내재되어 있을(지라도) / 패션에, / 개조하는 것은 / 기존의 옷을, / 사는 것보다는 / 새것을, / ~였다 / 널리 퍼진 관행.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> inherent - 내재된, 고유의, existing - 기존의, widespread - 널리 퍼진, 광범위한, practice - 관행, 실천</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 6</div>
+        <div class="sentence-en">It / is / rare, / in fact, / to find / an eighteenth-century dress / that / does not show / some sign / of alteration.</div>
+        <div class="sentence-ko">(~은) / ~이다 / 드문, / 사실, / 찾는 것은 / 18세기의 드레스를 / (~하는) / 보여주지 않는 / 약간의 흔적을 / 수선의.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> rare - 드문, sign - 기호, 흔적, alteration - 변경, 수선</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 7</div>
+        <div class="sentence-en">The cost / of having a gown made, / or remade, / was / only about half the cost / of the textile itself / and / could be / significantly less, / depending on / the type / of fabric.</div>
+        <div class="sentence-ko">비용은 / 가운을 만들게 하는, / 혹은 다시 만들게 하는, / ~였다 / 대략 절반의 비용에 불과한 / 직물 그 자체의 / 그리고 / ~일 수 있었다 / 훨씬 더 적을 (수 있었다), / ~에 따라서 / 종류에 / 원단의.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> remake - 다시 만들다, depending on - ~에 따라서</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 8</div>
+        <div class="sentence-en">In addition to / updated dress silhouettes, / accessories and trimmings / played / an important role / in refreshing / old clothing styles.</div>
+        <div class="sentence-ko">~에 더하여 / 새롭게 된 드레스 실루엣에, / 액세서리와 장식은 / 수행했다 / 중요한 역할을 / 새롭게 하는 데 / 오래된 옷 스타일을.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> in addition to - ~에 더하여, silhouette - 실루엣, 윤곽, trimming - 장식, 테두리, refresh - 상쾌하게 하다, 새롭게 하다</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 9</div>
+        <div class="sentence-en">For example, / the addition / of a row of lace / on an upper part / of a gown / was / an economical alternative / to the full replacement / of the gown.</div>
+        <div class="sentence-ko">예를 들어, / 추가하는 것은 / 한 줄의 레이스를 / 윗부분에 / 가운의 / ~였다 / 경제적인 대안 / 전면적인 교체에 대한 / 가운의.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> addition - 추가, a row of - 한 줄의, economical - 경제적인, 절약하는, alternative - 대안, replacement - 교체</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 10</div>
+        <div class="sentence-en">Many eighteenth-century dresses, / particularly those / from the first half / of the century, / were constructed / with relatively crude stitches, / indicating / that / the effortless preservation / of the original gown / was / a consideration.</div>
+        <div class="sentence-ko">많은 18세기 드레스들은, / 특히 그것들은 / 전반부에서 나온 / 그 세기의, / 만들어졌다 / 비교적 엉성한 땀(바느질)으로, / (그리고 이것은) 보여준다 / ~라는 것을 / 손쉬운 보존(문맥상 오류: 개조/수선)이 / 원래 가운의 / ~였다는 것을 / 고려 사항.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> construct - 만들다, 구성하다, relatively - 비교적, crude - 엉성한, 투박한, stitch - 땀, 바느질, effortless - 노력 없는, 손쉬운, preservation - 보존 (문맥상 alteration으로 수정되어야 함), consideration - 고려 사항</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 11</div>
+        <div class="sentence-en">Because / fabrics / retained / value / even when / they / were not / in fashion, / hand-woven silks, / cherished / for their quality and beauty, / were sometimes passed down / through generations.</div>
+        <div class="sentence-ko">~때문에 / 원단이 / 유지했기 (때문에) / 가치를 / 심지어 ~할 때조차 / 그것들이 / 아닐 때조차 / 유행이, / 손으로 짠 실크는, / 소중히 여겨지는 / 품질과 아름다움 때문에, / 때때로 물려졌다 / 세대를 거쳐.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> retain - 유지하다, in fashion - 유행하는, hand-woven - 손으로 짠, cherish - 소중히 여기다, pass down - 물려주다, 전수하다</div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">02</div><h2>어법 및 구문 포인트</h2></div>
+      <div class="card no-break">
+        <div class="point-block">
+          <div class="sentence-id">문장 2</div>
+          <div class="line-item"><strong>[more costly than the labor it took to alter them]</strong> `it takes + 시간/비용/노력 + to부정사` (~하는 데 비용/노력이 들다) 구문이 관계대명사절로 변형되어 `the labor`를 수식하고 있다. `costly`는 `cost`에 `-ly`가 붙은 형용사다.</div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 7</div>
+          <div class="line-item"><strong>[having a gown made, or remade]</strong> 사역동사 `have + 목적어(a gown) + 목적격 보어(과거분사 made/remade)` 구조다. 가운이 스스로 만드는 것이 아니라 사람에 의해 '만들어지는' 수동의 관계이므로 과거분사가 쓰였다.</div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul><li>목적격 보어 자리에 `make`나 `making`을 쓰면 어법상 틀린다.</li></ul>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 10</div>
+          <div class="line-item"><strong>[were constructed with relatively crude stitches, indicating that...]</strong> 콤마 뒤의 `indicating`은 분사구문으로 '그리고 그것은 ~을 보여준다'라는 연속적인 의미를 갖는다.</div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul><li><strong>문맥상 낱말 쓰임 주의:</strong> 본문 원문의 `preservation`(보존)은 문맥상 오답이다. 바느질을 엉성하게(crude) 한 이유는 옷을 해체하여 다시 개조하기 쉽게 만들기 위함이므로, 원래 가운을 보존하려는 것이 아니라 옷의 '수선(alteration)'이나 '개조(modification)'가 손쉬운 것을 고려한 것이다.</li></ul>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 11</div>
+          <div class="line-item"><strong>[hand-woven silks, cherished for their quality and beauty, were sometimes passed down...]</strong> 주어인 `silks`와 동사 `were passed down` 사이에 과거분사구 `cherished...`가 삽입되어 주어를 수식한다. 실크가 '소중히 여겨지는' 대상이므로 과거분사 `cherished`가 맞다.</div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">03</div><h2>문장 단위 내용 흐름 정리</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>[(1)-(2) 18세기 의복의 특징] :</strong> 18세기 여성의 드레스는 천을 자르지 않고 통째로 썼기 때문에 용도를 변경하기 쉬웠다. 노동력보다 직물 가격이 훨씬 비싸서 옷을 개조해 입는 것이 일반적이었다.</div>
+        <div class="line-item"><strong>[(3)-(5) 부유층의 절약 관행] :</strong> 심지어 부유한 사람들조차도 새 옷을 사기보다 옷을 개조하거나 중고로 파는 지속 가능한 삶의 방식을 실천했다.</div>
+        <div class="line-item"><strong>[(6)-(9) 경제적 개조의 방법] :</strong> 당시 옷은 대부분 수선된 흔적이 있다. 옷을 다시 만드는 비용이 직물 값의 절반밖에 안 되었고, 옷 전체를 바꾸기보다 레이스나 장식을 추가하여 저렴하게 스타일을 새롭게 했다.</div>
+        <div class="line-item"><strong>[(10)-(11) 개조를 위한 바느질과 직물의 가치] :</strong> 쉽게 뜯어서 다시 수선하기 위해 일부러 엉성하게 바느질을 하기도 했다. 비싼 실크와 같은 직물은 유행이 지나도 가치가 있어서 세대를 거쳐 대물림되었다.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">04</div><h2>표현들의 연관성 정리</h2></div>
+      <div class="card no-break">
+        <h3>의복 재활용의 다양한 표현</h3>
+        <div class="chip-row">
+          <span class="chip">Repurposing</span> <span class="arrow">=</span> <span class="chip">altered</span> <span class="arrow">=</span> <span class="chip">modified</span> <span class="arrow">=</span> <span class="chip">remodeled</span> <span class="arrow">=</span> <span class="chip">remade</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 20px;">모두 값비싼 직물을 버리지 않고 유행에 맞게 고쳐 입는 18세기의 패션 관행을 나타내는 유의어들이다.</div>
+
+        <h3>경제적 원인</h3>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-bottom: 20px;"><strong>Textiles were significantly more costly than labor:</strong> 옷을 끊임없이 개조해 입을 수밖에 없었던 핵심적인 경제적 원인이다.</div>
+
+        <h3>개조를 위한 의도적 설계</h3>
+        <div class="chip-row">
+          <span class="chip">Crude stitches</span> <span class="arrow">↔</span> <span class="chip">Effortless alteration(preservation의 수정어)</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 4px;">옷을 나중에 뜯어고치기 쉽게 하려고 꼼꼼하고 튼튼 바느질 대신 엉성하고 투박한 바느질을 선택한 인과관계를 보여준다.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">05</div><h2>소재와 주제문</h2></div>
+      <div class="card no-break" style="border-top-color: #f59e0b;">
+        <div class="line-item" style="margin-bottom: 12px;"><strong>핵심 소재:</strong> 18세기 여성들의 의복 개조(수선) 및 재활용 관행</div>
+        <div class="mini-divider"></div>
+        <div class="label" style="margin-top: 8px;">주제문 (문장 2)</div>
+        <div class="sentence-en" style="margin-bottom: 0;">Textiles were significantly more costly than the labor it took to alter them, and as a result, most garments were modified numerous times to keep up with changes in fashion.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">06</div><h2>지문의 요약 및 패러프레이징</h2></div>
+      <div class="card no-break">
+        <div class="summary-pair">
+          <div class="label">요약 / Summary</div>
+          <div class="sentence-en">In the eighteenth century, because textiles were far more expensive than labor, women across all social classes frequently remodeled and repurposed their dresses using economical alterations and easily unpicked stitches.</div>
+          <div class="sentence-ko">18세기에 직물이 노동력보다 훨씬 비쌌기 때문에 모든 사회 계층의 여성들은 경제적인 수선과 쉽게 풀리는 바느질을 이용하여 자신의 드레스를 자주 개조하고 용도를 변경했다.</div>
+        </div>
+        <div class="divider"></div>
+        <div class="summary-pair">
+          <div class="label">패러프레이징 / Paraphrasing</div>
+          <div class="sentence-en">Due to the high cost of fabric relative to tailoring labor, 18th-century fashion heavily relied on sustainability. Garments were intentionally constructed to be easily disassembled and updated with minor accessory changes, allowing expensive materials to be reused and passed down.</div>
+          <div class="sentence-ko">재단 노동력에 비해 직물 비용이 높았기 때문에, 18세기 패션은 지속 가능성에 크게 의존했다. 의복은 의도적으로 쉽게 해체되고 사소한 액세서리 변경으로 최신화될 수 있도록 만들어졌으며, 이를 통해 비싼 소재가 재사용되고 물려질 수 있었다.</div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">07</div><h2>도움이 되는 배경지식</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>1. 18세기 텍스타일 산업:</strong><br> 산업 혁명 이전, 직물을 짜는 과정은 엄청난 수작업과 시간이 필요했기 때문에 실크, 벨벳 등 질 좋은 원단은 가보로 물려줄 만큼 귀중한 재산(사치품)이었다. 반면 재단사나 재봉사의 인건비는 상대적으로 매우 저렴했다.</div>
+        <div class="divider"></div>
+        <div class="line-item"><strong>2. 트리밍 (Trimming):</strong><br> 옷의 가장자리나 표면을 장식하는 레이스, 리본, 프릴 등을 말한다. 옷의 바탕 천을 바꾸지 않고도 이런 부자재만 교체하여 유행에 맞게 새 옷 같은 느낌을 주는 것이 당시의 핵심 패션 전략이었다.</div>
+      </div>
+    </div>
+
+
+    <!-- ========================================== -->
+    <!-- 지문 구분선 (인쇄 시 여기서 페이지가 나뉨) -->
+    <!-- ========================================== -->
+    <hr class="passage-separator" />
+
+    <!-- ========================================== -->
+    <!-- [지문 2] 19강 5~6번                        -->
+    <!-- ========================================== -->
+    <div class="passage-container">
+      <div class="header-container">
+        <div class="hero-title">19강 5~6번 지문분석</div>
+        <div class="subtitle">Lio T 내신대비 지문분석서</div>
+      </div>
+
+      <div class="section-title no-break section-00"><div class="page-no">00</div><h2>영어 본문 및 전체 해석</h2></div>
+      <div class="card no-break">
+        <div class="text-block-title">영어 본문</div>
+        <div class="eng-body">
+          Since the 1970s, a combination of forces has made the problem of overwork more widespread. The service sectors in Western economies have grown dramatically while employment in manufacturing has declined. The shrinking of labor unions and workplace protections has let employers push for longer hours while global competition, decreased job security, and flat wages have forced workers to work harder to stay in place. Corporations now shed staff in the course of restructuring and “process reengineering,” forcing surviving workers to carry heavier workloads. The 2008 recession and recovery has weakened a pattern in which companies seek to grow by increasing demands on existing workers rather than hiring new ones. A few industries have turned into fast-moving, winner-take-all contests: small numbers of people stand to make immense fortunes when their tech company goes public, their hedge fund investment pays off, or their song goes viral — and since no one knows how long they have until fashions change, technology evolves, or the bubble bursts, it makes sense to go all-in right now. As a result, many of us are actually working longer hours. Working hours generally decline with increased productivity, but in the 1970s, increased productivity stopped yielding shorter working hours, despite the expectations of generations of economists. Working hours started to rise in the United States in the 1980s, especially among salaried workers and professionals like doctors, lawyers, bankers, and academics; in contrast, working hours (and full-time jobs and salaries) in less skilled, hourly professions began to fall. Since then, this split has spread to other parts of the world: today, well-off, well-educated people in Western Europe, Australia, and South Korea are also more likely to be overworked, while more poor people struggle to find stable jobs and face chronic underemployment.
+        </div>
+        <div class="divider"></div>
+        <div class="text-block-title">전체 해석</div>
+        <div class="kor-body">
+          1970년대 이후로 여러 세력들의 결합은 과로의 문제를 더 광범위하게 만들었다. 서구 경제에서 서비스 부문은 극적으로 성장한 반면, 제조업에서의 고용은 감소했다. 노동조합과 직장 보호 장치의 축소는 고용주들이 더 긴 노동 시간을 밀어붙이게 허용했고, 반면 글로벌 경쟁, 감소한 직업 안정성, 그리고 정체된 임금은 근로자들이 제자리를 유지하기 위해 더 열심히 일하도록 강요했다. 이제 기업들은 구조조정과 "업무 재설계" 과정에서 직원을 감원하며, 살아남은 근로자들에게 더 무거운 업무량을 감당하도록 강요한다. 2008년의 경기 침체와 회복은 기업들이 새로운 사람을 고용하기보다는 기존 근로자들에 대한 요구를 늘림으로써 성장하려고 하는 패턴을 약화시켰다(문맥상 강화/강화시켰다가 되어야 맞음). 몇몇 산업들은 빠르게 움직이는 승자 독식의 경쟁으로 변모했다: 적은 수의 사람들은 그들의 기술 회사가 상장되거나, 헤지 펀드 투자가 성과를 내거나, 그들의 노래가 입소문이 날 때 막대한 부를 얻을 위치에 있다. 그리고 유행이 변하거나, 기술이 진화하거나, 거품이 터질 때까지 그들에게 시간이 얼마나 있는지 아무도 모르기 때문에, 지금 당장 올인(모든 것을 거는 것)하는 것은 타당하다. 그 결과, 우리 중 많은 사람들이 실제로 더 오랜 시간 일하고 있다. 노동 시간은 일반적으로 생산성 향상과 함께 감소하지만, 1970년대에 향상된 생산성은 수 세대의 경제학자들의 기대에도 불구하고 더 짧은 노동 시간을 산출하는 것을 멈추었다. 미국에서 노동 시간은 1980년대에 증가하기 시작했는데, 특히 의사, 변호사, 은행가, 교수와 같은 봉급생활자와 전문가들 사이에서 그러했다; 반면에, 숙련도가 떨어지는 시간제 직종에서의 노동 시간(그리고 정규직 일자리와 급여)은 떨어지기 시작했다. 그 이후로 이러한 양극화는 세계의 다른 지역으로 퍼져나갔다: 오늘날 서유럽, 호주, 한국의 부유하고 교육 수준이 높은 사람들도 과로할 가능성이 더 높은 반면, 더 많은 가난한 사람들은 안정적인 일자리를 찾기 위해 고군분투하며 만성적인 불완전 고용에 직면하고 있다.
+        </div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">01</div><h2>직독직해 및 어휘 정리</h2></div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 1</div>
+        <div class="sentence-en">Since the 1970s, / a combination / of forces / has made / the problem / of overwork / more widespread.</div>
+        <div class="sentence-ko">1970년대 이후로, / 결합은 / 세력들(요인들)의 / 만들었다 / 문제를 / 과로의 / 더 광범위하게.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> combination - 결합, 조합, force - 세력, 힘, 요인, overwork - 과로, widespread - 광범위한, 널리 퍼진</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 2</div>
+        <div class="sentence-en">The service sectors / in Western economies / have grown / dramatically / while / employment / in manufacturing / has declined.</div>
+        <div class="sentence-ko">서비스 부문은 / 서구 경제에서의 / 성장했다 / 극적으로 / 반면에 / 고용은 / 제조업에서의 / 감소했다.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> sector - 부문, dramatically - 극적으로, employment - 고용, manufacturing - 제조업, decline - 감소하다</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 3</div>
+        <div class="sentence-en">The shrinking / of labor unions / and workplace protections / has let / employers / push / for longer hours / while / global competition, decreased job security, and flat wages / have forced / workers / to work / harder / to stay in place.</div>
+        <div class="sentence-ko">축소는 / 노동조합과 / 직장 보호 장치의 / 허용했다(만들었다) / 고용주들이 / 밀어붙이도록 / 더 긴 시간(노동 시간)을 / 반면에 / 글로벌 경쟁, 감소한 직업 안정성, 그리고 정체된 임금은 / 강요했다 / 근로자들이 / 일하도록 / 더 열심히 / 제자리에 머물기 위해(현상 유지를 위해).</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> shrink - 줄어들다, 축소되다, labor union - 노동조합, employer - 고용주, security - 안정(성), 보안, flat wage - 정체된 임금, force A to B - A가 B하도록 강요하다, stay in place - 제자리에 머물다</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 4</div>
+        <div class="sentence-en">Corporations / now / shed / staff / in the course / of restructuring / and “process reengineering,” / forcing / surviving workers / to carry / heavier workloads.</div>
+        <div class="sentence-ko">기업들은 / 이제 / 감원한다 / 직원을 / 과정에서 / 구조조정의 / 그리고 "업무 재설계(리엔지니어링)"의, / (그리고) 강요한다 / 살아남은 근로자들이 / 감당하도록 / 더 무거운 업무량을.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> corporation - 기업, shed - (직원을) 줄이다, 해고하다, restructure - 구조조정하다, surviving - 살아남은, workload - 업무량</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 5</div>
+        <div class="sentence-en">The 2008 recession / and recovery / has weakened / a pattern / in which / companies / seek to grow / by increasing demands / on existing workers / rather than hiring / new ones.</div>
+        <div class="sentence-ko">2008년의 경기 침체와 / 회복은 / 약화시켰다(문맥상 오류: 강화시켰다) / 패턴을 / (그 안에서) / 기업들이 / 성장하려고 애쓰는 / 요구를 늘림으로써 / 기존 근로자들에 대한 / 고용하기보다는 / 새로운 사람들을.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> recession - 경기 침체, 불황, weaken - 약화시키다 (문맥상 strengthen, reinforce 등으로 수정되어야 함), seek to - ~하려고 애쓰다, demand - 요구, existing - 기존의</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 6</div>
+        <div class="sentence-en">A few industries / have turned into / fast-moving, winner-take-all contests: / small numbers of people / stand to make / immense fortunes / when / their tech company / goes public, / their hedge fund investment / pays off, / or / their song / goes viral / — and / since / no one / knows / how long / they / have / until / fashions / change, / technology / evolves, / or / the bubble / bursts, / it / makes sense / to go all-in / right now.</div>
+        <div class="sentence-ko">몇몇 산업들은 / 변모했다 / 빠르게 움직이는, 승자 독식의 경쟁으로: / 적은 수의 사람들이 / ~할 입장에 있다(가능성이 있다) / 막대한 부를 벌어들일 / ~할 때 / 그들의 기술 회사가 / 상장될 (때), / 그들의 헤지 펀드 투자가 / 성공할 (때), / 혹은 / 그들의 노래가 / 입소문이 날 (때) / 그리고 / ~때문에 / 아무도 / 알지 못하기 (때문에) / 얼마나 오래 / 그들이 / 가졌는지(시간이 있는지) / ~할 때까지 / 유행이 / 변하거나, / 기술이 / 진화하거나, / 혹은 / 거품이 / 터질 (때까지), / (~은) / 타당하다 / 올인하는 것은 / 지금 당장.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> winner-take-all - 승자 독식의, stand to - ~할 것 같다, ~할 입장에 있다, immense - 막대한, fortune - 부, 재산, go public - (주식을) 상장하다, hedge fund - 헤지 펀드, pay off - 성과를 내다, 성공하다, go viral - 입소문이 나다, 널리 퍼지다, burst - 터지다</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 7</div>
+        <div class="sentence-en">As a result, / many of us / are actually working / longer hours.</div>
+        <div class="sentence-ko">그 결과, / 우리 중 많은 사람들이 / 실제로 일하고 있다 / 더 오랜 시간을.</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 8</div>
+        <div class="sentence-en">Working hours / generally decline / with increased productivity, / but / in the 1970s, / increased productivity / stopped / yielding / shorter working hours, / despite / the expectations / of generations of economists.</div>
+        <div class="sentence-ko">노동 시간은 / 일반적으로 감소한다 / 향상된 생산성과 함께, / 하지만 / 1970년대에, / 향상된 생산성은 / 멈추었다 / 산출하는 것을 / 더 짧은 노동 시간을, / ~에도 불구하고 / 기대 / 수 세대의 경제학자들의.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> productivity - 생산성, stop -ing - ~하는 것을 멈추다, yield - 산출하다, 낳다, generation - 세대</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 9</div>
+        <div class="sentence-en">Working hours / started to rise / in the United States / in the 1980s, / especially among salaried workers / and professionals / like doctors, lawyers, bankers, and academics; / in contrast, / working hours / (and full-time jobs and salaries) / in less skilled, hourly professions / began to fall.</div>
+        <div class="sentence-ko">노동 시간은 / 증가하기 시작했다 / 미국에서 / 1980년대에, / 특히 봉급생활자들 사이에서 / 그리고 전문가들 (사이에서) / 의사, 변호사, 은행가, 교수와 같은; / 반면에, / 노동 시간은 / (그리고 정규직 일자리와 급여는) / 덜 숙련된, 시간제 직종에서의 / 떨어지기 시작했다.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> salaried worker - 봉급생활자, professional - 전문가, academic - 교수, 학자, hourly profession - 시간제 직종</div>
+      </div>
+      <div class="sentence-card no-break">
+        <div class="sentence-id">문장 10</div>
+        <div class="sentence-en">Since then, / this split / has spread / to other parts / of the world: / today, / well-off, well-educated people / in Western Europe, Australia, and South Korea / are also more likely to be overworked, / while / more poor people / struggle to find / stable jobs / and face / chronic underemployment.</div>
+        <div class="sentence-ko">그 이후로, / 이러한 양극화(분열)는 / 퍼져나갔다 / 다른 지역으로 / 세계의: / 오늘날, / 부유하고 교육을 잘 받은 사람들은 / 서유럽, 호주, 그리고 한국의 / 과로할 가능성이 더 높은 반면, / 더 많은 가난한 사람들은 / 찾기 위해 고군분투한다 / 안정적인 일자리를 / 그리고 직면한다 / 만성적인 불완전 고용에.</div>
+        <div class="mini-divider"></div>
+        <div class="vocab-box"><strong>어휘:</strong> split - 분열, 양극화, well-off - 부유한, 잘사는, overwork - 과로하게 하다(수동태로 과로하다), chronic - 만성적인, underemployment - 불완전 고용</div>
+      </div>
+
+      <div class="section-title no-break page-break"><div class="page-no">02</div><h2>어법 및 구문 포인트</h2></div>
+      <div class="card no-break">
+        <div class="point-block">
+          <div class="sentence-id">문장 3</div>
+          <div class="line-item"><strong>[has let employers push...]</strong> `let + 목적어 + 동사원형` 사역동사 구문이다. `push` 자리에 `to push`나 `pushing`이 올 수 없다.</div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 4</div>
+          <div class="line-item"><strong>[forcing surviving workers to carry...]</strong> 콤마 뒤의 `forcing`은 능동의 분사구문이다. 기업이 감원하면서 남은 노동자들에게 더 많은 일을 하도록 '강요하면서'라는 결과/동시동작을 나타낸다. `force + 목적어 + to부정사` 구조를 취하므로 `to carry`가 왔다.</div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 5</div>
+          <div class="line-item"><strong>[The 2008 recession and recovery has weakened a pattern...]</strong> 주어인 `recession and recovery`를 하나의 경제적 흐름 단일 사건으로 보아 단수 동사 `has`를 사용했다.</div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul><li><strong>문맥상 낱말 쓰임 주의:</strong> 본문 원문의 `weakened`(약화시켰다)는 문맥상 오답이다. 경제 불황이 오면 기업들은 신규 채용을 꺼리고 기존 직원들을 쥐어짜는(점점 더 많은 일을 요구하는) 경향이 심해진다. 따라서 이러한 패턴을 '강화시켰다'가 되어야 하므로 `strengthened`나 `reinforced`로 이해해야 한다.</li></ul>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="point-block">
+          <div class="sentence-id">문장 8</div>
+          <div class="line-item"><strong>[stopped yielding]</strong> `stop + 동명사`는 '~하는 것을 멈추다(그만두다)'라는 뜻이다.</div>
+          <div class="exam-note">
+            <strong>[시험 출제 요소 및 주의점]</strong>
+            <ul><li>`stopped to yield`로 쓰면 '산출하기 위해 하던 일을 멈추다'라는 뜻이 되므로 문맥상 틀린다. 생산성 향상이 노동 시간 단축을 가져오던 흐름이 '끊어졌다'는 뜻이어야 한다.</li></ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">03</div><h2>문장 단위 내용 흐름 정리</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>[(1)-(4) 과로의 원인들] :</strong> 1970년대 이후 서비스업 중심 경제, 노조 약화, 글로벌 경쟁, 임금 정체 등으로 인해 과로가 심해졌다. 기업은 구조조정으로 직원을 줄이고 남은 사람들에게 업무를 가중시켰다.</div>
+        <div class="line-item"><strong>[(5)-(7) 과로의 심화 요인] :</strong> 경제 불황은 신규 채용 대신 기존 직원을 쥐어짜는 현상을 낳았고, 일부 승자 독식 산업에서는 불안정한 미래 속에서 살아남아 큰돈을 벌기 위해 지금 모든 에너지를 '올인(all-in)'해야만 했다.</div>
+        <div class="line-item"><strong>[(8)-(10) 노동 시간의 양극화] :</strong> 과거 경제학자들의 예상(생산성 증가 = 노동 시간 단축)과 달리, 고학력 전문직이나 고소득층은 오히려 엄청난 과로에 시달리는 반면, 저숙련 노동자들은 일자리가 줄어들어 만성적 불완전 고용 상태에 빠지는 사회적 '양극화(split)'가 전 세계적으로 퍼졌다.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">04</div><h2>표현들의 연관성 정리</h2></div>
+      <div class="card no-break">
+        <h3>과로의 제 양상</h3>
+        <div class="chip-row">
+          <span class="chip">Overwork</span> <span class="arrow">=</span> <span class="chip">longer hours</span> <span class="arrow">=</span> <span class="chip">carry heavier workloads</span> <span class="arrow">=</span> <span class="chip">go all-in</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 20px;">오늘날 노동자들이 겪는 극심한 피로와 장시간 노동의 현실을 다양한 각도에서 묘사한다.</div>
+
+        <h3>사회 구조적 압박 요인</h3>
+        <div class="chip-row">
+          <span class="chip">Shrinking of labor unions</span> <span class="arrow">=</span> <span class="chip">global competition</span> <span class="arrow">=</span> <span class="chip">restructuring</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 20px;">노동자들을 장시간 노동으로 내몬 사회 구조적이고 경제적인 압박 요인들이다.</div>
+
+        <h3>노동 시장의 양극화</h3>
+        <div class="chip-row">
+          <span class="chip">Split</span> <span class="arrow">=</span> <span class="chip">salaried workers/professionals (overworked)</span> <span class="arrow">↔</span> <span class="chip">less skilled, hourly professions (underemployment)</span>
+        </div>
+        <div class="line-item" style="font-size: 10.5pt; color: var(--text-muted); margin-top: -12px; margin-bottom: 4px;">현대 노동 시장의 뼈아픈 양극화를 명확히 대조하여 보여준다. 엘리트층은 과로사 위험에, 빈곤층은 실업 위험에 처해 있다.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">05</div><h2>소재와 주제문</h2></div>
+      <div class="card no-break" style="border-top-color: #f59e0b;">
+        <div class="line-item" style="margin-bottom: 12px;"><strong>핵심 소재:</strong> 1970년대 이후 과로가 심화된 원인과 현대 노동 시장의 양극화 현상</div>
+        <div class="mini-divider"></div>
+        <div class="label" style="margin-top: 8px;">주제문 (문장 1)</div>
+        <div class="sentence-en" style="margin-bottom: 8px;">Since the 1970s, a combination of forces has made the problem of overwork more widespread.</div>
+        <div class="label" style="margin-top: 8px;">주제문 (문장 10)</div>
+        <div class="sentence-en" style="margin-bottom: 0;">Since then, this split has spread to other parts of the world: today, well-off, well-educated people... are also more likely to be overworked, while more poor people struggle to find stable jobs and face chronic underemployment.</div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">06</div><h2>지문의 요약 및 패러프레이징</h2></div>
+      <div class="card no-break">
+        <div class="summary-pair">
+          <div class="label">요약 / Summary</div>
+          <div class="sentence-en">Driven by corporate restructuring, intense global competition, and a winner-take-all economy, modern overwork has created a stark divide where highly educated professionals work excessively long hours while less skilled workers face chronic underemployment.</div>
+          <div class="sentence-ko">기업의 구조조정, 치열한 글로벌 경쟁, 승자 독식 경제에 의해 주도된 현대의 과로는, 고학력 전문가들이 지나치게 긴 시간을 일하는 반면 덜 숙련된 근로자들은 만성적인 불완전 고용에 직면하는 극명한 격차를 만들어냈다.</div>
+        </div>
+        <div class="divider"></div>
+        <div class="summary-pair">
+          <div class="label">패러프레이징 / Paraphrasing</div>
+          <div class="sentence-en">A series of economic shifts since the 1970s has derailed the expectation that rising productivity would lead to more leisure. Instead, the labor market has fractured: corporate pressures and the allure of immense rewards force the elite into exhausting overwork, leaving the lower-skilled battling severe job scarcity.</div>
+          <div class="sentence-ko">1970년대 이후의 일련의 경제적 변화는 생산성 향상이 더 많은 여가로 이어질 것이라는 기대를 무너뜨렸다. 대신 노동 시장은 분열되었다. 기업의 압박과 막대한 보상의 매력은 엘리트층을 지치게 하는 과로로 내몰고, 기술이 부족한 사람들은 심각한 일자리 부족과 싸우게 만들었다.</div>
+        </div>
+      </div>
+
+      <div class="section-title no-break"><div class="page-no">07</div><h2>도움이 되는 배경지식</h2></div>
+      <div class="card no-break">
+        <div class="line-item"><strong>1. 불완전 고용 (Underemployment):</strong><br> 근로자가 일할 의사와 능력이 있음에도 불구하고, 풀타임 일자리를 구하지 못해 파트타임으로 일하거나 자신의 기술 수준보다 훨씬 낮은 직종에서 일하는 상태. (예: 박사 학위 소지자가 아르바이트를 하는 경우).</div>
+        <div class="divider"></div>
+        <div class="line-item"><strong>2. 승자 독식 사회 (Winner-Take-All Society):</strong><br> 상위 1%가 부와 명예의 대부분을 차지하는 경제 구조. 벤처 기업 상장이나 팝스타의 성공처럼 1등이 되면 천문학적인 돈을 벌기 때문에, 사람들은 실패의 불안감 속에 잠을 줄여가며 '올인'하는 극단적인 노동 환경에 놓이게 된다.</div>
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>
